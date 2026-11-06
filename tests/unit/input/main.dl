@@ -1,0 +1,38 @@
+import ../../helpers/driver.dl
+window input test:
+    button "Count"
+    code:
+        when the "Count" button is clicked:
+            set count to this window's state as a pointer to an integer
+            store ((the value at count) + 1) at count
+set count to 0
+set instance to an instance of input test with state (the address of count)
+set view to a UI view of (the address of instance) sized 640 by 480 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set button to the UI layout for element (the control labeled "Count" in (the address of instance)) in (view's layout)
+queue UI input of kind 1 key 0 at (button's painted bounds' x + 4.0) (button's painted bounds' y + 4.0) with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (count = 1) reporting "A quick press and release was lost"
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 6 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (count = 2) reporting "Enter was dispatched more than once"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+queue UI input of kind 1 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's keyboard focus) reporting "Pointer motion stole keyboard focus"
+set view's cursor to a UI point at (button's painted bounds' x + 4.0) and (button's painted bounds' y + 4.0)
+ignore update UI view (the address of view)
+set view's seconds to view's seconds + 0.016
+loop while update UI view (the address of view):
+    set view's seconds to view's seconds + 0.016
+set paints to view's paint count
+queue UI input of kind 1 key 0 at (button's painted bounds' x + 5.0) (button's painted bounds' y + 5.0) with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's paint count = paints) reporting "Motion without a visual change repainted the UI"
+close the address of view
+close the address of instance
+print line "Queued inputs are preserved and static motion does not repaint."

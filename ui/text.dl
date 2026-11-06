@@ -1,0 +1,142 @@
+# Text runs, UTF-8 boundaries and selection geometry belong to the shared engine.
+import platform.dl
+import lib/utf8.dl
+
+to clear UI selection in {a pointer to UI view:view}:
+    set view's selection to a new UI text selection
+
+to get the UI text prefix of {string:text} ending at {integer:end}:
+    return a new string from (the data of text) containing end bytes
+
+to get the [first] selected UI byte in {a pointer to UI text run:run} in {a pointer to UI view:view}:
+    set selection to view's selection
+    if (selection's anchor run = @intrinsic("construct", a pointer to UI text run)) or (selection's caret run = @intrinsic("construct", a pointer to UI text run)):
+        return 0
+    set first to selection's anchor run
+    set last to selection's caret run
+    set start to selection's anchor
+    if (first's order > last's order) or ((first = last) and (selection's anchor > selection's caret)):
+        set first to selection's caret run
+        set last to selection's anchor run
+        set start to selection's caret
+    if (run's order < first's order) or (run's order > last's order):
+        return 0
+    if run = first:
+        return the minimum of start and (run's text's length)
+    return 0
+
+to get the [last] selected UI byte in {a pointer to UI text run:run} in {a pointer to UI view:view}:
+    set selection to view's selection
+    if (selection's anchor run = @intrinsic("construct", a pointer to UI text run)) or (selection's caret run = @intrinsic("construct", a pointer to UI text run)):
+        return 0
+    set first to selection's anchor run
+    set last to selection's caret run
+    set end to selection's caret
+    if (first's order > last's order) or ((first = last) and (selection's anchor > selection's caret)):
+        set first to selection's caret run
+        set last to selection's anchor run
+        set end to selection's anchor
+    if (run's order < first's order) or (run's order > last's order):
+        return 0
+    if run = last:
+        return the minimum of end and (run's text's length)
+    return run's text's length
+
+to get the selected UI text in {a pointer to UI view:view}:
+    set result to the string form of ""
+    set run to view's texts
+    set included to false
+    loop while run != @intrinsic("construct", a pointer to UI text run):
+        if run's generation = view's paint count:
+            set start to the first selected UI byte in run in view
+            set end to the last selected UI byte in run in view
+            if end > start:
+                if included:
+                    set result to result + "\n"
+                set result to result + (the substring of (run's text) from start spanning (end - start) bytes)
+                set included to true
+        set run to run's next
+    return result
+
+to get UI text position of {UI point:point} in {a pointer to UI text run:run}:
+    return UI point point untransformed by (run's transform)
+
+to get the UI text byte at {floating-point number:x} in {a pointer to UI text run:run}:
+    set offset to 0
+    set width to 0.0
+    loop while offset < run's text's length:
+        set character to the UTF8 character at offset in (run's text)
+        require condition (character's valid) reporting "UI text must contain valid UTF-8"
+        set next to the width of (the UI text prefix of (run's text) ending at (character's next)) using (run's typeface)
+        if x < ((width + next) / 2.0):
+            return offset
+        set width to next
+        set offset to character's next
+    return offset
+
+to get remember UI [text] {string:text} at {UI point:origin} using {UI font:typeface} on {UI frame:frame}:
+    set view to frame's view
+    if view's selectable = false:
+        return @intrinsic("construct", a pointer to UI text run)
+    set run to view's next text
+    if run = @intrinsic("construct", a pointer to UI text run):
+        set run to storage for one slot initialized with (a new UI text run)
+        if view's last text = @intrinsic("construct", a pointer to UI text run):
+            set view's texts to run
+        else:
+            set view's last text's next to run
+    if (run's text != text) and (run's element = @intrinsic("construct", UI reference)):
+        if (view's selection's anchor run = run) or (view's selection's caret run = run):
+            clear UI selection in view
+    set run's text to text
+    set run's origin to origin
+    set run's typeface to typeface
+    set run's transform to view's transform
+    set run's clip to view's hit bounds
+    set run's element to view's text element
+    increment view's text count
+    set run's order to view's text count
+    set run's generation to view's paint count
+    set view's last text to run
+    set view's next text to run's next
+    return run
+
+to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
+    if run = @intrinsic("construct", a pointer to UI text run):
+        return nothing
+    set view to frame's view
+    set start to the first selected UI byte in run in view
+    set end to the last selected UI byte in run in view
+    set x to run's origin's x
+    set y to run's origin's y - run's typeface's size
+    if end > start:
+        set left to the width of (the UI text prefix of (run's text) ending at start) using (run's typeface)
+        set right to the width of (the UI text prefix of (run's text) ending at end) using (run's typeface)
+        draw a rectangle at x (x + left) and y y with width (right - left) and height (run's typeface's size + 4) in color red 190, green 216 and blue 250 in frame
+    if (run's element != @intrinsic("construct", UI reference)) and (view's selection's caret run = run):
+        set caret to the minimum of (view's selection's caret) and (run's text's length)
+        set offset to the width of (the UI text prefix of (run's text) ending at caret) using (run's typeface)
+        draw a rectangle at x (x + offset) and y y with width 1.2 and height (run's typeface's size + 3) in color red 60, green 100 and blue 190 in frame
+
+to finish UI text painting in {a pointer to UI view:view}:
+    set run to view's next text
+    if view's selection's anchor run != @intrinsic("construct", a pointer to UI text run):
+        if (view's selection's anchor run's generation != view's paint count) or (view's selection's caret run's generation != view's paint count):
+            clear UI selection in view
+    loop while run != @intrinsic("construct", a pointer to UI text run):
+        set next to run's next
+        destroy the value at run
+        deallocate run
+        set run to next
+    if view's last text = @intrinsic("construct", a pointer to UI text run):
+        set view's texts to @intrinsic("construct", a pointer to UI text run)
+    else:
+        set view's last text's next to @intrinsic("construct", a pointer to UI text run)
+    set view's next text to @intrinsic("construct", a pointer to UI text run)
+
+to synchronize editable UI text {a pointer to UI text run:run} in {a pointer to UI view:view}:
+    set entry to the UI value for (run's element) in (view's instance)
+    if run's text != entry's text:
+        set run's text to entry's text
+        set view's selection's anchor to the minimum of (view's selection's anchor) and (run's text's length)
+        set view's selection's caret to the minimum of (view's selection's caret) and (run's text's length)

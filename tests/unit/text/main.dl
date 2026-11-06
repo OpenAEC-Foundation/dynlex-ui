@@ -1,0 +1,56 @@
+import ../../helpers/driver.dl
+
+window text test:
+    label "Select this text"
+    text field "Name" containing "Aé🙂B"
+
+set state to 0
+set instance to an instance of text test with state (the address of state)
+set view to a UI view of (the address of instance) sized 640 by 480 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set field to the UI layout for element (the control labeled "Name" in (the address of instance)) in (view's layout)
+set x to field's painted bounds' x + 42.0
+set y to field's painted bounds' y + 20.0
+queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's selection's caret = 8) reporting "Pointer selection did not use Unicode character advances"
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the selected UI text in (the address of view)) = "B") reporting "Shift-left did not extend selection"
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set surface to view's window as a pointer to test UI surface
+require condition (surface's copied = "🙂B") reporting "Copy split a UTF-8 character"
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "界" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (field's node) in (the address of instance))'s text) = "Aé界") reporting "Text insertion did not replace the selection"
+queue UI input of kind 3 key 259 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (field's node) in (the address of instance))'s text) = "Aé") reporting "Backspace did not delete a complete Unicode scalar"
+queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 3 key 88 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (surface's copied = "Aé") reporting "Cut did not copy the field"
+require condition (((the UI value for (field's node) in (the address of instance))'s text) = "") reporting "Cut did not empty the field"
+set long to the string form of ""
+set index to 0
+loop while index < 200:
+    set long to long + "a"
+    increment index
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing long in (the address of view)
+ignore update UI view (the address of view)
+require condition (field's scroll position > 0.0) reporting "Long editable text did not scroll to the caret"
+set the text of "Name" in (the address of instance) to "Ok"
+ignore update UI view (the address of view)
+require condition (field's scroll position = 0.0) reporting "Shortening a field left its text outside the viewport"
+require condition (view's selection's caret = 2) reporting "A programmatic edit left the caret beyond the text"
+queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 6 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "á" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (field's node) in (the address of instance))'s text) = "Oká") reporting "AltGr was interpreted as a command shortcut"
+close the address of view
+close the address of instance
+print line "Shared Unicode selection, copy, cut, insertion and deletion work."

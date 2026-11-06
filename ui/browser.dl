@@ -1,0 +1,18 @@
+import ../platform/browser/services.dl
+
+the browser UI driver means: a static reference to @intrinsic("construct", UI driver,
+    (the function named "open browser UI $ sized $ by $ titled $") as a pointer,
+    (the function named "close browser UI $") as a pointer,
+    (the function named "poll browser UI $") as a pointer,
+    (the function named "begin browser UI $") as a pointer,
+    (the function named "present browser UI $") as a pointer,
+    (the function named "submit browser UI $ vertices $ counting $ with $") as a pointer,
+    (the function named "a browser UI font in $ from $ sized $") as a pointer,
+    (the function named "release browser UI font $") as a pointer,
+    (the function named "the browser UI width of $ containing $ counting $") as a pointer,
+    (the function named "draw browser UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer,
+    (the function named "the browser UI icon in $ from $ sized $") as a pointer,
+    (the function named "release browser UI texture in $ holding $") as a pointer,
+    (the function named "copy browser UI text in $ containing $ counting $") as a pointer,
+    (the function named "launch browser UI $") as a pointer,
+    (the function named "wake browser UI $") as a pointer, (the function named "set browser UI cursor in $ to $") as a pointer)

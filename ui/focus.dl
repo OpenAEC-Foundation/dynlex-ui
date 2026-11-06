@@ -1,0 +1,64 @@
+# Keyboard focus is input state; painting never decides which control receives a key.
+import view.dl
+import ribbon_scroll.dl
+
+to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view}:
+    increment view's control count
+    set layout's order to view's control count
+    set layout's focus next to @intrinsic("construct", a pointer to UI layout)
+    if view's focus last = @intrinsic("construct", a pointer to UI layout):
+        set view's focus first to layout
+    else:
+        set view's focus last's focus next to layout
+    set view's focus last to layout
+
+to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI view:view}:
+    set kind to layout's node's kind
+    if kind = 22:
+        if layout's node != view's instance's page:
+            return nothing
+    if kind = 28:
+        set child to layout's first
+        set index to 0
+        loop while index < layout's node's count:
+            append UI focus child in view
+            set child to child's next
+            increment index
+        set earlier to child
+        set later to child's next
+        set active to the active UI tab in layout for (view's instance)
+        set child to active's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            collect UI focus from child in view
+            set child to child's next
+        if UI ribbon arrow earlier is visible in (view's layout) for (view's instance):
+            append UI focus earlier in view
+        if UI ribbon arrow later is visible in (view's layout) for (view's instance):
+            append UI focus later in view
+        return nothing
+    if ((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 39):
+        append UI focus layout in view
+        return nothing
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        collect UI focus from child in view
+        set child to child's next
+
+to refresh UI focus in {a pointer to UI view:view}:
+    set previous to view's focus first
+    loop while previous != @intrinsic("construct", a pointer to UI layout):
+        set next to previous's focus next
+        set previous's order to 0
+        set previous's focus next to @intrinsic("construct", a pointer to UI layout)
+        set previous to next
+    set view's focus first to @intrinsic("construct", a pointer to UI layout)
+    set view's focus last to @intrinsic("construct", a pointer to UI layout)
+    set view's control count to 0
+    collect UI focus from (view's layout) in view
+    if view's focus order > view's control count:
+        set view's focus order to 1
+    set view's focused to view's focus first
+    loop while view's focused != @intrinsic("construct", a pointer to UI layout):
+        if view's focused's order = view's focus order:
+            return nothing
+        set view's focused to view's focused's focus next

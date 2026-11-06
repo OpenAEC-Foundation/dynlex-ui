@@ -1,0 +1,28 @@
+import declarations.dl
+import platform_types.dl
+import transform_types.dl
+
+class:
+    patterns:
+        UI text run
+    members:
+        text as a string
+        origin as UI point
+        typeface as UI font
+        transform as UI transform
+        clip as UI bounds
+        element as UI reference
+        order as an integer
+        generation as an integer
+        next as a pointer to UI text run
+
+class:
+    patterns:
+        UI text selection
+    members:
+        anchor run as a pointer to UI text run
+        caret run as a pointer to UI text run
+        anchor as an integer
+        caret as an integer
+        dragging as a boolean
+        composition as a string

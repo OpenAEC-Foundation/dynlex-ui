@@ -1,0 +1,109 @@
+# One painter for desktop and browser. Drivers receive geometry and text operations.
+import platform.dl
+import focus.dl
+import icon_rendering.dl
+import theme.dl
+import ribbon.dl
+import resize.dl
+import layout.dl
+import ribbon_layout.dl
+import table_rendering.dl
+import controls.dl
+import ribbon_rendering.dl
+import popups.dl
+
+to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
+    set node to layout's node
+    if node's kind = 22:
+        if node != view's instance's page:
+            return nothing
+    set box to layout's bounds
+    set box's x to box's x + x
+    set box's y to box's y + y
+    if node's kind = 28:
+        draw UI ribbon layout in box with cursor cursor in view on frame
+    else if (node's kind = 39) or (node's kind = 2) or (((node's kind = 17) or (node's kind = 19)) or ((node's kind = 33) or (node's kind = 34))):
+        draw UI control layout in box with cursor cursor in view on frame
+    else if node's kind = 3:
+        draw UI table node at (box's x) (box's y) in view on frame
+    else if node's kind = 20:
+        set action to the action for node in (view's instance) for event 1
+        require condition (action != no UI action) reporting "The UI canvas has no paint callback"
+        set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
+        @intrinsic("call pointer", action, nothing, the address of painting)
+    else:
+        draw UI presentation node in box in view on frame
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            draw UI layout child at (box's x) (box's y) with cursor cursor in view on frame
+            set child to child's next
+
+to get the UI cursor in {a pointer to UI view:view}:
+    set position to view's cursor
+    if view's fitted:
+        if (view's content bounds' width <= 0.0) or (view's content bounds' height <= 0.0):
+            return a UI point at -1.0 and -1.0
+        set position's x to (position's x - view's content bounds' x) * ((view's logical width as a floating-point number) / view's content bounds' width)
+        set position's y to (position's y - view's content bounds' y) * ((view's logical height as a floating-point number) / view's content bounds' height)
+    return position
+
+to update the UI viewport in {a pointer to UI view:view}:
+    set width to view's width as a floating-point number
+    set height to view's height as a floating-point number
+    set view's icons' scale to view's pixel scale
+    set view's content bounds to UI box at 0 0 sized width height
+    if view's adaptive:
+        set view's logical width to view's width
+        set view's logical height to view's height
+        if (view's layout's bounds' width != width) or (view's layout's bounds' height != height):
+            resize UI layout (view's layout) to (view's width) by (view's height)
+    else if view's fitted:
+        set scale to the minimum of (width / view's logical width) and (height / view's logical height)
+        set view's icons' scale to scale * view's pixel scale
+        set {inner width} to scale * view's logical width
+        set {inner height} to scale * view's logical height
+        set view's content bounds to UI box at ((width - inner width) / 2.0) ((height - inner height) / 2.0) sized inner width inner height
+    else:
+        set {available width} to the maximum of 1 and (view's width - 64)
+        set {available height} to the maximum of 1 and (view's height - 192)
+        if (view's layout's bounds' width != available width) or (view's layout's bounds' height != available height):
+            resize UI layout (view's layout) to available width by available height
+
+to paint UI view {a pointer to UI view:view}:
+    update the UI viewport in view
+    @intrinsic("call pointer", view's driver's begin, nothing, view)
+    set frame to @intrinsic("construct", UI frame, view, view's drawable)
+    if frame's drawable = false:
+        @intrinsic("call pointer", view's driver's present, nothing, view)
+        return nothing
+    set cursor to the UI cursor in view
+    set view's hot to @intrinsic("construct", a pointer to UI layout)
+    refresh UI focus in view
+    set view's hit bounds to UI box at 0 0 sized (view's width) (view's height)
+    if view's fitted:
+        set view's hit bounds to UI box at 0 0 sized (view's logical width) (view's logical height)
+    set view's clip to view's hit bounds
+    set view's next text to view's texts
+    set view's last text to @intrinsic("construct", a pointer to UI text run)
+    set view's text count to 0
+    set view's selectable to true
+    increment view's paint count
+    if view's theme's dark:
+        set backdrop to UI box at 0 0 sized (view's logical width) (view's logical height)
+        draw a rounded UI surface backdrop with radius 0.0 from (UI ink 17 28 43) to (view's theme's background) opacity 255 feathered by 0.75 on frame
+        draw a rounded UI surface (UI box at 88 104 sized 348 280) with radius 140.0 from (view's theme's accent) to (UI ink 28 61 94) opacity 9 feathered by 180.0 on frame
+        draw a rounded UI surface (UI box at 690 180 sized 280 340) with radius 140.0 from (UI ink 146 113 244) to (UI ink 35 80 133) opacity 9 feathered by 190.0 on frame
+    if view's fitted:
+        draw UI layout (view's layout) at 0 0 with cursor cursor in view on frame
+    else:
+        draw UI text (view's instance's description's text) at 32 57 with (view's heading) in (view's theme's text) on frame
+        draw UI layout (view's layout) at 32 120 with cursor cursor in view on frame
+        set bottom to view's height - 72
+        set width to view's width - 64
+        draw a rounded UI box (UI box at 32 bottom sized width 44) with radius 10.0 in (UI ink 229 236 248) on frame
+        draw UI text (view's instance's status) at 48 (bottom + 27) with (view's typeface) in (view's theme's text) on frame
+    draw the UI popup with cursor cursor in view on frame
+    finish UI text painting in view
+    if view's focus order > view's control count:
+        set view's focus order to 1
+    @intrinsic("call pointer", view's driver's present, nothing, view)

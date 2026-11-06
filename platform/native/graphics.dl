@@ -1,0 +1,69 @@
+# Vulkan submission translates the shared vertex ABI; geometry stays in ui/.
+import types.dl
+import svg.dl
+
+to get the native UI [surface] in {a pointer to UI view:view}:
+    return view's window as a pointer to native UI surface
+
+to set native UI clipping in {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set first to UI surface point (a UI point at (view's clip's x) and (view's clip's y)) in view
+    set last to UI surface point (a UI point at (view's clip's x + view's clip's width) and (view's clip's y + view's clip's height)) in view
+    set rectangle to a new VkRect2D
+    set scale to view's pixel scale
+    set left to the maximum of 0 and ((the floor of (first's x * scale)) as an integer)
+    set top to the maximum of 0 and ((the floor of (first's y * scale)) as an integer)
+    set right to the minimum of (the framebuffer width of (surface's resource)) and ((the ceiling of (last's x * scale)) as an integer)
+    set bottom to the minimum of (the framebuffer height of (surface's resource)) and ((the ceiling of (last's y * scale)) as an integer)
+    set rectangle's offset' x to left
+    set rectangle's offset' y to top
+    set rectangle's extent' width to (the maximum of 0 and (right - left)) as a 32 bit unsigned integer
+    set rectangle's extent' height to (the maximum of 0 and (bottom - top)) as a 32 bit unsigned integer
+    set the clipping rectangle of (surface's frame) to rectangle
+
+to begin native UI {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set state to surface's resource as a pointer to DynlexGraphics
+    set ink to view's theme's background
+    set surface's frame to a new graphics frame in (surface's resource) with background red ((graphics color channel (ink's red) for state) as a floating-point number), green ((graphics color channel (ink's green) for state) as a floating-point number), blue ((graphics color channel (ink's blue) for state) as a floating-point number) and alpha 1.0
+    set view's drawable to surface's frame's drawable
+    if view's drawable = false:
+        if ((the framebuffer width of (surface's resource)) > 0) and ((the framebuffer height of (surface's resource)) > 0):
+            animate UI view view
+    if view's drawable:
+        set state's model to an identity graphics matrix
+        set state's camera to an identity graphics matrix
+        set state's projection to a graphics orthographic projection from left 0.0 right (view's width as a floating-point number) top 0.0 bottom (view's height as a floating-point number) near -1.0 far 1.0
+    set view's linear colors to the graphics surface uses sRGB in state
+
+to present native UI {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    display surface's frame
+
+to submit native UI {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    if (view's clip's width <= 0.0) or (view's clip's height <= 0.0):
+        return nothing
+    set surface to the native UI surface in view
+    set state to surface's resource as a pointer to DynlexGraphics
+    set native UI clipping in view
+    begin a graphics triangle stream with texture (texture as a pointer to DynlexGraphicsTexture) in state
+    set index to 0
+    loop while index < count:
+        set vertex to the item at index in vertices
+        store vertex's u into state's current_vertex's texture_coordinates at 0
+        store vertex's v into state's current_vertex's texture_coordinates at 1
+        store vertex's red into state's current_vertex's color at 0
+        store vertex's green into state's current_vertex's color at 1
+        store vertex's blue into state's current_vertex's color at 2
+        store vertex's alpha into state's current_vertex's color at 3
+        append a graphics vertex at x (vertex's x as a floating-point number) y (vertex's y as a floating-point number) z 0.0 in state
+        increment index
+    finish the graphics triangle stream in state
+
+to get the native UI icon in {a pointer to UI view:view} from {a pointer to UI SVG icon:icon} sized {integer:size}:
+    set surface to the native UI surface in view
+    set pixels to the coverage of SVG (the value at icon) at pixel size size using (surface's library)
+    return (a graphics texture resource from (the data of pixels) with width size height size channels (1 as a 32 bit unsigned integer) in (surface's resource as a pointer to DynlexGraphics)) as a pointer
+
+to release native UI texture in {a pointer to UI view:view} holding {a pointer:texture}:
+    release graphics texture resource (texture as a pointer to DynlexGraphicsTexture)

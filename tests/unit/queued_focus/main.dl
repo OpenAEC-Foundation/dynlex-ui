@@ -1,0 +1,35 @@
+import ../../helpers/driver.dl
+window queued tabs:
+    ribbon "Tabs" at 0 0 sized 600 by 168:
+        tab "A":
+            ribbon group "First":
+                tool "One" with icon "copy"
+        tab "B":
+            ribbon group "Second":
+                tool "Two" with icon "paste"
+        tab "C":
+            ribbon group "Third":
+                tool "Three" with icon "cut"
+set state to 0
+set instance to an instance of queued tabs with state (the address of state)
+set view to a UI view of (the address of instance) sized 800 by 480 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+set index to 0
+loop while index < 4:
+    queue UI input of kind 3 key 262 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    queue UI input of kind 6 key 262 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    increment index
+ignore update UI view (the address of view)
+require condition ((the value of "Tabs" in (the address of instance)) = 1) reporting "Queued arrows used focus from the previous paint"
+require condition (view's focused's node's text = "B") reporting "Focus did not follow the selected tab"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the value of "Tabs" in (the address of instance)) = 2) reporting "Queued Tab/Enter activated the previous control"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's focused's node's text = "B") reporting "Shift-Tab did not move focus backward"
+close the address of view
+close the address of instance
+print line "Keyboard focus updates between queued events without a paint."

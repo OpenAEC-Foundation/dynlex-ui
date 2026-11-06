@@ -1,0 +1,1 @@
+Keyboard focus updates between queued events without a paint.

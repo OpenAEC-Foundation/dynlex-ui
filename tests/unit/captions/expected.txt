@@ -1,0 +1,1 @@
+Instance captions update across controls, tables, ribbons and popups.

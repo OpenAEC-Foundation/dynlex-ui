@@ -1,0 +1,21 @@
+import ../../ui/application.dl
+import lib/graphics.dl
+import lib/font.dl
+
+class:
+    patterns:
+        native UI surface
+    members:
+        resource as a pointer
+        view as a pointer to UI view
+        frame as a graphics frame
+        library as a pointer
+        hand cursor as a pointer
+        text cursor as a pointer
+
+class:
+    patterns:
+        native UI face
+    members:
+        typeface as a font
+        size as an integer

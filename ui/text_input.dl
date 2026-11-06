@@ -1,0 +1,148 @@
+import text.dl
+
+# Selection anchors are byte offsets on Unicode scalar boundaries.
+to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
+    set result to @intrinsic("construct", a pointer to UI text run)
+    set run to view's texts
+    loop while run != @intrinsic("construct", a pointer to UI text run):
+        if (run's generation = view's paint count) and (point is inside (run's clip)):
+            set local to UI text position of point in run
+            set width to the maximum of 8.0 and (the width of (run's text) using (run's typeface))
+            set box to UI box at (run's origin's x) (run's origin's y - run's typeface's size) sized width (run's typeface's size + 5)
+            set inside to local is inside box
+            if run's element != @intrinsic("construct", UI reference):
+                set inside to (local's y >= box's y) and (local's y < (box's y + box's height))
+            if inside:
+                set result to run
+        set run to run's next
+    return result
+
+to select UI text at {UI point:point} in {a pointer to UI text run:run} extending {boolean:extend} in {a pointer to UI view:view}:
+    set local to UI text position of point in run
+    set caret to the UI text byte at (local's x - run's origin's x) in run
+    if run's element != @intrinsic("construct", UI reference):
+        if view's selection's anchor run != run:
+            set extend to false
+    else if view's selection's anchor run != @intrinsic("construct", a pointer to UI text run):
+        if view's selection's anchor run's element != @intrinsic("construct", UI reference):
+            set extend to false
+    if extend = false:
+        set view's selection's anchor run to run
+        set view's selection's anchor to caret
+    if (view's selection's caret run != run) or (view's selection's caret != caret):
+        set view's damaged to true
+    set view's selection's caret run to run
+    set view's selection's caret to caret
+
+to handle UI text pointer at {UI point:point} over {a pointer to UI layout:hot} in {a pointer to UI view:view}:
+    if (view's down != view's was down) and view's down:
+        set run to the UI text hit at point in view
+        if hot != @intrinsic("construct", a pointer to UI layout):
+            if hot's node's kind != 39:
+                set run to @intrinsic("construct", a pointer to UI text run)
+        if run = @intrinsic("construct", a pointer to UI text run):
+            clear UI selection in view
+        else:
+            set extend to ((view's modifiers bitwise and 1) != 0) and (view's selection's anchor run != @intrinsic("construct", a pointer to UI text run))
+            select UI text at point in run extending extend in view
+            set view's selection's dragging to true
+    else if view's selection's dragging and view's down:
+        set run to view's selection's caret run
+        if run's element = @intrinsic("construct", UI reference):
+            set hit to the UI text hit at point in view
+            if hit != @intrinsic("construct", a pointer to UI text run):
+                set run to hit
+        select UI text at point in run extending true in view
+    if view's down = false:
+        set view's selection's dragging to false
+
+to replace UI text selection with {string:inserted} in {a pointer to UI view:view}:
+    set run to view's selection's caret run
+    require condition (run's element != @intrinsic("construct", UI reference)) reporting "Only editable UI text can be replaced"
+    set entry to the UI value for (run's element) in (view's instance)
+    set start to the minimum of (view's selection's anchor) and (view's selection's caret)
+    set end to the maximum of (view's selection's anchor) and (view's selection's caret)
+    set filtered to the string form of ""
+    set index to 0
+    loop while index < inserted's length:
+        set character to the UTF8 character at index in inserted
+        require condition (character's valid) reporting "UI text must contain valid UTF-8"
+        if (character's code >= 32) and (character's code != 127):
+            set filtered to filtered + (the substring of inserted from index spanning (character's next - index) bytes)
+        set index to character's next
+    set entry's text to ((the substring of (entry's text) from 0 spanning start bytes) + filtered) + (the substring of (entry's text) from end spanning (entry's text's length - end) bytes)
+    set view's selection's anchor to start + filtered's length
+    set view's selection's caret to view's selection's anchor
+    set run's text to entry's text
+    set view's selection's composition to ""
+    activate (run's element) belonging to (run's element) in (view's instance)
+
+to handle UI [text] keys in {a pointer to UI view:view}:
+    set run to view's selection's caret run
+    if run = @intrinsic("construct", a pointer to UI text run):
+        return nothing
+    set editable to run's element != @intrinsic("construct", UI reference)
+    if editable:
+        synchronize editable UI text run in view
+    set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)
+    set shift to (view's modifiers bitwise and 1) != 0
+    if command:
+        if view's key press = 65:
+            set first to run
+            set last to run
+            if editable = false:
+                set first to view's texts
+                set last to view's last text
+            set view's selection's anchor run to first
+            set view's selection's anchor to 0
+            set view's selection's caret run to last
+            set view's selection's caret to last's text's length
+            set view's key press to -1
+            set view's damaged to true
+        if (view's key press = 67) or (view's key press = 88):
+            set text to the selected UI text in view
+            if text's length > 0:
+                @intrinsic("call pointer", view's driver's copy, nothing, view, the data of text, text's length)
+            if editable and (view's key press = 88):
+                replace UI text selection with (the string form of "") in view
+            set view's key press to -1
+    if editable:
+        if view's typed text's length > 0:
+            replace UI text selection with (view's typed text) in view
+            set view's typed text to ""
+        set key to view's key press
+        if (key = 259) or (key = 261):
+            if view's selection's anchor = view's selection's caret:
+                if key = 259:
+                    set view's selection's anchor to the previous UTF8 boundary before (view's selection's caret) in (run's text)
+                else if view's selection's caret < run's text's length:
+                    set view's selection's anchor to (the UTF8 character at (view's selection's caret) in (run's text))'s next
+            replace UI text selection with (the string form of "") in view
+            set view's key press to -1
+        if ((key = 262) or (key = 263)) or ((key = 268) or (key = 269)):
+            set position to view's selection's caret
+            if key = 268:
+                set position to 0
+            if key = 269:
+                set position to run's text's length
+            if (shift = false) and (view's selection's anchor != view's selection's caret):
+                if key = 263:
+                    set position to the minimum of (view's selection's anchor) and (view's selection's caret)
+                if key = 262:
+                    set position to the maximum of (view's selection's anchor) and (view's selection's caret)
+            else:
+                if key = 263:
+                    set position to the previous UTF8 boundary before position in (run's text)
+                if (key = 262) and (position < run's text's length):
+                    set position to (the UTF8 character at position in (run's text))'s next
+            set view's selection's caret to position
+            if shift = false:
+                set view's selection's anchor to position
+            set view's damaged to true
+            set view's key press to -1
+        if (key = 257) or (key = 32):
+            set view's key press to -1
+        if key = 256:
+            clear UI selection in view
+            set view's key press to -1
+            set view's damaged to true

@@ -1,0 +1,107 @@
+# Shared view state; platform resources remain opaque.
+import layout_types.dl
+import platform_types.dl
+import text_types.dl
+import icon_types.dl
+import transform_types.dl
+import input_types.dl
+
+class:
+    patterns:
+        UI view
+    members:
+        icons as UI icon cache
+        window as a pointer
+        driver as a pointer to UI driver
+        width as an integer
+        height as an integer
+        pixel scale as a floating-point number
+        linear colors as a boolean
+        cursor as UI point
+        cursor shape as an integer
+        down as a boolean
+        modifiers as an integer
+        typed text as a string
+        scroll x as a floating-point number
+        scroll y as a floating-point number
+        seconds as a floating-point number
+        closed as a boolean
+        drawable as a boolean
+        damaged as a boolean
+        animating as a boolean
+        paint count as an integer
+        last width as an integer
+        last height as an integer
+        last scale as a floating-point number
+        observer as a pointer to UI observer
+        revision as an integer
+        vertices as a pointer to UI vertex
+        vertex count as an integer
+        vertex capacity as an integer
+        current color as UI paint
+        current alpha as an integer
+        clip as UI bounds
+        transform as UI transform
+        saved transforms as a pointer to saved UI transform
+        texts as a pointer to UI text run
+        next text as a pointer to UI text run
+        last text as a pointer to UI text run
+        text count as an integer
+        selectable as a boolean
+        text element as UI reference
+        selection as UI text selection
+        instance as a pointer to UI instance
+        typeface as a UI font
+        heading as a UI font
+        small as a UI font
+        display as a UI font
+        strong as a UI font
+        brand as a UI font
+        last paint as a floating-point number
+        frame seconds as a floating-point number
+        theme as UI theme
+        layout as a pointer to UI layout
+        hot as a pointer to UI layout
+        pressed as a pointer to UI layout
+        was down as a boolean
+        key press as an integer
+        input kind as an integer
+        focus order as an integer
+        control count as an integer
+        focused as a pointer to UI layout
+        focus first as a pointer to UI layout
+        focus last as a pointer to UI layout
+        keyboard focus as a boolean
+        page as UI reference
+        fitted as a boolean
+        adaptive as a boolean
+        logical width as an integer
+        logical height as an integer
+        popup as a pointer to UI layout
+        popup index as an integer
+        last cursor as UI point
+        content bounds as UI bounds
+        hit bounds as UI bounds
+        input first as a pointer to UI input event
+        input last as a pointer to UI input event
+        input action as a pointer
+        frame action as a pointer
+        close action as a pointer
+        keys as a boolean array of 512 items
+
+class:
+    patterns:
+        UI canvas frame
+    members:
+        instance as a pointer to UI instance
+        frame as a UI frame
+        bounds as UI bounds
+        seconds as a floating-point number
+
+this canvas means: @intrinsic("receiver")
+
+section when painting the {C string:label} canvas:
+    receiver: a pointer to UI canvas frame
+    returns: nothing
+    value:
+        bind (the control labeled label in this window) in this window to @intrinsic("deferred body") for event 1

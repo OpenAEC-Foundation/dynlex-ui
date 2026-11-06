@@ -1,0 +1,19 @@
+import interface.dl
+
+to close the writing room {a pointer to UI view:view}:
+    set instance to view's instance
+    close view
+    close instance
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open the writing room using {a pointer to UI driver:driver}:
+    globals:
+        writing room
+    execute:
+        set instance to storage for one slot initialized with (an instance of writing room)
+        set view to storage for one slot initialized with (a UI view of instance sized 960 by 640 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with driver)
+        set view's close action to (the function named "close the writing room $") as a pointer
+        run view

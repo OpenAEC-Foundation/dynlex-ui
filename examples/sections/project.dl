@@ -1,0 +1,9 @@
+import ../../ui/native.dl
+import project_description.dl
+
+set state to a new project state
+set instance to an instance of project window with state (the address of state)
+set view to a desktop view of (the address of instance) sized 840 by 600 using fonts "assets/fonts/LiberationMono-Regular.ttf" and "assets/fonts/LiberationMono-Regular.ttf"
+run the address of view
+close the address of view
+close the address of instance

@@ -1,0 +1,39 @@
+import ../../helpers/driver.dl
+
+window test controls:
+    button "Go"
+    switch "Motion"
+
+set state to 0
+set instance to an instance of test controls with state (the address of state)
+set view to a UI view of (the address of instance) sized 640 by 480 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set button to the UI layout for element (the control labeled "Go" in (the address of instance)) in (view's layout)
+set view's cursor to a UI point at (button's painted bounds' x + 4.0) and (button's painted bounds' y + 4.0)
+require condition (update UI view (the address of view)) reporting "Hover did not schedule its animation"
+set index to 0
+loop while view's animating:
+    set view's seconds to view's seconds + 0.016
+    ignore update UI view (the address of view)
+    increment index
+    require condition (index < 100) reporting "The hover animation never settled"
+require condition (button's hover = 1.0) reporting "Hover did not reach its destination"
+set count to view's paint count
+ignore update UI view (the address of view)
+require condition (view's paint count = count) reporting "Hover kept painting after it settled"
+set view's cursor to a UI point at 0.0 and 0.0
+ignore update UI view (the address of view)
+loop while view's animating:
+    set view's seconds to view's seconds + 0.016
+    ignore update UI view (the address of view)
+require condition (button's hover = 0.0) reporting "Hover did not fade out"
+set toggle to the UI layout for element (the control labeled "Motion" in (the address of instance)) in (view's layout)
+set view's cursor to a UI point at (toggle's painted bounds' x + 4.0) and (toggle's painted bounds' y + 4.0)
+set view's down to true
+ignore update UI view (the address of view)
+set view's down to false
+ignore update UI view (the address of view)
+require condition (the "Motion" switch is on in (the address of instance)) reporting "The shared input handler did not activate the switch"
+close the address of view
+close the address of instance
+print line "Shared hit testing works; hover frames stop when settled."

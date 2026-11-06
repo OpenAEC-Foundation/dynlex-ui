@@ -1,0 +1,4 @@
+import ../../ui/browser.dl
+import program.dl
+
+open the ribbon using the browser UI driver

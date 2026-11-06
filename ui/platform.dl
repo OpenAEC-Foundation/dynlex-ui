@@ -1,0 +1,82 @@
+# Drawing commands and memory belong to DynLex; drivers submit them to the host.
+import view.dl
+import transforms.dl
+
+to get the width of {a value:message} using {UI font:typeface}:
+    set text to the string form of message
+    return @intrinsic("call pointer", typeface's driver's measure text, a floating-point number, typeface's resource, the data of text, text's length)
+
+to get a UI font from {C string:path} sized {integer:size} in {a pointer to UI view:view}:
+    set resource to @intrinsic("call pointer", view's driver's open font, a pointer, view, path, size)
+    return @intrinsic("construct", UI font, resource, view's driver, size)
+
+to release UI font {a pointer to UI font:typeface}:
+    @intrinsic("call pointer", typeface's driver's close font, nothing, typeface's resource)
+
+to get the UI color channel {integer:channel} in {a pointer to UI view:view}:
+    set value to (channel as a floating-point number) / 255.0
+    if view's linear colors:
+        if value <= 0.04045:
+            return value / 12.92
+        return ((value + 0.055) / 1.055) raised to the power of 2.4
+    return value
+
+to start triangles in {UI frame:frame}:
+    set frame's view's vertex count to 0
+
+to append UI [vertex] {UI vertex:vertex} to {UI frame:frame}:
+    set view to frame's view
+    set point to UI point (a UI point at (vertex's x) and (vertex's y)) transformed by (view's transform)
+    set point to UI surface point point in view
+    set vertex's x to point's x as a 32 bit floating-point number
+    set vertex's y to point's y as a 32 bit floating-point number
+    if view's vertex count = view's vertex capacity:
+        set capacity to the maximum of 512 and (view's vertex capacity * 2)
+        set view's vertices to the checked allocation from (view's vertices as a pointer) resized to capacity items of UI vertex
+        set view's vertex capacity to capacity
+    store vertex into (view's vertices) at (view's vertex count)
+    increment view's vertex count
+
+to submit UI triangles with texture {a pointer:texture} on {UI frame:frame}:
+    set view to frame's view
+    @intrinsic("call pointer", view's driver's triangles, nothing, view, view's vertices, view's vertex count, texture)
+
+to finish triangles in {UI frame:frame}:
+    submit UI triangles with texture (0 as a pointer) on frame
+
+to use vertex color red {integer:red}, green {integer:green} and blue {integer:blue} in {UI frame:frame}:
+    set frame's view's current color to UI ink red green blue
+    set frame's view's current alpha to 255
+
+to add a [vertex] at x {a value:x} and y {a value:y} to {UI frame:frame}:
+    set view to frame's view
+    set ink to view's current color
+    set vertex to @intrinsic("construct", UI vertex, x as a 32 bit floating-point number, y as a 32 bit floating-point number, 0.0 as a 32 bit floating-point number, 0.0 as a 32 bit floating-point number, (the UI color channel (ink's red) in view) as a 32 bit floating-point number, (the UI color channel (ink's green) in view) as a 32 bit floating-point number, (the UI color channel (ink's blue) in view) as a 32 bit floating-point number, ((view's current alpha as a floating-point number) / 255.0) as a 32 bit floating-point number)
+    append UI vertex vertex to frame
+
+to draw a rectangle at x {a value:x} and y {a value:y} with width {a value:width} and height {a value:height} in color red {integer:red}, green {integer:green} and blue {integer:blue} in {UI frame:frame}:
+    use vertex color red red, green green and blue blue in frame
+    start triangles in frame
+    set corners to [0, 1, 2, 0, 2, 3]
+    set index to 0
+    loop while index < 6:
+        set corner to the item at index in corners
+        set horizontal to width if ((corner = 1) or (corner = 2)), else 0
+        set vertical to height if ((corner = 2) or (corner = 3)), else 0
+        add a vertex at x (x + horizontal) and y (y + vertical) to frame
+        increment index
+    finish triangles in frame
+
+to draw UI texture {UI texture:texture} in {UI bounds:box} in {UI paint:ink} on {UI frame:frame}:
+    set view to frame's view
+    start triangles in frame
+    set corners to [0, 1, 2, 0, 2, 3]
+    set index to 0
+    loop while index < 6:
+        set corner to the item at index in corners
+        set u to 1.0 if ((corner = 1) or (corner = 2)), else 0.0
+        set v to 1.0 if ((corner = 2) or (corner = 3)), else 0.0
+        set vertex to @intrinsic("construct", UI vertex, (box's x + u * box's width) as a 32 bit floating-point number, (box's y + v * box's height) as a 32 bit floating-point number, u as a 32 bit floating-point number, v as a 32 bit floating-point number, (the UI color channel (ink's red) in view) as a 32 bit floating-point number, (the UI color channel (ink's green) in view) as a 32 bit floating-point number, (the UI color channel (ink's blue) in view) as a 32 bit floating-point number, 1.0 as a 32 bit floating-point number)
+        append UI vertex vertex to frame
+        increment index
+    submit UI triangles with texture (texture's resource) on frame

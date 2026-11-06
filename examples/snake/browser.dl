@@ -1,0 +1,4 @@
+import ../../ui/browser.dl
+import application.dl
+
+open Snake Studio using the browser UI driver

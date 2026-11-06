@@ -1,0 +1,106 @@
+import ../../ui/application.dl
+import interface.dl
+
+to read snake input from {a pointer to UI view:view}:
+    if view's input kind != 3:
+        if (view's input kind = 9) and ((view's key press = the UI space key) or ((view's key press = the UI P key) or (view's key press = the UI escape key))):
+            set view's key press to -1
+        return nothing
+    set match to the snake match in (view's instance)
+    set key to view's key press
+    if (key = the UI up arrow key) or (key = the UI W key):
+        turn match toward 0
+    if (key = the UI right arrow key) or (key = the UI D key):
+        turn match toward 1
+    if (key = the UI down arrow key) or (key = the UI S key):
+        turn match toward 2
+    if (key = the UI left arrow key) or (key = the UI A key):
+        turn match toward 3
+    if (key = the UI space key) or (key = the UI P key):
+        if (view's instance's page's text = "playing") or (view's instance's page's text = "paused"):
+            pause or resume match
+            if match's phase = the paused screen:
+                show page "paused" in (view's instance)
+            else:
+                show page "playing" in (view's instance)
+            set view's key press to -1
+    if key = the UI escape key:
+        if view's instance's page's text = "settings":
+            leave snake settings in (view's instance)
+        else if match's phase = the playing screen:
+            pause or resume match
+            show page "paused" in (view's instance)
+        else if match's phase = the paused screen:
+            pause or resume match
+            show page "playing" in (view's instance)
+        else if match's phase = the menu screen:
+            set view's closed to true
+        else:
+            return to the snake menu in (view's instance)
+        set view's key press to -1
+
+to refresh the snake interface in {a pointer to UI view:view}:
+    set match to the snake match in (view's instance)
+    set view's theme's accent to the accent for match
+    set status to "READY TO PLAY"
+    if match's phase = the playing screen:
+        set status to "IN THE FLOW"
+    if match's phase = the paused screen:
+        set status to "PAUSED"
+    if view's instance's page's text = "settings":
+        set status to "MAKE IT YOURS"
+    if (match's phase = the finished screen) or (match's phase = the completed screen):
+        set status to "RUN COMPLETE"
+    set the text of "Session status" in (view's instance) to status
+    set the text of "Score" in (view's instance) to match's score
+    set the text of "Session best" in (view's instance) to match's best score
+    set the text of "Length" in (view's instance) to match's length
+    set pace to "CLASSIC"
+    if match's pace = 0:
+        set pace to "RELAXED"
+    if match's pace = 2:
+        set pace to "SWIFT"
+    set the text of "Board mode" in (view's instance) to (the string form of pace) + " / 24 x 24"
+    set seconds to match's elapsed as an integer
+    set the text of "Time" in (view's instance) to (the string form of seconds) + "s"
+    if (match's phase = the finished screen) or (match's phase = the completed screen):
+        if match's impact and (match's impact time < the snake impact duration):
+            show page "impact" in (view's instance)
+        else:
+            show page "finished" in (view's instance)
+        set outcome to "Game over"
+        if match's phase = the completed screen:
+            set outcome to "Board cleared"
+        set the text of "Outcome" in (view's instance) to outcome
+
+to advance the snake frame in {a pointer to UI view:view}:
+    set match to the snake match in (view's instance)
+    update match after (view's frame seconds) seconds
+    refresh the snake interface in view
+    if ((match's phase = the playing screen) or ((match's impact and (match's impact time < the snake impact duration)) and (match's phase = the finished screen))):
+        animate UI view view
+
+to close the snake application {a pointer to UI view:view}:
+    set instance to view's instance
+    set match to the snake match in instance
+    close view
+    close instance
+    close match
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+    deallocate match
+
+function open Snake Studio using {a pointer to UI driver:driver}:
+    globals:
+        snake studio
+    execute:
+        set match to storage for one slot initialized with (a new snake session)
+        arrange the opening trail in match
+        set instance to storage for one slot initialized with (an instance of snake studio with state match)
+        set view to storage for one slot initialized with (a UI view of instance sized 1120 by 760 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with driver)
+        watch UI input in view using (the function named "read snake input from $")
+        update UI frames in view using (the function named "advance the snake frame in $")
+        set view's close action to (the function named "close the snake application $") as a pointer
+        run view

@@ -1,0 +1,11 @@
+class:
+    patterns:
+        UI input event
+    members:
+        kind as an integer
+        key as an integer
+        x as a floating-point number
+        y as a floating-point number
+        modifiers as an integer
+        text as a string
+        next as a pointer to UI input event

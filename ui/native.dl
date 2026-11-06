@@ -1,0 +1,23 @@
+# Desktop adapter; applications can import ui/browser.dl for the canvas adapter.
+import ../platform/native/window.dl
+import ../platform/native/fonts.dl
+
+the native UI driver means: a static reference to @intrinsic("construct", UI driver,
+    (the function named "open native UI $ sized $ by $ titled $") as a pointer,
+    (the function named "close native UI $") as a pointer,
+    (the function named "poll native UI $") as a pointer,
+    (the function named "begin native UI $") as a pointer,
+    (the function named "present native UI $") as a pointer,
+    (the function named "submit native UI $ vertices $ counting $ with $") as a pointer,
+    (the function named "a native UI font in $ from $ sized $") as a pointer,
+    (the function named "release native UI font $") as a pointer,
+    (the function named "the native UI width of $ containing $ counting $") as a pointer,
+    (the function named "draw native UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer,
+    (the function named "the native UI icon in $ from $ sized $") as a pointer,
+    (the function named "release native UI texture in $ holding $") as a pointer,
+    (the function named "copy native UI text in $ containing $ counting $") as a pointer,
+    (the function named "launch native UI $") as a pointer,
+    (the function named "wake native UI $") as a pointer, (the function named "set native UI cursor in $ to $") as a pointer)
+
+to get a desktop view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold}:
+    return a UI view of instance sized width by height using fonts regular and bold with the native UI driver

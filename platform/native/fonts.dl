@@ -1,0 +1,38 @@
+import graphics.dl
+
+to get a native UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size}:
+    set surface to the native UI surface in view
+    set loading to the result of loading a font from path at size size rasterized at scale 2 for (surface's resource)
+    require condition (loading succeeded) reporting "Loading a UI font failed"
+    set face to @intrinsic("construct", native UI face, loading's typeface, size)
+    return (storage for one slot initialized with face) as a pointer
+
+to release native UI font {a pointer:resource}:
+    set face to resource as a pointer to native UI face
+    set result to the result of releasing (the address of (face's typeface))
+    require condition (result succeeded) reporting "Releasing a UI font failed"
+    deallocate face
+
+to get the native UI width of {a pointer:resource} containing {C string:text} counting {integer:count}:
+    set face to resource as a pointer to native UI face
+    return the width of (a new string from text containing count bytes) using (face's typeface)
+
+to draw native UI text in {a pointer to UI view:view} using {a pointer:resource} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
+    set face to resource as a pointer to native UI face
+    set surface to the native UI surface in view
+    set state to surface's resource as a pointer to DynlexGraphics
+    set native UI clipping in view
+    set zero to UI surface point (UI point (a UI point at 0.0 and 0.0) transformed by (view's transform)) in view
+    set east to UI surface point (UI point (a UI point at 1.0 and 0.0) transformed by (view's transform)) in view
+    set south to UI surface point (UI point (a UI point at 0.0 and 1.0) transformed by (view's transform)) in view
+    set model to an identity graphics matrix
+    store ((east's x - zero's x) as a 32 bit floating-point number) into model at 0
+    store ((east's y - zero's y) as a 32 bit floating-point number) into model at 1
+    store ((south's x - zero's x) as a 32 bit floating-point number) into model at 4
+    store ((south's y - zero's y) as a 32 bit floating-point number) into model at 5
+    store (zero's x as a 32 bit floating-point number) into model at 12
+    store (zero's y as a 32 bit floating-point number) into model at 13
+    set state's model to model
+    set result to the result of drawing (a new string from text containing count bytes) as text at x x and y y using (face's typeface) in color red (ink's red), green (ink's green) and blue (ink's blue) in (surface's frame)
+    require condition (result succeeded) reporting "Drawing UI text failed"
+    set state's model to an identity graphics matrix

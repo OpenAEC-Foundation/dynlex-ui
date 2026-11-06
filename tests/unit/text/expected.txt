@@ -1,0 +1,1 @@
+Shared Unicode selection, copy, cut, insertion and deletion work.

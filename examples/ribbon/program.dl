@@ -1,0 +1,26 @@
+import ../../ui/application.dl
+import interface.dl
+import workspace.dl
+
+to close the ribbon application {a pointer to UI view:view}:
+    set instance to view's instance
+    set state to instance's state as a pointer to ribbon demo state
+    close view
+    close instance
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+    deallocate state
+
+function open the ribbon using {a pointer to UI driver:driver}:
+    globals:
+        ribbon studio
+    execute:
+        set state to storage for one slot initialized with (a new ribbon demo state)
+        set instance to storage for one slot initialized with (an instance of ribbon studio with state state)
+        bind (the control labeled "Editor" in instance) in instance to (the function named "paint the ribbon workspace on $") for event 1
+        set view to storage for one slot initialized with (a UI view of instance sized 1280 by 800 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with driver)
+        set state's view to view
+        set view's close action to (the function named "close the ribbon application $") as a pointer
+        run view

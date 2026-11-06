@@ -1,0 +1,103 @@
+import graphics.dl
+import input.dl
+
+to open native UI {a pointer to UI view:view} sized {integer:width} by {integer:height} titled {C string:title}:
+    set surface to a new native UI surface
+    set surface's resource to a new hidden window with width width and height height
+    set surface's hand cursor to @intrinsic("call", "glfw", "glfwCreateStandardCursor", a pointer, 221188)
+    set surface's text cursor to @intrinsic("call", "glfw", "glfwCreateStandardCursor", a pointer, 221186)
+    require condition ((surface's hand cursor != (0 as a pointer)) and (surface's text cursor != (0 as a pointer))) reporting "Creating UI cursors failed"
+    set surface's view to view
+    set error to @intrinsic("call", "freetype", "FT_Init_FreeType", an integer, the address of (surface's library))
+    require condition (error = 0) reporting "Initializing UI vector rasterization failed"
+    set view's window to (storage for one slot initialized with surface) as a pointer
+    set the title of (surface's resource) to title
+    set minimum to the element of kind 37 labeled "" in (view's instance's description)
+    if minimum != @intrinsic("construct", UI reference):
+        set the minimum size of (surface's resource) to (minimum's width) by (minimum's height)
+    connect native UI input in (view's window as a pointer to native UI surface)
+
+to close native UI {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set error to @intrinsic("call", "freetype", "FT_Done_FreeType", an integer, surface's library)
+    require condition (error = 0) reporting "Releasing UI vector rasterization failed"
+    @intrinsic("call", "glfw", "glfwDestroyCursor", nothing, surface's hand cursor)
+    @intrinsic("call", "glfw", "glfwDestroyCursor", nothing, surface's text cursor)
+    close surface's resource
+    deallocate surface
+
+to poll native UI {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set surface's view to view
+    poll window events
+    set dimensions to the window dimensions of (surface's resource)
+    set view's width to dimensions' width
+    set view's height to dimensions' height
+    if dimensions' width > 0:
+        set view's pixel scale to (the framebuffer width of (surface's resource)) / (dimensions' width as a floating-point number)
+    set view's seconds to the time since start for (surface's resource)
+    set view's closed to surface's resource should close
+
+to wait for native UI {a pointer to UI view:view} for {floating-point number:seconds}:
+    if seconds < 0.0:
+        @intrinsic("call", "glfw", "glfwWaitEvents", nothing)
+    else:
+        @intrinsic("call", "glfw", "glfwWaitEventsTimeout", nothing, seconds)
+
+to get the native UI clipboard in {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set graphics to surface's resource as a pointer to DynlexGraphics
+    set text to @intrinsic("call", "glfw", "glfwGetClipboardString", a C string, graphics' window)
+    if text = (0 as a pointer to a byte):
+        set description to 0 as a C string
+        set error to @intrinsic("call", "glfw", "glfwGetError", an integer, the address of description)
+        if error != 65545:
+            print line error
+            print line description
+        require condition (error = 65545) reporting "Reading the UI clipboard failed"
+        return "" as a C string
+    return text
+
+to copy native UI text in {a pointer to UI view:view} containing {C string:text} counting {integer:count}:
+    set surface to the native UI surface in view
+    set graphics to surface's resource as a pointer to DynlexGraphics
+    set terminated to a new string buffer containing (count + 1) bytes
+    ignore @intrinsic("call", "libc", "memcpy", a pointer, the data of terminated, text, count as a word sized unsigned integer)
+    store (0 as a byte) into (the data of terminated) at count
+    @intrinsic("call", "glfw", "glfwSetClipboardString", nothing, graphics' window, the data of terminated)
+    set description to 0 as a C string
+    set error to @intrinsic("call", "glfw", "glfwGetError", an integer, the address of description)
+    if error != 0:
+        print line error
+        print line description
+    require condition (error = 0) reporting "Writing the UI clipboard failed"
+
+to wake native UI {a pointer to UI view:view}:
+    @intrinsic("call", "glfw", "glfwPostEmptyEvent", nothing)
+
+to launch native UI {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    set surface's view to view
+    show surface's resource
+    loop while view's closed = false:
+        set animation to update UI view view
+        set suspended to (view's width <= 0) or (view's height <= 0)
+        if ((view's closed = false) and ((view's damaged = false) or suspended)) and (view's input first = @intrinsic("construct", a pointer to UI input event)):
+            if animation:
+                set remaining to (view's last paint + 0.0166666666666667) - (the time since start for (surface's resource))
+                if remaining > 0.0:
+                    wait for native UI view for remaining
+            else:
+                wait for native UI view for -1.0
+    if view's close action != (0 as a pointer):
+        finish UI application view
+
+to set native UI [cursor] in {a pointer to UI view:view} to {integer:shape}:
+    set surface to the native UI surface in view
+    set graphics to surface's resource as a pointer to DynlexGraphics
+    set cursor to 0 as a pointer
+    if shape = 1:
+        set cursor to surface's hand cursor
+    if shape = 2:
+        set cursor to surface's text cursor
+    @intrinsic("call", "glfw", "glfwSetCursor", nothing, graphics' window, cursor)

@@ -1,0 +1,51 @@
+import ../../helpers/driver.dl
+window captions:
+    label "Note"
+    button "Old"
+    1 x 1 table:
+        "blue" row:
+            "name"
+    ribbon "Ribbon" at 0 220 sized 600 by 168:
+        tab "Home":
+            ribbon group "Group":
+                tool "Tool" with icon "copy"
+                tool field "One" sized 100:
+                    menu item "One"
+                    menu item "Two"
+                large menu "Choose" with icon "copy":
+                    menu item "Choice A"
+
+to get {string:log} contains rendered {C string:caption}:
+    set expected to (the string form of caption) + "\n"
+    set index to 0
+    loop while index <= (log's length - expected's length):
+        if log has expected at offset index:
+            return true
+        increment index
+    return false
+
+set instance to an instance of captions
+set view to a UI view of (the address of instance) sized 800 by 600 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set the text of "Note" in (the address of instance) to "New note"
+set the text of "Old" in (the address of instance) to "New button"
+set the text of "name" in (the address of instance) to "New cell"
+set the text of "Home" in (the address of instance) to "New tab"
+set the text of "Tool" in (the address of instance) to "New tool"
+set the value of "One" in (the address of instance) to 1
+set the text of "Two" in (the address of instance) to "Second"
+set the text of "Choice A" in (the address of instance) to "Alpha"
+set menu to the UI layout for element (the control labeled "Choose" in (the address of instance)) in (view's layout)
+activate UI layout menu in (the address of view)
+ignore update UI view (the address of view)
+set surface to view's window as a pointer to test UI surface
+require condition (surface's drawn contains rendered "New note") reporting "The label ignored its value"
+require condition (surface's drawn contains rendered "New button") reporting "The button ignored its value"
+require condition (surface's drawn contains rendered "New cell") reporting "The cell ignored its value"
+require condition (surface's drawn contains rendered "New tab") reporting "The tab ignored its value"
+require condition (surface's drawn contains rendered "New tool") reporting "The tool ignored its value"
+require condition (surface's drawn contains rendered "Second") reporting "The selected field ignored its option caption"
+require condition (surface's drawn contains rendered "Alpha") reporting "The popup ignored its value"
+close the address of view
+close the address of instance
+print line "Instance captions update across controls, tables, ribbons and popups."

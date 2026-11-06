@@ -1,0 +1,59 @@
+# A platform implements these operations. UI behavior lives in the shared library.
+import geometry.dl
+
+class:
+    patterns:
+        UI driver
+    members:
+        open as a pointer
+        close as a pointer
+        poll as a pointer
+        begin as a pointer
+        present as a pointer
+        triangles as a pointer
+        open font as a pointer
+        close font as a pointer
+        measure text as a pointer
+        draw text as a pointer
+        rasterize icon as a pointer
+        release texture as a pointer
+        copy as a pointer
+        launch as a pointer
+        wake as a pointer
+        cursor as a pointer
+
+class:
+    patterns:
+        [a|] UI font
+    members:
+        resource as a pointer
+        driver as a pointer to UI driver
+        size as an integer
+
+class:
+    patterns:
+        UI texture
+    members:
+        resource as a pointer
+        width as an integer
+        height as an integer
+
+class:
+    patterns:
+        UI vertex
+    members:
+        x as a 32 bit floating-point number
+        y as a 32 bit floating-point number
+        u as a 32 bit floating-point number
+        v as a 32 bit floating-point number
+        red as a 32 bit floating-point number
+        green as a 32 bit floating-point number
+        blue as a 32 bit floating-point number
+        alpha as a 32 bit floating-point number
+
+class:
+    patterns:
+        [a|] UI frame
+    members:
+        view as a pointer to UI view
+        drawable as a boolean

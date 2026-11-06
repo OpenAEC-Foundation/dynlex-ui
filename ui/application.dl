@@ -1,0 +1,124 @@
+# Lifetime and invalidation are shared by all platforms.
+import renderer.dl
+import events.dl
+import input.dl
+
+to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
+    set result to a new UI view
+    set result's instance to instance
+    set result's driver to driver
+    set result's theme to the UI theme for (instance's description)
+    set result's logical width to width
+    set result's logical height to height
+    set result's width to width
+    set result's height to height
+    set result's pixel scale to 1.0
+    set result's focus order to 1
+    set result's key press to -1
+    set result's current alpha to 255
+    set result's current color to UI ink 255 255 255
+    set result's transform to the identity UI transform
+    set result's damaged to true
+    set result's drawable to true
+    set rule to the element of kind 26 labeled "" in (instance's description)
+    if rule != @intrinsic("construct", UI reference):
+        set result's fitted to true
+        set result's logical width to rule's width
+        set result's logical height to rule's height
+        set result's adaptive to rule's variant = "adaptive"
+    set {available width} to result's logical width
+    set {available height} to result's logical height
+    if result's fitted = false:
+        set available width to the maximum of 1 and (width - 64)
+        set available height to the maximum of 1 and (height - 192)
+    set result's layout to a UI layout for (instance's description) inside (instance's description) with width available width using (result's theme)
+    prepare UI layout (result's layout) for (instance's description) sized available width by available height
+    @intrinsic("call pointer", driver's open, nothing, the address of result, width, height, instance's description's text)
+    set result's typeface to a UI font from regular sized 15 in (the address of result)
+    set result's heading to a UI font from bold sized 26 in (the address of result)
+    set result's small to a UI font from regular sized 12 in (the address of result)
+    set result's display to a UI font from bold sized 48 in (the address of result)
+    set result's strong to a UI font from bold sized 15 in (the address of result)
+    set result's brand to a UI font from bold sized 30 in (the address of result)
+    return result
+
+to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using font {C string:path} with {a pointer to UI driver:driver}:
+    return a UI view of instance sized width by height using fonts path and path with driver
+
+to request a UI redraw in {a pointer to UI view:view}:
+    set view's damaged to true
+    @intrinsic("call pointer", view's driver's wake, nothing, view)
+
+to get update UI view {a pointer to UI view:view}:
+    set continuing to view's animating
+    set view's animating to false
+    if view's observer = @intrinsic("construct", a pointer to UI observer):
+        set observer to a new UI observer
+        set observer's context to view as a pointer
+        set observer's notify to (the function named "request a UI redraw in $") as a pointer
+        set observer's next to view's instance's observers
+        set view's observer to storage for one slot initialized with observer
+        set view's instance's observers to view's observer
+    @intrinsic("call pointer", view's driver's poll, nothing, view)
+    set view's frame seconds to 0.0
+    if continuing:
+        set view's frame seconds to the minimum of 0.05 and (view's seconds - view's last paint)
+    if (((view's last width != view's width) or (view's last height != view's height)) or (view's last scale != view's pixel scale)) or (view's revision != view's instance's revision):
+        set view's damaged to true
+    update the UI viewport in view
+    process UI input in view
+    handle UI input in view
+    if view's frame action != (0 as a pointer):
+        @intrinsic("call pointer", view's frame action, nothing, view)
+    if (((view's damaged or view's animating) or continuing) and (view's closed = false)) and ((view's width > 0) and (view's height > 0)):
+        set view's damaged to false
+        paint UI view view
+        set view's last paint to view's seconds
+        set view's revision to view's instance's revision
+        set view's last width to view's width
+        set view's last height to view's height
+        set view's last scale to view's pixel scale
+    set view's key press to -1
+    set view's typed text to ""
+    if (view's width <= 0) or (view's height <= 0):
+        return false
+    return (view's animating or view's damaged) or (view's input first != @intrinsic("construct", a pointer to UI input event))
+
+to close {a pointer to UI view:view}:
+    loop while view's input first != @intrinsic("construct", a pointer to UI input event):
+        set event to view's input first
+        set view's input first to event's next
+        destroy the value at event
+        deallocate event
+    if view's observer != @intrinsic("construct", a pointer to UI observer):
+        set previous to @intrinsic("construct", a pointer to UI observer)
+        set observer to view's instance's observers
+        loop while observer != view's observer:
+            set previous to observer
+            set observer to observer's next
+        if previous = @intrinsic("construct", a pointer to UI observer):
+            set view's instance's observers to observer's next
+        else:
+            set previous's next to observer's next
+        deallocate observer
+    set view's next text to view's texts
+    set view's last text to @intrinsic("construct", a pointer to UI text run)
+    clear UI selection in view
+    finish UI text painting in view
+    release UI icons (the address of (view's icons)) in view
+    release UI font the address of (view's typeface)
+    release UI font the address of (view's heading)
+    release UI font the address of (view's small)
+    release UI font the address of (view's display)
+    release UI font the address of (view's strong)
+    release UI font the address of (view's brand)
+    release UI layout view's layout
+    deallocate view's vertices
+    @intrinsic("call pointer", view's driver's close, nothing, view)
+
+to run {a pointer to UI view:view}:
+    @intrinsic("call pointer", view's driver's launch, nothing, view)
+
+to finish UI application {a pointer to UI view:view}:
+    require condition (view's close action != (0 as a pointer)) reporting "The UI application has no close handler"
+    @intrinsic("call pointer", view's close action, nothing, view)

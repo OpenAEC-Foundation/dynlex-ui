@@ -1,0 +1,1 @@
+Queued inputs are preserved and static motion does not repaint.

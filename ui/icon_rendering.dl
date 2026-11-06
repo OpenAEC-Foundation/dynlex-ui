@@ -1,0 +1,43 @@
+# SVGs are rasterized once per displayed size, then reused as coverage textures.
+import icons/catalog.dl
+import platform.dl
+import shapes.dl
+import icon_types.dl
+
+to draw UI [icon] {C string:name} in {UI bounds:box} in {UI paint:ink} using {a pointer to UI icon cache:cache} on {UI frame:frame}:
+    if frame's drawable = false:
+        return nothing
+    require condition (box's width = box's height) reporting "An SVG icon requires a square viewport"
+    set entry to the cached UI icon name sized (box's width) in cache
+    if entry = @intrinsic("construct", a pointer to UI icon texture):
+        set item to a new UI icon texture
+        set item's name to name
+        set item's logical size to box's width
+        set item's next to cache's first
+        set cache's first to storage for one slot initialized with item
+        set entry to cache's first
+    set size to the maximum of 1 and (((box's width * cache's scale) + 0.5) as an integer)
+    if entry's texture's width != size:
+        if entry's texture's resource != (0 as a pointer):
+            @intrinsic("call pointer", frame's view's driver's release texture, nothing, frame's view, entry's texture's resource)
+        set icon to the UI icon named name
+        set resource to @intrinsic("call pointer", frame's view's driver's rasterize icon, a pointer, frame's view, the address of icon, size)
+        set entry's texture to @intrinsic("construct", UI texture, resource, size, size)
+    draw UI texture (entry's texture) in box in ink on frame
+
+to get the cached UI icon {C string:name} sized {floating-point number:size} in {a pointer to UI icon cache:cache}:
+    set entry to cache's first
+    loop while entry != @intrinsic("construct", a pointer to UI icon texture):
+        if (entry's name = name) and (entry's logical size = size):
+            return entry
+        set entry to entry's next
+    return entry
+
+to release UI icons {a pointer to UI icon cache:cache} in {a pointer to UI view:view}:
+    set entry to cache's first
+    loop while entry != @intrinsic("construct", a pointer to UI icon texture):
+        set next to entry's next
+        @intrinsic("call pointer", view's driver's release texture, nothing, view, entry's texture's resource)
+        deallocate entry
+        set entry to next
+    set cache's first to @intrinsic("construct", a pointer to UI icon texture)

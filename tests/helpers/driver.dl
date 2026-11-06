@@ -1,0 +1,85 @@
+# A recording platform adapter for shared-engine tests; never imported by applications.
+import ../../ui/application.dl
+
+class:
+    patterns:
+        test UI surface
+    members:
+        paints as an integer
+        wakes as an integer
+        copied as a string
+        drawn as a string
+        cursor as an integer
+
+to open test UI {a pointer to UI view:view} sized {integer:width} by {integer:height} titled {C string:title}:
+    set surface to a new test UI surface
+    set view's window to (storage for one slot initialized with surface) as a pointer
+
+to close test UI {a pointer to UI view:view}:
+    destroy the value at (view's window as a pointer to test UI surface)
+    deallocate (view's window as a pointer to test UI surface)
+
+to poll test UI {a pointer to UI view:view}:
+    ignore view
+
+to begin test UI {a pointer to UI view:view}:
+    set surface to view's window as a pointer to test UI surface
+    set surface's drawn to ""
+    set view's drawable to true
+
+to present test UI {a pointer to UI view:view}:
+    set surface to view's window as a pointer to test UI surface
+    increment surface's paints
+
+to submit test UI {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    require condition ((count > 0) and ((count mod 3) = 0)) reporting "The renderer emitted incomplete triangles"
+    set index to 0
+    loop while index < count:
+        set vertex to the item at index in vertices
+        require condition ((vertex's x is finite) and (vertex's y is finite)) reporting "The renderer emitted invalid geometry"
+        require condition ((vertex's alpha >= 0.0) and (vertex's alpha <= 1.0)) reporting "The renderer emitted invalid coverage"
+        increment index
+
+to get a test UI font in {a pointer to UI view:view} from {C string:path} sized {integer:size}:
+    return 1 as a pointer
+
+to release test UI font {a pointer:resource}:
+    ignore resource
+
+to get the test UI [width] of {a pointer:resource} containing {C string:text} counting {integer:count}:
+    set content to a new string from text containing count bytes
+    set index to 0
+    set width to 0.0
+    loop while index < count:
+        set character to the UTF8 character at index in content
+        require condition (character's valid) reporting "Invalid test text"
+        set index to character's next
+        set width to width + 8.0
+    return width
+
+to draw test UI text in {a pointer to UI view:view} using {a pointer:font} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
+    set surface to view's window as a pointer to test UI surface
+    set surface's drawn to (surface's drawn + (a new string from text containing count bytes)) + "\n"
+
+to get the test UI icon in {a pointer to UI view:view} from {a pointer to UI SVG icon:icon} sized {integer:size}:
+    return 1 as a pointer
+
+to release test UI texture in {a pointer to UI view:view} holding {a pointer:texture}:
+    ignore texture
+
+to copy test UI text in {a pointer to UI view:view} containing {C string:text} counting {integer:count}:
+    set surface to view's window as a pointer to test UI surface
+    set surface's copied to the substring of (a new string from text containing count bytes) from 0 spanning count bytes
+
+to launch test UI {a pointer to UI view:view}:
+    ignore view
+
+to wake test UI {a pointer to UI view:view}:
+    set surface to view's window as a pointer to test UI surface
+    increment surface's wakes
+
+the test UI driver means: a static reference to @intrinsic("construct", UI driver, (the function named "open test UI $ sized $ by $ titled $") as a pointer, (the function named "close test UI $") as a pointer, (the function named "poll test UI $") as a pointer, (the function named "begin test UI $") as a pointer, (the function named "present test UI $") as a pointer, (the function named "submit test UI $ vertices $ counting $ with $") as a pointer, (the function named "a test UI font in $ from $ sized $") as a pointer, (the function named "release test UI font $") as a pointer, (the function named "the test UI width of $ containing $ counting $") as a pointer, (the function named "draw test UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer, (the function named "the test UI icon in $ from $ sized $") as a pointer, (the function named "release test UI texture in $ holding $") as a pointer, (the function named "copy test UI text in $ containing $ counting $") as a pointer, (the function named "launch test UI $") as a pointer, (the function named "wake test UI $") as a pointer, (the function named "set test UI cursor in $ to $") as a pointer)
+
+to set test UI cursor in {a pointer to UI view:view} to {integer:shape}:
+    set surface to view's window as a pointer to test UI surface
+    set surface's cursor to shape

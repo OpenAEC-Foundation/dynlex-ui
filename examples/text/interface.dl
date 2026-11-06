@@ -1,0 +1,14 @@
+import ../../ui/application.dl
+
+window writing room:
+    heading "One interface. Every platform."
+    caption "Select the text, edit a field, or copy a few words."
+    text field "Project name" containing "A brighter way forward"
+    text field "Unicode" containing "Café · Ελληνικά · Кириллица"
+    primary button "Save project"
+    label "Drag across this sentence to select text in the canvas."
+    label "The same DynLex code handles selection and editing on desktop."
+    code:
+        when the "Save project" button is clicked:
+            set name to (the UI value for (the control labeled "Project name" in this window) in this window)'s text
+            set this window's status to "Saved: " + name

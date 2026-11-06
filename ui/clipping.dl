@@ -1,0 +1,19 @@
+# Drawing and hit testing use the same logical clip. Drivers convert it to pixels.
+import view.dl
+
+class:
+    patterns:
+        UI clipping state
+    members:
+        bounds as UI bounds
+        rectangle as UI bounds
+
+to get a UI clip restricted to {UI bounds:box} in {a pointer to UI view:view} on {UI frame:frame}:
+    set previous to @intrinsic("construct", UI clipping state, view's hit bounds, view's clip)
+    set view's hit bounds to the UI intersection of box and (view's hit bounds)
+    set view's clip to the UI intersection of box and (view's clip)
+    return previous
+
+to restore UI clip {UI clipping state:saved} in {a pointer to UI view:view} on {UI frame:frame}:
+    set view's hit bounds to saved's bounds
+    set view's clip to saved's rectangle

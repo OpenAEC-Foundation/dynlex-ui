@@ -1,0 +1,22 @@
+# Test the production handlers, then inspect the session after the window closes.
+import ../../ui/native.dl
+import ../../examples/snake/application.dl
+
+set match to a new snake session
+arrange the opening trail in the address of match
+set interface to an instance of snake studio with state (the address of match)
+set view to a desktop view of (the address of interface) sized 1120 by 760 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf"
+watch UI input in (the address of view) using (the function named "read snake input from $")
+update UI frames in (the address of view) using (the function named "advance the snake frame in $")
+run the address of view
+print line interface's page's text
+print line match's phase
+print line match's pace
+print line match's wrap edges
+print line match's show grid
+print line match's reduced motion
+print line match's palette
+print line (match's steps > 0)
+close the address of view
+close the address of interface
+close the address of match

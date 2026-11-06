@@ -1,0 +1,41 @@
+import view.dl
+
+to get UI surface [point] {UI point:point} in {a pointer to UI view:view}:
+    if view's fitted:
+        set point's x to view's content bounds' x + (point's x * (view's content bounds' width / view's logical width))
+        set point's y to view's content bounds' y + (point's y * (view's content bounds' height / view's logical height))
+    return point
+
+to save the model transform in {UI frame:frame}:
+    set saved to @intrinsic("construct", saved UI transform, frame's view's transform, frame's view's saved transforms)
+    set frame's view's saved transforms to storage for one slot initialized with saved
+
+to restore the model transform in {UI frame:frame}:
+    set saved to frame's view's saved transforms
+    set frame's view's transform to saved's value
+    set frame's view's saved transforms to saved's next
+    deallocate saved
+
+to move the model in {UI frame:frame} by x {a value:x}, y {a value:y} and z {a value:z}:
+    set transform to the address of (frame's view's transform)
+    set transform's x to transform's x + (transform's xx * x + transform's xy * y)
+    set transform's y to transform's y + (transform's yx * x + transform's yy * y)
+
+to scale the model in {UI frame:frame} by x {a value:x}, y {a value:y} and z {a value:z}:
+    set transform to the address of (frame's view's transform)
+    set transform's xx to transform's xx * x
+    set transform's yx to transform's yx * x
+    set transform's xy to transform's xy * y
+    set transform's yy to transform's yy * y
+
+to rotate the model in {UI frame:frame} by {a value:angle} degrees around x {a value:x}, y {a value:y} and z {a value:z}:
+    require condition ((x = 0.0) and (y = 0.0)) reporting "UI transforms rotate in the surface plane"
+    set radians to angle * 0.017453292519943295
+    set cosine to the cosine of radians
+    set sine to the sine of radians
+    set old to frame's view's transform
+    set transform to the address of (frame's view's transform)
+    set transform's xx to old's xx * cosine + old's xy * sine
+    set transform's xy to old's xy * cosine - old's xx * sine
+    set transform's yx to old's yx * cosine + old's yy * sine
+    set transform's yy to old's yy * cosine - old's yx * sine

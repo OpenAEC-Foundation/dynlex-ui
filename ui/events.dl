@@ -1,0 +1,99 @@
+import interaction.dl
+import platform.dl
+import text_input.dl
+import focus.dl
+
+to get the UI hit at {UI point:point} in {a pointer to UI layout:layout} during {integer:generation} for {a pointer to UI instance:instance}:
+    if layout's node's kind = 22:
+        if layout's node != instance's page:
+            return @intrinsic("construct", a pointer to UI layout)
+    set found to @intrinsic("construct", a pointer to UI layout)
+    if (layout's paint generation = generation) and (point is inside (layout's hit bounds)):
+        set found to layout
+    if layout's node's kind = 29:
+        if (the selected tab of (layout's parent) in instance) != layout's node:
+            return found
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set candidate to the UI hit at point in child during generation for instance
+        if candidate != @intrinsic("construct", a pointer to UI layout):
+            set found to candidate
+        set child to child's next
+    return found
+
+to handle UI input in {a pointer to UI view:view}:
+    set cursor to the UI cursor in view
+    if view's page != view's instance's page:
+        clear UI selection in view
+        set view's page to view's instance's page
+        set view's focus order to 1
+        set view's keyboard focus to false
+        dismiss the UI popup in view
+        set view's damaged to true
+    set hot to @intrinsic("construct", a pointer to UI layout)
+    if view's paint count > 0:
+        if view's popup != @intrinsic("construct", a pointer to UI layout):
+            set child to view's popup's first
+            loop while child != @intrinsic("construct", a pointer to UI layout):
+                if cursor is inside (child's painted bounds):
+                    set hot to child
+                set child to child's next
+        else:
+            set hot to the UI hit at cursor in (view's layout) during (view's paint count) for (view's instance)
+    if hot != view's hot:
+        set view's damaged to true
+    set view's hot to hot
+    refresh UI focus in view
+    set shape to 0
+    if hot != @intrinsic("construct", a pointer to UI layout):
+        set shape to 1
+    if (the UI text hit at cursor in view) != @intrinsic("construct", a pointer to UI text run):
+        if (hot = @intrinsic("construct", a pointer to UI layout)) or (hot's node's kind = 39):
+            set shape to 2
+    if view's selection's dragging:
+        set shape to 2
+    if shape != view's cursor shape:
+        set view's cursor shape to shape
+        @intrinsic("call pointer", view's driver's cursor, nothing, view, shape)
+    handle UI text pointer at cursor over hot in view
+    handle UI text keys in view
+    if view's key press >= 0:
+        set view's damaged to true
+        handle UI popup keys in view
+        if view's key press = 258:
+            dismiss the UI popup in view
+            if view's keyboard focus and (view's control count > 0):
+                set direction to 1
+                if (view's modifiers bitwise and 1) != 0:
+                    set direction to -1
+                set view's focus order to ((((view's focus order - 1) + direction) + view's control count) mod view's control count) + 1
+            set view's keyboard focus to true
+            if view's focus order > view's control count:
+                set view's focus order to 1
+        refresh UI focus in view
+        if view's popup = @intrinsic("construct", a pointer to UI layout):
+            navigate UI tabs in view
+        refresh UI focus in view
+        if ((view's key press = 257) or (view's key press = 32)) and (view's focused != @intrinsic("construct", a pointer to UI layout)):
+            activate UI layout (view's focused) in view
+        if the UI close key was pressed in view:
+            set view's closed to true
+    if view's down != view's was down:
+        set view's damaged to true
+        if view's down:
+            if hot = @intrinsic("construct", a pointer to UI layout):
+                dismiss the UI popup in view
+            set view's pressed to hot
+            set view's keyboard focus to false
+            if hot != @intrinsic("construct", a pointer to UI layout):
+                set view's focus order to hot's order
+                if hot's node's kind = 39:
+                    set view's keyboard focus to true
+        else:
+            if (view's pressed != @intrinsic("construct", a pointer to UI layout)) and (view's pressed = hot):
+                activate UI layout hot in view
+            set view's pressed to @intrinsic("construct", a pointer to UI layout)
+    set view's was down to view's down
+    if (view's scroll x != 0.0) or (view's scroll y != 0.0):
+        scroll UI ribbons in (view's layout) at cursor in view
+    set view's last cursor to cursor

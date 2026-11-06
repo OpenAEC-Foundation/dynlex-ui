@@ -1,0 +1,4 @@
+import ../../ui/native.dl
+import application.dl
+
+open Snake Studio using the native UI driver

@@ -1,0 +1,31 @@
+import geometry.dl
+
+class:
+    patterns:
+        UI transform
+    members:
+        xx as a floating-point number
+        xy as a floating-point number
+        yx as a floating-point number
+        yy as a floating-point number
+        x as a floating-point number
+        y as a floating-point number
+
+class:
+    patterns:
+        saved UI transform
+    members:
+        value as UI transform
+        next as a pointer to saved UI transform
+
+the identity UI transform means: @intrinsic("construct", UI transform, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+to get UI point {UI point:point} transformed by {UI transform:transform}:
+    return a UI point at (transform's xx * point's x + transform's xy * point's y + transform's x) and (transform's yx * point's x + transform's yy * point's y + transform's y)
+
+to get UI point {UI point:point} untransformed by {UI transform:matrix}:
+    set determinant to (matrix's xx * matrix's yy) - (matrix's xy * matrix's yx)
+    require condition (determinant != 0.0) reporting "A singular UI transform cannot be inverted"
+    set horizontal to point's x - matrix's x
+    set vertical to point's y - matrix's y
+    return a UI point at (((matrix's yy * horizontal) - (matrix's xy * vertical)) / determinant) and (((matrix's xx * vertical) - (matrix's yx * horizontal)) / determinant)

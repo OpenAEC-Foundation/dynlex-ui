@@ -1,0 +1,96 @@
+# Web services supply surfaces, fonts and GPU resources; UI rules stay shared.
+import ../../ui/application.dl
+import ../../ui/svg_types.dl
+
+to open browser UI {a pointer to UI view:view} sized {integer:width} by {integer:height} titled {C string:title}:
+    set view's window to @intrinsic("call", "dynlex_ui", "ui_open", a pointer, width, height, title)
+    set view's linear colors to true
+
+to close browser UI {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_close", nothing, view's window)
+
+to poll browser UI {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_poll", nothing, view's window, the address of (view's width), the address of (view's height), the address of (view's pixel scale), the address of (view's seconds))
+
+to begin browser UI {a pointer to UI view:view}:
+    set ink to view's theme's background
+    @intrinsic("call", "dynlex_ui", "ui_begin", nothing, view's window, the UI color channel (ink's red) in view, the UI color channel (ink's green) in view, the UI color channel (ink's blue) in view)
+    set view's drawable to true
+
+to present browser UI {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_present", nothing, view's window)
+
+to submit browser UI {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    set first to UI surface point (a UI point at (view's clip's x) and (view's clip's y)) in view
+    set last to UI surface point (a UI point at (view's clip's x + view's clip's width) and (view's clip's y + view's clip's height)) in view
+    @intrinsic("call", "dynlex_ui", "ui_triangles", nothing, view's window, vertices, count, texture, first's x, first's y, last's x - first's x, last's y - first's y)
+
+to get a browser UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size}:
+    return @intrinsic("call", "dynlex_ui", "ui_open_font", a pointer, view's window, path, size)
+
+to release browser UI font {a pointer:resource}:
+    @intrinsic("call", "dynlex_ui", "ui_close_font", nothing, resource)
+
+to get the browser UI width of {a pointer:resource} containing {C string:text} counting {integer:count}:
+    return @intrinsic("call", "dynlex_ui", "ui_measure_text", a floating-point number, resource, text, count)
+
+to draw browser UI text in {a pointer to UI view:view} using {a pointer:resource} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
+    if count = 0:
+        return nothing
+    set clip to view's clip
+    set corners to [a UI point at (clip's x) and (clip's y), a UI point at (clip's x + clip's width) and (clip's y), a UI point at (clip's x + clip's width) and (clip's y + clip's height), a UI point at (clip's x) and (clip's y + clip's height)]
+    set left and top to 1.0e30
+    set right and bottom to -1.0e30
+    set index to 0
+    loop while index < 4:
+        set point to UI point (the item at index in corners) untransformed by (view's transform)
+        set left to the minimum of left and (point's x - x)
+        set top to the minimum of top and (point's y - y)
+        set right to the maximum of right and (point's x - x)
+        set bottom to the maximum of bottom and (point's y - y)
+        increment index
+    set mask to @intrinsic("call", "dynlex_ui", "ui_text_mask", a pointer, resource, text, count, view's icons' scale, left, top, right, bottom)
+    if mask = (0 as a pointer):
+        return nothing
+    set width to @intrinsic("call", "dynlex_ui", "ui_mask_width", a floating-point number, mask)
+    set height to @intrinsic("call", "dynlex_ui", "ui_mask_height", a floating-point number, mask)
+    set left to @intrinsic("call", "dynlex_ui", "ui_mask_left", a floating-point number, mask)
+    set top to @intrinsic("call", "dynlex_ui", "ui_mask_top", a floating-point number, mask)
+    set texture to @intrinsic("construct", UI texture, mask, 0, 0)
+    draw UI texture texture in (UI box at (x + left) (y + top) sized width height) in (the value at ink) on (@intrinsic("construct", UI frame, view, true))
+
+to get the browser UI icon in {a pointer to UI view:view} from {a pointer to UI SVG icon:icon} sized {integer:size}:
+    set drawing to @intrinsic("call", "dynlex_ui", "ui_svg_begin", a pointer, view's window, size)
+    set index to 0
+    loop while index < icon's count:
+        set operation to the item at index in (icon's operations)
+        @intrinsic("call", "dynlex_ui", "ui_svg_operation", nothing, drawing, operation's kind, operation's first x, operation's first y, operation's second x, operation's second y, operation's end x, operation's end y)
+        increment index
+    return @intrinsic("call", "dynlex_ui", "ui_svg_end", a pointer, drawing)
+
+to release browser UI texture in {a pointer to UI view:view} holding {a pointer:texture}:
+    @intrinsic("call", "dynlex_ui", "ui_release_texture", nothing, texture)
+
+to copy browser UI text in {a pointer to UI view:view} containing {C string:text} counting {integer:count}:
+    @intrinsic("call", "dynlex_ui", "ui_copy", nothing, text, count)
+
+to wake browser UI {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_wake", nothing, view's window)
+
+to receive browser UI input in {a pointer to UI view:view} of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {C string:text} counting {integer:count}:
+    set content to the substring of (a new string from text containing count bytes) from 0 spanning count bytes
+    queue UI input of kind kind key key at x y with modifiers modifiers containing content in view
+
+to get the next browser UI frame in {a pointer to UI view:view}:
+    set animation to update UI view view
+    if view's closed:
+        finish UI application view
+        return false
+    return animation
+
+to launch browser UI {a pointer to UI view:view}:
+    require condition (view's close action != (0 as a pointer)) reporting "A browser application requires a close handler and persistent view storage"
+    @intrinsic("call", "dynlex_ui", "ui_launch", nothing, view's window, view, the function named "the next browser UI frame in $", the function named "finish UI application $", the function named "receive browser UI input in $ of kind $ key $ at $ $ with modifiers $ containing $ counting $")
+
+to set browser UI cursor in {a pointer to UI view:view} to {integer:shape}:
+    @intrinsic("call", "dynlex_ui", "ui_cursor", nothing, view's window, shape)

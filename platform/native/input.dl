@@ -1,0 +1,56 @@
+import types.dl
+
+to get the native UI [surface] for handle {a pointer:handle}:
+    set graphics to @intrinsic("call", "glfw", "glfwGetWindowUserPointer", a pointer to DynlexGraphics, handle)
+    return graphics' application_state as a pointer to native UI surface
+
+to receive native UI motion from {a pointer:handle} at {floating-point number:x} {floating-point number:y}:
+    set surface to the native UI surface for handle handle
+    queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (surface's view)
+
+to receive native UI button from {a pointer:handle} numbered {integer:button} action {integer:action} modifiers {integer:modifiers}:
+    if button = 0:
+        set surface to the native UI surface for handle handle
+        set x and y to 0.0
+        @intrinsic("call", "glfw", "glfwGetCursorPos", nothing, handle, the address of x, the address of y)
+        queue UI input of kind 1 key 0 at x y with modifiers modifiers containing "" in (surface's view)
+        queue UI input of kind 2 key action at 0.0 0.0 with modifiers modifiers containing "" in (surface's view)
+
+to receive native UI key from {a pointer:handle} numbered {integer:key} scan {integer:scan} action {integer:action} modifiers {integer:modifiers}:
+    if key >= 0:
+        set surface to the native UI surface for handle handle
+        set kind to 6 if action = 0, else 3
+        if action = 2:
+            set kind to 9
+        queue UI input of kind kind key key at 0.0 0.0 with modifiers modifiers containing "" in (surface's view)
+        if ((key = 86) and (action != 0)) and (((modifiers bitwise and 10) != 0) and ((modifiers bitwise and 4) = 0)):
+            queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing (the native UI clipboard in (surface's view)) in (surface's view)
+
+to receive native UI character from {a pointer:handle} numbered {32 bit unsigned integer:code}:
+    set surface to the native UI surface for handle handle
+    queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing (UTF8 text for code point (code as an integer)) in (surface's view)
+
+to receive native UI scroll from {a pointer:handle} at {floating-point number:x} {floating-point number:y}:
+    set surface to the native UI surface for handle handle
+    queue UI input of kind 5 key 0 at (-40.0 * x) (-40.0 * y) with modifiers 0 containing "" in (surface's view)
+
+to receive native UI focus from {a pointer:handle} active {integer:active}:
+    if active = 0:
+        set surface to the native UI surface for handle handle
+        queue UI input of kind 7 key 0 at 0.0 0.0 with modifiers 0 containing "" in (surface's view)
+
+to receive native UI refresh from {a pointer:handle}:
+    set surface to the native UI surface for handle handle
+    queue UI input of kind 8 key 0 at 0.0 0.0 with modifiers 0 containing "" in (surface's view)
+
+to connect native UI input in {a pointer to native UI surface:surface}:
+    set graphics to surface's resource as a pointer to DynlexGraphics
+    set graphics' application_state to surface as a pointer
+    set handle to graphics' window
+    ignore @intrinsic("call", "glfw", "glfwSetCursorPosCallback", a pointer, handle, the function named "receive native UI motion from $ at $ $")
+    ignore @intrinsic("call", "glfw", "glfwSetMouseButtonCallback", a pointer, handle, the function named "receive native UI button from $ numbered $ action $ modifiers $")
+    ignore @intrinsic("call", "glfw", "glfwSetKeyCallback", a pointer, handle, the function named "receive native UI key from $ numbered $ scan $ action $ modifiers $")
+    ignore @intrinsic("call", "glfw", "glfwSetCharCallback", a pointer, handle, the function named "receive native UI character from $ numbered $")
+    ignore @intrinsic("call", "glfw", "glfwSetWindowFocusCallback", a pointer, handle, the function named "receive native UI focus from $ active $")
+    ignore @intrinsic("call", "glfw", "glfwSetWindowRefreshCallback", a pointer, handle, the function named "receive native UI refresh from $")
+    register the graphics scroll callback named "receive native UI scroll from $ at $ $" for (surface's resource)

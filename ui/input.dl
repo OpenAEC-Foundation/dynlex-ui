@@ -1,0 +1,80 @@
+# Platforms enqueue input; shared DynLex code owns dispatch and interaction.
+import events.dl
+import lib/utf8.dl
+
+# Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
+# 6 key release, 7 focus loss, 8 surface refresh, 9 key repeat, 10 composition.
+to queue UI input of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {string:text} in {a pointer to UI view:view}:
+    set event to @intrinsic("construct", UI input event, kind, key, x, y, modifiers, text, @intrinsic("construct", a pointer to UI input event))
+    set entry to storage for one slot initialized with event
+    if view's input first = @intrinsic("construct", a pointer to UI input event):
+        set view's input first to entry
+    else:
+        set view's input last's next to entry
+    set view's input last to entry
+    @intrinsic("call pointer", view's driver's wake, nothing, view)
+
+to process UI input in {a pointer to UI view:view}:
+    loop while view's input first != @intrinsic("construct", a pointer to UI input event):
+        set event to view's input first
+        set view's input first to event's next
+        set view's input kind to event's kind
+        set view's modifiers to event's modifiers
+        set view's key press to -1
+        set view's typed text to ""
+        set view's scroll x to 0.0
+        set view's scroll y to 0.0
+        if event's kind = 1:
+            set view's cursor to a UI point at (event's x) and (event's y)
+        if event's kind = 2:
+            set view's down to event's key != 0
+        if ((event's kind = 3) or (event's kind = 9)) or (event's kind = 6):
+            require condition (0 <= event's key < 512) reporting "A platform supplied an invalid UI key"
+            store (event's kind != 6) into (view's keys) at (event's key)
+            if event's kind != 6:
+                set view's key press to event's key
+        if event's kind = 4:
+            set view's typed text to event's text
+        if event's kind = 5:
+            set view's scroll x to event's x
+            set view's scroll y to event's y
+        if event's kind = 7:
+            set view's keys to a new boolean array of 512 items
+            set view's down to false
+            set view's pressed to @intrinsic("construct", a pointer to UI layout)
+        if event's kind = 8:
+            set view's damaged to true
+        if event's kind = 10:
+            set view's selection's composition to event's text
+            set view's damaged to true
+        if view's input action != (0 as a pointer):
+            @intrinsic("call pointer", view's input action, nothing, view)
+        handle UI input in view
+        set view's key press to -1
+        set view's typed text to ""
+        set view's scroll x to 0.0
+        set view's scroll y to 0.0
+        destroy the value at event
+        deallocate event
+    set view's input last to @intrinsic("construct", a pointer to UI input event)
+
+to watch UI input in {a pointer to UI view:view} using {a callback:action}:
+    set view's input action to action as a pointer
+
+to update UI frames in {a pointer to UI view:view} using {a callback:action}:
+    set view's frame action to action as a pointer
+
+to animate UI view {a pointer to UI view:view}:
+    set view's animating to true
+
+the UI escape key means: 256
+the UI space key means: 32
+the UI P key means: 80
+the UI W key means: 87
+the UI A key means: 65
+the UI S key means: 83
+the UI D key means: 68
+the UI right arrow key means: 262
+the UI left arrow key means: 263
+the UI down arrow key means: 264
+the UI up arrow key means: 265

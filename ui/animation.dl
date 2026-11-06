@@ -1,0 +1,8 @@
+# Animations schedule frames only until they reach their destination.
+import view.dl
+
+to get UI value {floating-point number:value} approaching {floating-point number:target} at speed {floating-point number:speed} in {a pointer to UI view:view}:
+    if (view's instance's reduced motion) or ((the absolute value of (value - target)) < 0.001):
+        return target
+    set view's animating to true
+    return value + ((target - value) * (the minimum of 1.0 and (view's frame seconds * speed)))

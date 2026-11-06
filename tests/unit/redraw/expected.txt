@@ -1,0 +1,1 @@
+Static pages sleep; damage and resizing repaint.
