@@ -50,7 +50,8 @@ def main():
             environment = dict(os.environ, DYNLEX_BACKGROUND_BROWSER='1', XDG_SESSION_TYPE='x11')
             environment.pop('WAYLAND_DISPLAY', None)
             environment.pop('WAYLAND_SOCKET', None)
-            subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', f'dist/{name}'], cwd=project, env=environment, check=True)
+            for mode in ['webgpu', 'webgl-no-adapter', 'webgl-no-api']:
+                subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', f'dist/{name}', mode], cwd=project, env=environment, check=True)
 
 
 if __name__ == '__main__':

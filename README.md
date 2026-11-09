@@ -6,7 +6,7 @@ SVG icon placement, antialiased geometry, transitions, hit testing, text selecti
 single-line editing and redraw decisions are shared DynLex code.
 
 The native adapter submits to Vulkan through DynLex's graphics library. The browser
-adapter submits the same vertices to WebGPU. JavaScript supplies browser services:
+adapter submits the same vertices to WebGPU or WebGL2. JavaScript supplies browser services:
 GPU resources, fonts and SVG coverage, clipboard, event normalization and scheduling.
 The browser ships ahead-of-time application WebAssembly, without the compiler.
 The HTML page contains the canvas host; an invisible input bridge receives OS text
@@ -22,28 +22,15 @@ python3 scripts/build.py ribbon --dynlex ../dynlex
 python3 -m http.server --directory dist/ribbon 8000
 ```
 
-Visit `http://localhost:8000`. WebGPU requires a secure context (localhost or HTTPS)
-and a WebGPU-capable browser. There is no alternate renderer. Build `snake` or `text`
-instead of `ribbon` for the game or selection/editor demo.
-
-If Chrome exposes `navigator.gpu` but reports "No WebGPU adapter is available",
-check `chrome://gpu`. Browser GPU configuration and driver support determine
-whether an adapter can be exposed; the application cannot enable one itself.
-On Linux, explicitly selecting Vulkan worked with Chrome 157, Mesa 26.0.8 and
-Intel UHD Graphics 630. With the server running, use a separate browser profile:
-
-```sh
-google-chrome --user-data-dir="$HOME/.cache/dynlex-ui-browser" \
-  --ozone-platform=x11 --enable-features=Vulkan --use-angle=vulkan \
-  --disable-vulkan-surface http://localhost:8000
-```
-
-This configuration was verified on the hardware adapter in an isolated X11 display,
-including rendering, interaction, resize and idle redraw checks. It does not need
-`--enable-unsafe-webgpu`, `--ignore-gpu-blocklist` or `--no-sandbox`. It is a local
-launch configuration, not a requirement a website can apply to its visitors. See
-[Chrome's WebGPU troubleshooting guide](https://developer.chrome.com/docs/web-platform/webgpu/troubleshooting-tips)
-for browser support and adapter diagnostics.
+Visit `http://localhost:8000` in your normal browser. The host prefers WebGPU when
+it can acquire a device; otherwise it selects WebGL2 before creating any surfaces.
+The selection and shader-program services are shared with the DynLex homepage and
+IDE through `web/graphics-backend.js`, copied from the DynLex checkout by the build.
+Both transports consume the same geometry, clipping and coverage masks, with
+linear-light blending and sRGB presentation. Rendering failures after selection
+are reported rather than triggering a backend switch. WebGPU requires a secure
+context (localhost or HTTPS); WebGL2 also supports browsers without the WebGPU API.
+Build `snake` or `text` instead of `ribbon` for the game or selection/editor demo.
 
 For native:
 
@@ -99,8 +86,11 @@ python3 scripts/test.py --dynlex ../dynlex --native --browser
 
 Shared fixtures run at `-O0` and `-O2`. Native checks exercise the actual ribbon,
 Snake, table window and editor on private Xvfb displays. Browser checks use a
-separate Chrome profile on Xvfb with WebGPU software rendering, capture nonblank
-screenshots, interact with the canvas and check that idle paint counts stay fixed.
+separate Chrome profiles on Xvfb with software GPU drivers. Each demo runs with
+WebGPU, with an exposed WebGPU API returning no adapter, and with no WebGPU API.
+Checks capture nonblank screenshots, interact with the canvas, check that idle
+paint counts stay fixed, and verify blending, mask upload and clipping pixels on
+both transports. Software-driver flags are confined to these isolated tests.
 These checks require Node 22+, Chrome, X11 and `xvfb-run` in addition to the compiler.
 They never use the desktop display or an existing browser profile.
 

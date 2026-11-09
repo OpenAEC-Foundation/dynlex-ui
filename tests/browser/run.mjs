@@ -9,11 +9,18 @@ import { setTimeout as pause } from 'node:timers/promises';
 
 const directory = path.resolve(process.argv[2] || 'dist/ribbon');
 const example = path.basename(directory);
+const graphicsMode = process.argv[3] || 'system';
+assert(['system', 'webgpu', 'webgl-no-adapter', 'webgl-no-api'].includes(graphicsMode));
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'dynlex-ui-chrome-'));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
   '.wasm': 'application/wasm', '.ttf': 'font/ttf' };
 const server = http.createServer(async (request, response) => {
   try {
+    if (request.url === '/__tests__/rendering.mjs') {
+      response.setHeader('Content-Type', 'text/javascript');
+      response.end(await fs.readFile(new URL('./rendering.mjs', import.meta.url)));
+      return;
+    }
     const filename = path.resolve(directory, '.' + new URL(request.url, 'http://localhost').pathname);
     if (!filename.startsWith(directory + '/') && filename !== directory) throw new Error('Path');
     const resolved = filename === directory ? path.join(filename, 'index.html') : filename;
@@ -23,9 +30,11 @@ const server = http.createServer(async (request, response) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const chrome = spawn(process.env.CHROME || 'google-chrome', [
-  ...(process.env.DYNLEX_BACKGROUND_BROWSER ? ['--ozone-platform=x11'] : ['--headless=new']), '--no-sandbox', '--enable-gpu', '--enable-unsafe-webgpu',
-  '--enable-features=Vulkan', '--use-angle=vulkan', '--use-vulkan=swiftshader',
-  '--use-webgpu-adapter=swiftshader', '--disable-vulkan-surface',
+  ...(process.env.DYNLEX_BACKGROUND_BROWSER ? ['--ozone-platform=x11'] : ['--headless=new']),
+  ...(graphicsMode === 'webgpu' ? ['--enable-gpu', '--enable-unsafe-webgpu',
+    '--enable-features=Vulkan', '--use-angle=vulkan', '--use-vulkan=swiftshader',
+    '--use-webgpu-adapter=swiftshader', '--disable-vulkan-surface'] : []),
+  ...(graphicsMode.startsWith('webgl-') ? ['--use-gl=angle', '--use-angle=swiftshader'] : []),
   '--mute-audio', '--no-first-run', '--disable-background-networking',
   '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'
 ], { detached: true, stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, WAYLAND_DISPLAY: '', WAYLAND_SOCKET: '' } });
@@ -80,8 +89,29 @@ try {
       frames.add(id); return id;
     };
     window.cancelAnimationFrame = id => { frames.delete(id); cancelFrame(id); };
-    const requestAdapter = navigator.gpu.requestAdapter.bind(navigator.gpu);
-    navigator.gpu.requestAdapter = async options => {
+    const graphicsMode = ${JSON.stringify(graphicsMode)};
+    let api = null;
+    if (graphicsMode === 'webgl-no-api') {
+      Object.defineProperty(Navigator.prototype, 'gpu', { configurable: true, get: () => undefined });
+    }
+    if (graphicsMode === 'webgl-no-adapter') {
+      Object.defineProperty(Navigator.prototype, 'gpu', { configurable: true,
+        get: () => ({ requestAdapter: async () => null }) });
+    }
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(kind, ...args) {
+      const context = getContext.call(this, kind, ...args);
+      if (context && (kind === 'webgpu' || kind === 'webgl2')) api = kind;
+      if (context && kind === 'webgl2') {
+        const clear = context.clear.bind(context);
+        context.clear = bits => { clear(bits); paints++; };
+      }
+      return context;
+    };
+    const gpu = navigator.gpu;
+    if (gpu) {
+    const requestAdapter = gpu.requestAdapter.bind(gpu);
+    gpu.requestAdapter = async options => {
       const adapter = await requestAdapter(options);
       if (adapter === null) return null;
       const requestDevice = adapter.requestDevice.bind(adapter);
@@ -93,9 +123,10 @@ try {
       };
       return adapter;
     };
+    }
     window.uiTest = { stats() {
       const canvas = document.querySelector('canvas');
-      return canvas ? [{ paints, scheduled: frames.size > 0,
+      return canvas ? [{ paints, api, scheduled: frames.size > 0,
         width: canvas.clientWidth, height: canvas.clientHeight }] : [];
     } };
   ` });
@@ -104,6 +135,8 @@ try {
   await command('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   await waitFor('window.uiTest?.stats()[0]?.paints > 0 && !window.uiTest.stats()[0].scheduled');
   const before = await evaluate('window.uiTest.stats()[0]');
+  assert.equal(before.api, graphicsMode === 'webgpu' ? 'webgpu' :
+    graphicsMode.startsWith('webgl-') ? 'webgl2' : before.api);
   await pause(400);
   assert.equal((await evaluate('window.uiTest.stats()[0]')).paints, before.paints, 'Static UI must not repaint');
   await fs.mkdir('.cache', { recursive: true });
@@ -116,7 +149,7 @@ try {
       offset += length + 12;
     }
     assert(new Set(inflateSync(Buffer.concat(chunks))).size > 32, 'The browser screenshot is blank');
-    await fs.writeFile(`.cache/${name}.png`, png);
+    await fs.writeFile(`.cache/${name}-${graphicsMode}.png`, png);
     return result.data;
   };
   const initialImage = await screenshot(`${example}-browser`);
@@ -215,12 +248,17 @@ try {
   await pause(400);
   assert.equal((await evaluate('window.uiTest.stats()[0]')).paints, idle, 'Animations must settle');
   assert.equal(errors.length, 0, JSON.stringify(errors));
-  console.log(JSON.stringify({ before, after, errors }));
   await evaluate('import("/platform/start.js").then(({application}) => application.close())');
   assert.deepEqual(await evaluate('window.uiTest.stats()'), []);
   assert.equal(await evaluate('document.querySelectorAll("canvas, textarea").length'), 0);
   await pause(100);
   assert.equal(errors.length, 0, JSON.stringify(errors));
+  await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyFailureBoundaries(); })');
+  assert.equal(errors.length, 0, JSON.stringify(errors));
+  console.log(JSON.stringify({ example, graphicsMode, before, after, errors }));
+} catch (error) {
+  console.error(stderr);
+  throw error;
 } finally {
   socket?.close();
   if (chrome.exitCode === null) {

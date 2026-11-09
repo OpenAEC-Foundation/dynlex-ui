@@ -2,7 +2,7 @@
 
 Implement layout, declarative descriptions, interaction, selection and geometry in
 DynLex under `ui/`. Keep host APIs behind `UI driver` operations. `platform/native`
-uses DynLex's graphics/font libraries; `platform/browser` supplies WebGPU, font/SVG
+uses DynLex's graphics/font libraries; `platform/browser` supplies WebGPU/WebGL2, font/SVG
 rasterization, surface lifetime and normalized input. Do not add compiler UI syntax,
 HTML controls, CSS layout for application UI, or a second interaction implementation.
 

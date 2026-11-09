@@ -37,6 +37,7 @@ def main():
     source = project / "platform/browser"
     for path in source.glob("*.js"):
         shutil.copy2(path, platform / path.name)
+    shutil.copy2(dynlex / "web/graphics-backend.js", platform / "graphics-backend.js")
     shutil.copy2(source / "index.html", output / "index.html")
     runtime = platform / "runtime"
     runtime.mkdir(exist_ok=True)
