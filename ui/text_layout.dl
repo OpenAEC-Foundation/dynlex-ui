@@ -1,0 +1,59 @@
+# Line breaks retain offsets into the original source, including skipped spaces.
+import document_fonts.dl
+import text_lines.dl
+import paragraph_layout.dl
+import lib/utf8.dl
+
+to get the number of wrapped UI rows in {a pointer to UI layout:layout} within {floating-point number:width}:
+    release UI text lines in layout
+    set content to layout's content
+    set start to 0
+    set {line count} to 0
+    set previous to @intrinsic("construct", a pointer to UI text line)
+    set top to 0.0
+    set more to true
+    loop while more:
+        set offset to start
+        set end to start
+        set next to start
+        set break to -1
+        set complete to false
+        loop while (offset < content's length) and (complete = false):
+            set character to the UTF8 character at offset in content
+            require condition (character's valid) reporting "UI text must contain valid UTF-8"
+            if character's code = 10:
+                set end to offset
+                set next to character's next
+                set complete to true
+            else:
+                if (character's code = 32) or (character's code = 9):
+                    set break to offset
+                set measured to the width from start to (character's next) in UI paragraph layout
+                if (measured > width) and (offset > start):
+                    set end to offset
+                    set next to offset
+                    if break > start:
+                        set end to break
+                        set next to (the UTF8 character at break in content)'s next
+                    set complete to true
+                else:
+                    set end to character's next
+                    set next to end
+                    set offset to end
+        set line to storage for one slot initialized with (a new UI text line)
+        set line's start to start
+        set line's end to end
+        set line's width to the width from start to end in UI paragraph layout
+        measure UI row line in layout
+        set line's top to top
+        set top to top + line's height
+        if previous = @intrinsic("construct", a pointer to UI text line):
+            set layout's lines to line
+        else:
+            set previous's next to line
+        set previous to line
+        increment line count
+        set more to (next < content's length) or ((next = content's length) and (end < next))
+        set start to next
+    set layout's text height to top
+    return line count

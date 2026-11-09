@@ -2,16 +2,7 @@
 import layout.dl
 import resizing.dl
 
-to get the UI layout labeled {C string:label} in {a pointer to UI layout:layout}:
-    if layout's node's text = label:
-        return layout
-    set child to layout's first
-    loop while child != @intrinsic("construct", a pointer to UI layout):
-        set found to the UI layout labeled label in child
-        if found != @intrinsic("construct", a pointer to UI layout):
-            return found
-        set child to child's next
-    return @intrinsic("construct", a pointer to UI layout)
+import layout_lookup.dl
 
 to remember the UI geometry in {a pointer to UI layout:layout}:
     set layout's design bounds to layout's bounds

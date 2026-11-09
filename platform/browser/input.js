@@ -57,8 +57,8 @@ export function connectInput(surface, send, schedule) {
     const key = keyNumber(event.code);
     if (key < 0 || event.isComposing) return;
     const shortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
-    if ([256, 257, 258, 259, 261, 262, 263, 264, 265, 268, 269].includes(key) ||
-        (shortcut && [65, 67, 88].includes(key))) event.preventDefault();
+    if ([256, 257, 258, 259, 261, 262, 263, 264, 265, 266, 267, 268, 269].includes(key) ||
+        (shortcut && [65, 67, 88, 89, 90].includes(key))) event.preventDefault();
     send(event.repeat ? 9 : 3, key, 0, 0, modifiers(event));
   }, options);
   input.addEventListener("keyup", event => {
@@ -87,7 +87,7 @@ export function connectInput(surface, send, schedule) {
     resolution.addEventListener("change", changed, { once: true }); schedule();
   };
   changed();
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) send(8); }, options);
+  document.addEventListener("visibilitychange", () => send(document.hidden ? 7 : 8), options);
   return () => { controller.abort(); observer.disconnect();
     resolution.removeEventListener("change", changed); input.remove(); };
 }

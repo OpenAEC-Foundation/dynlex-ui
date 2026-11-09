@@ -2,16 +2,7 @@
 import layout_types.dl
 import ribbon.dl
 
-to get the UI layout for element {UI reference:node} in {a pointer to UI layout:layout}:
-    if layout's node = node:
-        return layout
-    set child to layout's first
-    loop while child != @intrinsic("construct", a pointer to UI layout):
-        set found to the UI layout for element node in child
-        if found != @intrinsic("construct", a pointer to UI layout):
-            return found
-        set child to child's next
-    return @intrinsic("construct", a pointer to UI layout)
+import layout_lookup.dl
 
 to get the active UI tab in {a pointer to UI layout:layout} for {a pointer to UI instance:instance}:
     set selected to the selected tab of (layout's node) in instance

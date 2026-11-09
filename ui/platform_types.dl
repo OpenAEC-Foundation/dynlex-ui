@@ -50,10 +50,3 @@ class:
         green as a 32 bit floating-point number
         blue as a 32 bit floating-point number
         alpha as a 32 bit floating-point number
-
-class:
-    patterns:
-        [a|] UI frame
-    members:
-        view as a pointer to UI view
-        drawable as a boolean

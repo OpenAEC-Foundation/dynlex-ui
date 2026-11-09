@@ -1,0 +1,1 @@
+Document tabs share selection, keyboard traversal and persistent editor state.

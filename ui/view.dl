@@ -30,6 +30,7 @@ class:
         damaged as a boolean
         animating as a boolean
         paint count as an integer
+        paint serial as an integer
         last width as an integer
         last height as an integer
         last scale as a floating-point number
@@ -48,7 +49,12 @@ class:
         last text as a pointer to UI text run
         text count as an integer
         selectable as a boolean
-        text element as UI reference
+        text focus as UI reference
+        text source as a pointer to UI text source
+        text control as a pointer to UI layout
+        text offset as an integer
+        text end caret as a boolean
+        reveal caret as a boolean
         selection as UI text selection
         instance as a pointer to UI instance
         typeface as a UI font
@@ -57,6 +63,9 @@ class:
         display as a UI font
         strong as a UI font
         brand as a UI font
+        regular path as a C string
+        bold path as a C string
+        fonts as a pointer to UI font cache entry
         last paint as a floating-point number
         frame seconds as a floating-point number
         theme as UI theme
@@ -66,6 +75,8 @@ class:
         was down as a boolean
         key press as an integer
         input kind as an integer
+        input code as an integer
+        message as a string
         focus order as an integer
         control count as an integer
         focused as a pointer to UI layout
@@ -88,6 +99,13 @@ class:
         frame action as a pointer
         close action as a pointer
         keys as a boolean array of 512 items
+
+class:
+    patterns:
+        [a|] UI frame
+    members:
+        view as a pointer to UI view
+        drawable as a boolean
 
 class:
     patterns:

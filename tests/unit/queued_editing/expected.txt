@@ -1,0 +1,1 @@
+Editor focus and blur take effect between queued events.

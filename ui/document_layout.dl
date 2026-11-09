@@ -1,0 +1,128 @@
+import document_declarations.dl
+import text_layout.dl
+import text.dl
+
+to get a document UI layout for {UI reference:node} inside {UI reference:parent}:
+    if node's kind = 48:
+        require condition (node's count > 0) reporting "A tab group requires at least one tab"
+    set result to storage for one slot initialized with (a new UI layout)
+    set result's node to node
+    set result's parent to parent
+    set index to 0
+    set last to @intrinsic("construct", a pointer to UI layout)
+    loop while index < node's count:
+        set element to the UI child at index in node
+        if node's kind = 48:
+            require condition (element's kind = 29) reporting "A tab group contains tab sections"
+        if ((element's kind < 6) or (element's kind > 10)) and ((element's kind != 25) and (element's kind != 26)):
+            set child to a document UI layout for element inside node
+            if last = @intrinsic("construct", a pointer to UI layout):
+                set result's first to child
+            else:
+                set last's next to child
+            set last to child
+        increment index
+    return result
+
+to reflow document UI layout {a pointer to UI layout:layout} within {floating-point number:available} inheriting {UI appearance settings:inherited} in {a pointer to UI view:view}:
+    set node to layout's node
+    set appearance to default UI appearance settings
+    set appearance's foreground to inherited's foreground
+    # Unfilled descendants inherit their surrounding surface color.
+    set appearance's background to inherited's background
+    set appearance's font size to inherited's font size
+    set appearance's font path to inherited's font path
+    set appearance's bold to inherited's bold
+    set appearance's line spacing to inherited's line spacing
+    apply UI appearance (node's appearance) for (view's width as a floating-point number) to (the address of appearance)
+    if (node's kind = 22) and (node != view's instance's page):
+        set appearance's hidden to true
+    set layout's appearance to appearance
+    set width to available
+    if appearance's maximum width > 0.0:
+        set width to the minimum of width and (appearance's maximum width)
+    set width to the maximum of width and (appearance's minimum width)
+    set layout's bounds to UI box at ((available - width) / 2.0) 0 sized width 0
+    if appearance's hidden:
+        return nothing
+    set inner to the maximum of 1.0 and (width - (appearance's padding * 2.0))
+    if (((node's kind = 42) or (node's kind = 43)) or (node's kind = 44)) or (node's kind = 46):
+        set layout's content to (the UI value for node in (view's instance))'s text
+        set layout's rich to (node's kind = 42) and (node's count > 0)
+        set layout's typeface to a document UI font for appearance in view
+        if layout's rich:
+            prepare UI paragraph layout in view
+        set source to the address of (layout's text source)
+        if source's text != layout's content:
+            if (view's selection's anchor source = source) or (view's selection's caret source = source):
+                if node's kind = 44:
+                    set view's selection's anchor to the minimum of (view's selection's anchor) and (layout's content's length)
+                    set view's selection's caret to the minimum of (view's selection's caret) and (layout's content's length)
+                    set view's reveal caret to true
+                else:
+                    clear UI selection in view
+            set source's text to layout's content
+        if node's kind = 44:
+            set layout's text source's element to node
+        set span to inner
+        if appearance's unwrapped:
+            set span to 1.0e30
+        set count to the number of wrapped UI rows in layout within span
+        set layout's text width to 0.0
+        set line to layout's lines
+        loop while line != @intrinsic("construct", a pointer to UI text line):
+            set layout's text width to the maximum of (layout's text width) and (line's width)
+            set line to line's next
+        set layout's bounds' height to layout's text height + appearance's padding * 2.0
+    else if node's kind = 48:
+        set selected to the selected tab of node in (view's instance)
+        set layout's typeface to a document UI font for appearance in view
+        set header to (appearance's font size * appearance's line spacing) + 20.0
+        set span to (inner - appearance's gap * (node's count - 1)) / node's count
+        set child to layout's first
+        set index to 0
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            reflow document UI layout child within inner inheriting appearance in view
+            set child's bounds' x to appearance's padding
+            set child's bounds' y to appearance's padding + header + appearance's gap
+            set child's tab bounds to UI box at (appearance's padding + index * (span + appearance's gap)) (appearance's padding) sized span header
+            if child's node = selected:
+                set layout's bounds' height to child's bounds' y + child's bounds' height + appearance's padding
+            set child to child's next
+            increment index
+    else:
+        set columns to appearance's columns
+        if (view's width as a floating-point number) < appearance's stack below:
+            set columns to 1
+        set {child width} to (inner - ((columns - 1) * appearance's gap)) / columns
+        set {row top} to appearance's padding
+        set {row height} to 0.0
+        set column to 0
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            reflow document UI layout child within child width inheriting appearance in view
+            if child's appearance's hidden = false:
+                set child's bounds' x to child's bounds' x + appearance's padding + column * (child width + appearance's gap)
+                set child's bounds' y to row top
+                set row height to the maximum of row height and (child's bounds' height)
+                if appearance's overlay = false:
+                    increment column
+                    if column = columns:
+                        set row top to row top + row height + appearance's gap
+                        set row height to 0.0
+                        set column to 0
+            set child to child's next
+        set layout's bounds' height to row top + row height + appearance's padding
+        if ((column = 0) and (row top > appearance's padding)) and (appearance's overlay = false):
+            set layout's bounds' height to layout's bounds' height - appearance's gap
+    set layout's bounds' height to the maximum of (layout's bounds' height) and (appearance's minimum height)
+    if appearance's height > 0.0:
+        set layout's bounds' height to appearance's height
+
+to reflow the UI document in {a pointer to UI view:view}:
+    set inherited to default UI appearance settings
+    set inherited's background to view's theme's background
+    reflow document UI layout (view's layout) within (view's width as a floating-point number) inheriting inherited in view
+    set limit to the maximum of 0.0 and (view's layout's bounds' height - view's height)
+    set view's layout's scroll position to the minimum of limit and (view's layout's scroll position)
+    set view's layout's scroll target to the minimum of limit and (view's layout's scroll target)

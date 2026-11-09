@@ -3,6 +3,7 @@
 import lib/sections.dl
 import lib/callbacks.dl
 import lib/check.dl
+import appearance.dl
 
 class:
     patterns:
@@ -22,6 +23,9 @@ class:
         width as an integer
         height as an integer
         variant as a C string
+        appearance as UI appearance reference
+        content as a C string
+        destination as a C string
 
 UI reference means: a pointer to UI element
 default UI cell width means: 220
@@ -30,9 +34,13 @@ no UI children means: @intrinsic("construct", UI reference array of 0 items)
 UI children of values means: @intrinsic("cast", a static reference to values, a pointer to UI reference)
 no UI action means: @intrinsic("construct", a pointer)
 
-UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} at {integer:left} {integer:top} measuring {integer:width} by {integer:height} styled {C string:variant} means: a static reference to @intrinsic("construct", UI element, kind, text, color, columns, rows, border, UI children of children, the length of children, action, left, top, width, height, variant)
+UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} at {integer:left} {integer:top} measuring {integer:width} by {integer:height} styled {C string:variant} means: a static reference to @intrinsic("construct", UI element, kind, text, color, columns, rows, border, UI children of children, the length of children, action, left, top, width, height, variant, no UI appearance, text, "")
 UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} means: UI node kind with text colored color sized columns by rows bordered border containing children acting action at 0 0 measuring 0 by 0 styled ""
 a UI container of kind {integer:kind} containing {an array:children} means: UI node kind with "" colored "" sized 0 by 0 bordered 0 containing children acting no UI action
+
+{UI reference:node} wearing {UI appearance reference:appearance} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, appearance, node's content, node's destination)
+{UI reference:node} with initial text {C string:content} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, content, node's destination)
+{UI reference:node} leading to {C string:destination} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, destination)
 
 button {C string:label} means: UI node 2 with label colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
 col {C string:label} means: UI node 5 with label colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
@@ -93,12 +101,26 @@ class:
 
 class:
     patterns:
+        UI text edit
+    members:
+        before as a string
+        after as a string
+        anchor as an integer
+        caret as an integer
+        position as an integer
+        next as a pointer to UI text edit
+
+class:
+    patterns:
         UI value
     members:
         target as UI reference
         text as a string
         number as an integer
         next as a pointer to UI value
+        undo as a pointer to UI text edit
+        redo as a pointer to UI text edit
+        destination as a string
 
 class:
     patterns:
@@ -121,6 +143,7 @@ class:
         reduced motion as a boolean
         revision as an integer
         observers as a pointer to UI observer
+        event target as UI reference
 
 to invalidate {a pointer to UI instance:instance}:
     increment instance's revision
@@ -195,7 +218,10 @@ to click {UI reference:button} in {a pointer to UI instance:instance}:
     set handler to instance's handlers
     loop while handler != @intrinsic("construct", a pointer to UI handler):
         if handler's target = button:
+            set previous to instance's event target
+            set instance's event target to button
             @intrinsic("call pointer", handler's action, nothing, instance)
+            set instance's event target to previous
             invalidate instance
             return nothing
         set handler to handler's next
@@ -214,10 +240,19 @@ to close {a pointer to UI instance:instance}:
     set value to instance's values
     loop while value != @intrinsic("construct", a pointer to UI value):
         set next to value's next
+        release UI text edits value's undo
+        release UI text edits value's redo
         destroy the value at value
         deallocate value
         set value to next
     set instance's values to @intrinsic("construct", a pointer to UI value)
+
+to release UI text edits {a pointer to UI text edit:edit}:
+    loop while edit != @intrinsic("construct", a pointer to UI text edit):
+        set next to edit's next
+        destroy the value at edit
+        deallocate edit
+        set edit to next
 
 class:
     patterns:

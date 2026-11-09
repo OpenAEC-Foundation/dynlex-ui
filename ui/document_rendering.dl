@@ -1,0 +1,79 @@
+import document_layout.dl
+import outlines.dl
+import animation.dl
+import clipping.dl
+import document_scrolling.dl
+import paragraph_rendering.dl
+import document_tabs_rendering.dl
+
+to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
+    set appearance to layout's appearance
+    if appearance's hidden:
+        return nothing
+    increment view's paint serial
+    set layout's paint serial to view's paint serial
+    set box to layout's bounds
+    set box's x to box's x + x
+    set box's y to box's y + y
+    if appearance's sticky:
+        set box's y to the maximum of 0.0 and (box's y)
+    set layout's painted bounds to box
+    set kind to layout's node's kind
+    if appearance's filled or (((kind = 20) or (kind = 43)) or (kind = 44)):
+        set layout's paint generation to view's paint count
+        set layout's hit bounds to the UI intersection of box and (view's hit bounds)
+    if appearance's filled:
+        draw a rounded UI box box with radius (appearance's radius) in (appearance's background) on frame
+    if appearance's border width > 0.0:
+        draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
+    if (((kind = 42) or (kind = 43)) or (kind = 44)) or (kind = 46):
+        if (kind = 43) or (kind = 44):
+            set target to 0.0
+            if (view's hot = layout) or ((view's focused = layout) and (view's keyboard focus)):
+                set target to 1.0
+            set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
+            if (layout's hover > 0.01) and (kind = 43):
+                set tint to appearance's foreground
+                draw a rounded UI surface box with radius (appearance's radius) from tint to tint opacity ((layout's hover * 20.4) as an integer) feathered by 0.75 on frame
+        set top to box's y + appearance's padding
+        set view's selectable to kind != 43
+        set view's text source to the address of (layout's text source)
+        set clip to UI box at (box's x + appearance's padding) (box's y + appearance's padding) sized (box's width - appearance's padding * 2.0) (box's height - appearance's padding * 2.0)
+        set saved to a UI clip restricted to clip in view on frame
+        if kind = 44:
+            keep the UI caret visible in layout within clip in view
+            set top to top - layout's scroll position
+        set line to layout's lines
+        loop while line != @intrinsic("construct", a pointer to UI text line):
+            set left to box's x + appearance's padding
+            if kind = 44:
+                set left to left - layout's text scroll
+            if appearance's centered:
+                set left to box's x + (box's width - line's width) / 2.0
+            draw UI row line in layout at left (top + line's top + line's ascent) on frame
+            set line to line's next
+        set view's text source to @intrinsic("construct", a pointer to UI text source)
+        restore UI clip saved in view on frame
+    else if kind = 48:
+        draw document UI tabs layout in box in view on frame
+    else if kind = 20:
+        set action to the action for (layout's node) in (view's instance) for event 1
+        require condition (action != no UI action) reporting "The UI surface has no painting callback"
+        set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
+        @intrinsic("call pointer", action, nothing, the address of painting)
+    else:
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            if child's appearance's sticky = false:
+                draw document UI layout child at (box's x) (box's y) in view on frame
+            set child to child's next
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            if child's appearance's sticky:
+                draw document UI layout child at (box's x) (box's y) in view on frame
+            set child to child's next
+
+to paint the UI document in {a pointer to UI view:view} on {UI frame:frame}:
+    set layout to view's layout
+    set layout's scroll position to UI value (layout's scroll position) approaching (layout's scroll target) at speed 18.0 in view
+    draw document UI layout layout at 0.0 (0.0 - layout's scroll position) in view on frame

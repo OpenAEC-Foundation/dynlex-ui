@@ -1,0 +1,42 @@
+import shapes.dl
+
+# A border is a ring of coverage, leaving its interior untouched. This also
+# works over images and shader surfaces whose background cannot be repainted.
+to draw a rounded UI outline {UI bounds:box} with radius {floating-point number:radius} width {floating-point number:width} in {UI paint:ink} on {UI frame:frame}:
+    if frame's drawable = false:
+        return nothing
+    set limit to (the minimum of (box's width) and (box's height)) / 2.0
+    if width >= limit:
+        draw a rounded UI box box with radius radius in ink on frame
+        return nothing
+    set rounding to the minimum of limit and (the maximum of 0.5 and radius)
+    set inside to UI box at (box's x + width) (box's y + width) sized (box's width - width * 2.0) (box's height - width * 2.0)
+    set {inner rounding} to the maximum of 0.5 and (rounding - width)
+    set steps to the maximum of 5 and (((the square root of (rounding * 2.0)) as an integer) + 3)
+    set count to steps * 4
+    set paint to the linear UI ink of ink on frame
+    start triangles in frame
+    set index to 0
+    loop while index < count:
+        set next to (index + 1) mod count
+        set {points A} to [the UI corner point index of steps on box rounded by rounding expanded by 0.75, the UI corner point index of steps on box rounded by rounding expanded by -0.5, the UI corner point index of steps on inside rounded by inner rounding expanded by 0.5, the UI corner point index of steps on inside rounded by inner rounding expanded by -0.75]
+        set {points B} to [the UI corner point next of steps on box rounded by rounding expanded by 0.75, the UI corner point next of steps on box rounded by rounding expanded by -0.5, the UI corner point next of steps on inside rounded by inner rounding expanded by 0.5, the UI corner point next of steps on inside rounded by inner rounding expanded by -0.75]
+        set coverage to [0, 255, 255, 0]
+        set band to 0
+        loop while band < 3:
+            set {first A} to the item at band in points A
+            set {first B} to the item at band in points B
+            set {second A} to the item at (band + 1) in points A
+            set {second B} to the item at (band + 1) in points B
+            set {first alpha} to the item at band in coverage
+            set {second alpha} to the item at (band + 1) in coverage
+            add UI vertex first A in paint with alpha first alpha to frame
+            add UI vertex first B in paint with alpha first alpha to frame
+            add UI vertex second B in paint with alpha second alpha to frame
+            add UI vertex first A in paint with alpha first alpha to frame
+            add UI vertex second B in paint with alpha second alpha to frame
+            add UI vertex second A in paint with alpha second alpha to frame
+            increment band
+        increment index
+    finish triangles in frame
+    use vertex color red 255, green 255 and blue 255 in frame

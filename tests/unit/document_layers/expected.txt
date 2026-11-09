@@ -1,0 +1,1 @@
+Document hit testing follows paint order and preserves hover and selection.

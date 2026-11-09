@@ -3,7 +3,8 @@ import events.dl
 import lib/utf8.dl
 
 # Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
-# 6 key release, 7 focus loss, 8 surface refresh, 9 key repeat, 10 composition.
+# 6 key release, 7 focus loss, 8 refresh, 9 repeat, 10 composition,
+# 11 platform response (key=request ID, modifiers=status), 12 platform notification.
 to queue UI input of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {string:text} in {a pointer to UI view:view}:
     set event to @intrinsic("construct", UI input event, kind, key, x, y, modifiers, text, @intrinsic("construct", a pointer to UI input event))
     set entry to storage for one slot initialized with event
@@ -19,6 +20,8 @@ to process UI input in {a pointer to UI view:view}:
         set event to view's input first
         set view's input first to event's next
         set view's input kind to event's kind
+        set view's input code to event's key
+        set view's message to event's text
         set view's modifiers to event's modifiers
         set view's key press to -1
         set view's typed text to ""

@@ -1,0 +1,1 @@
+Static appearances support reuse and viewport rules.

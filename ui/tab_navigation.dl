@@ -1,0 +1,31 @@
+import view.dl
+import text.dl
+import tabs.dl
+
+to navigate UI tabs in {a pointer to UI view:view}:
+    if (view's keyboard focus = false) or (view's focused = @intrinsic("construct", a pointer to UI layout)):
+        return nothing
+    if view's focused's node's kind != 29:
+        return nothing
+    set direction to 0
+    if view's key press = 263:
+        set direction to -1
+    if view's key press = 262:
+        set direction to 1
+    if (direction = 0) and ((view's key press != 268) and (view's key press != 269)):
+        return nothing
+    set group to view's focused's parent
+    set current to 0
+    loop while (the UI child at current in group) != view's focused's node:
+        increment current
+    set index to ((current + direction) + group's count) mod group's count
+    if view's key press = 268:
+        set index to 0
+    if view's key press = 269:
+        set index to group's count - 1
+    if group's kind = 28:
+        set view's focus order to view's focus order + (index - current)
+    else:
+        clear UI selection in view
+    activate (the UI child at index in group) belonging to group in (view's instance)
+    set view's key press to -1

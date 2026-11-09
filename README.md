@@ -14,8 +14,7 @@ and IME events. Application UI needs no HTML or CSS.
 
 ## Try it
 
-Use the compiler changes on `codex/ui-framework` until they are merged into DynLex.
-From this checkout, with the built compiler checkout at `../dynlex`:
+From this checkout, with a built DynLex compiler checkout at `../dynlex`:
 
 ```sh
 python3 scripts/build.py ribbon --dynlex ../dynlex
@@ -62,7 +61,8 @@ so another project can import `/path/to/dynlex-ui/ui/native.dl` or `ui/browser.d
 without using this checkout as its working directory. Font paths are supplied by
 the application. See
 [the ribbon interface](examples/ribbon/interface.dl), [the text example](examples/text),
-and [section authoring](docs/sections.md). Each demo keeps its description, application
+and [section authoring](docs/sections.md). [Responsive documents](docs/documents.md)
+cover appearances, rich paragraphs, editors and tab groups. Each demo keeps its description, application
 behavior and platform entry points separate.
 
 A view paints on first use, changes, resize or an active transition. Native windows
@@ -72,8 +72,9 @@ including a press/release pair received before the next paint.
 
 Text selection and editing use UTF-8 scalar boundaries and measured advances on
 both platforms. Clipboard copy/cut/paste and browser IME composition are supported.
-This is not yet a shaping engine: grapheme-cluster navigation, bidirectional editing,
-rich text and a screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
+Documents also support rich paragraphs, source-anchored selection, multiline
+editing and undo/redo. Grapheme-cluster navigation, bidirectional editing and a
+screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
 font fallback for missing glyphs. Browser font masks are clipped before rasterization,
 so long fields do not allocate textures as wide as their entire contents.
 

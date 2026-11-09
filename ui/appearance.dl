@@ -1,0 +1,167 @@
+# Immutable appearance rules. Resolution is shared by native and browser views.
+import lib/sections.dl
+import geometry.dl
+import lib/check.dl
+
+class:
+    patterns:
+        UI appearance
+    members:
+        rules as a pointer to UI appearance rule
+        count as an integer
+
+class:
+    patterns:
+        UI appearance rule
+    members:
+        kind as an integer
+        number as a floating-point number
+        ink as UI paint
+        text as a C string
+        appearance as a pointer to UI appearance
+
+UI appearance reference means: a pointer to UI appearance
+no UI appearance means: a static reference to @intrinsic("construct", UI appearance, @intrinsic("construct", a pointer to UI appearance rule), 0)
+UI appearance rule {integer:kind} valued {a value:number} means: @intrinsic("construct", UI appearance rule, kind, number as a floating-point number, UI ink 0 0 0, "", no UI appearance)
+UI appearance rule {integer:kind} colored {UI paint:ink} means: @intrinsic("construct", UI appearance rule, kind, 0.0, ink, "", no UI appearance)
+
+section appearance {name}:
+    declares: name
+    result: UI appearance reference
+    body:
+        rules: many UI appearance rule
+    value:
+        a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to (the body's rules), a pointer to UI appearance rule), the length of (the body's rules))
+
+section when viewport is below {a value:width}:
+    result: UI appearance rule
+    body:
+        rules: many UI appearance rule
+    value:
+        @intrinsic("construct", UI appearance rule, 100, width as a floating-point number, UI ink 0 0 0, "", a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to (the body's rules), a pointer to UI appearance rule), the length of (the body's rules)))
+
+use {UI appearance reference:appearance} means: @intrinsic("construct", UI appearance rule, 0, 0.0, UI ink 0 0 0, "", appearance)
+padding is {a value:number} means: UI appearance rule 1 valued number
+gap is {a value:number} means: UI appearance rule 2 valued number
+maximum width is {a value:number} means: UI appearance rule 3 valued number
+font size is {integer:number} means: UI appearance rule 4 valued number
+line spacing is {a value:number} means: UI appearance rule 5 valued number
+text is {UI paint:ink} means: UI appearance rule 6 colored ink
+background is {UI paint:ink} means: UI appearance rule 7 colored ink
+corner radius is {a value:number} means: UI appearance rule 8 valued number
+border width is {a value:number} means: UI appearance rule 9 valued number
+border is {UI paint:ink} means: UI appearance rule 10 colored ink
+columns are {integer:number} means: UI appearance rule 11 valued number
+stack below {a value:number} means: UI appearance rule 12 valued number
+minimum height is {a value:number} means: UI appearance rule 13 valued number
+text is centered means: UI appearance rule 14 valued 1
+flow is horizontal means: UI appearance rule 15 valued 1
+font is {C string:path} means: @intrinsic("construct", UI appearance rule, 16, 0.0, UI ink 0 0 0, path, no UI appearance)
+position is sticky means: UI appearance rule 17 valued 1
+minimum width is {a value:number} means: UI appearance rule 18 valued number
+content is hidden means: UI appearance rule 19 valued 1
+height is {a value:number} means: UI appearance rule 20 valued number
+font is bold means: UI appearance rule 21 valued 1
+lines do not wrap means: UI appearance rule 22 valued 1
+flow is overlay means: UI appearance rule 23 valued 1
+
+class:
+    patterns:
+        UI appearance settings
+    members:
+        padding as a floating-point number
+        gap as a floating-point number
+        maximum width as a floating-point number
+        font size as an integer
+        line spacing as a floating-point number
+        foreground as UI paint
+        background as UI paint
+        filled as a boolean
+        radius as a floating-point number
+        border width as a floating-point number
+        border ink as UI paint
+        columns as an integer
+        stack below as a floating-point number
+        minimum height as a floating-point number
+        centered as a boolean
+        horizontal as a boolean
+        font path as a C string
+        sticky as a boolean
+        minimum width as a floating-point number
+        hidden as a boolean
+        height as a floating-point number
+        bold as a boolean
+        unwrapped as a boolean
+        overlay as a boolean
+
+to get default UI appearance settings:
+    set result to a new UI appearance settings
+    set result's font size to 16
+    set result's line spacing to 1.5
+    set result's foreground to UI ink 25 29 35
+    set result's columns to 1
+    set result's font path to ""
+    return result
+
+to apply UI appearance {UI appearance reference:appearance} for {floating-point number:viewport} to {a pointer to UI appearance settings:settings}:
+    set index to 0
+    loop while index < appearance's count:
+        set rule to the item at index in (appearance's rules)
+        set kind to rule's kind
+        if (kind = 0) or ((kind = 100) and (viewport < rule's number)):
+            apply UI appearance (rule's appearance) for viewport to settings
+        if kind = 1:
+            set settings's padding to rule's number
+        if kind = 2:
+            set settings's gap to rule's number
+        if kind = 3:
+            set settings's maximum width to rule's number
+        if kind = 4:
+            set settings's font size to rule's number as an integer
+        if kind = 5:
+            set settings's line spacing to rule's number
+        if kind = 6:
+            set settings's foreground to rule's ink
+        if kind = 7:
+            set settings's background to rule's ink
+            set settings's filled to true
+        if kind = 8:
+            set settings's radius to rule's number
+        if kind = 9:
+            set settings's border width to rule's number
+        if kind = 10:
+            set settings's border ink to rule's ink
+        if kind = 11:
+            set settings's columns to rule's number as an integer
+        if kind = 12:
+            set settings's stack below to rule's number
+        if kind = 13:
+            set settings's minimum height to rule's number
+        if kind = 14:
+            set settings's centered to rule's number != 0.0
+        if kind = 15:
+            set settings's horizontal to rule's number != 0.0
+        if kind = 16:
+            set settings's font path to rule's text
+        if kind = 17:
+            set settings's sticky to rule's number != 0.0
+        if kind = 18:
+            set settings's minimum width to rule's number
+        if kind = 19:
+            set settings's hidden to rule's number != 0.0
+        if kind = 20:
+            set settings's height to rule's number
+        if kind = 21:
+            set settings's bold to rule's number != 0.0
+        if kind = 22:
+            set settings's unwrapped to rule's number != 0.0
+        if kind = 23:
+            set settings's overlay to rule's number != 0.0
+        increment index
+
+to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport}:
+    set result to default UI appearance settings
+    apply UI appearance appearance for viewport to (the address of result)
+    require condition ((result's font size > 0) and (result's line spacing > 0.0)) reporting "Text size and line spacing must be positive"
+    require condition ((result's padding >= 0.0) and (result's columns > 0)) reporting "Appearance padding and columns must be valid"
+    return result

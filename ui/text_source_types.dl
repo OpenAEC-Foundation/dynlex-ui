@@ -1,0 +1,23 @@
+import declarations.dl
+
+class:
+    patterns:
+        UI text source
+    members:
+        text as a string
+        element as UI reference
+        order as an integer
+        generation as an integer
+
+class:
+    patterns:
+        UI text selection
+    members:
+        anchor source as a pointer to UI text source
+        caret source as a pointer to UI text source
+        anchor as an integer
+        caret as an integer
+        dragging as a boolean
+        composition as a string
+        preferred x as a floating-point number
+        vertical as a boolean

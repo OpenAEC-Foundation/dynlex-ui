@@ -1,0 +1,25 @@
+import ../../helpers/driver.dl
+import ../../../ui/outlines.dl
+
+document outline test:
+
+set instance to an instance of outline test
+set view to a UI view of (the address of instance) sized 200 by 120 using font "regular" with the test UI driver
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+draw a rounded UI outline (UI box at 10 10 sized 100 80) with radius 12.0 width 3.0 in (UI ink 30 40 50) on frame
+require condition (view's vertex count > 0) reporting "The outline emitted no geometry"
+set index to 0
+loop while index < view's vertex count:
+    set a to the item at index in (view's vertices)
+    set b to the item at (index + 1) in (view's vertices)
+    set c to the item at (index + 2) in (view's vertices)
+    set first to (b's x - a's x) * (50.0 - a's y) - (b's y - a's y) * (60.0 - a's x)
+    set second to (c's x - b's x) * (50.0 - b's y) - (c's y - b's y) * (60.0 - b's x)
+    set third to (a's x - c's x) * (50.0 - c's y) - (a's y - c's y) * (60.0 - c's x)
+    set positive to ((first > 0.0) and (second > 0.0)) and (third > 0.0)
+    set negative to ((first < 0.0) and (second < 0.0)) and (third < 0.0)
+    require condition ((positive = false) and (negative = false)) reporting "A border triangle covered the transparent center"
+    set index to index + 3
+close the address of view
+close the address of instance
+print line "Rounded borders preserve transparent interiors."

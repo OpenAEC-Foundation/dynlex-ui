@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 
 
@@ -37,10 +38,13 @@ def main():
     subprocess.run(['python3', 'scripts/test_ui_svg.py'], cwd=project, check=True)
     print(f'{count} shared UI cases passed.', flush=True)
     if args.native:
+        manifest = subprocess.check_output([sys.executable,
+            str(args.dynlex.resolve() / 'scripts/find_vulkan_icd.py')], text=True).strip()
+        native_environment = dict(os.environ, VK_DRIVER_FILES=manifest, VK_ICD_FILENAMES=manifest)
         for name in ['sections', 'ribbon', 'snake', 'text']:
             subprocess.run(['python3', f'scripts/test_{"ui_sections" if name == "sections" else name + "_ui"}.py',
-                            str(project), str(compiler)], cwd=project, check=True)
-        subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, check=True)
+                            str(project), str(compiler)], cwd=project, env=native_environment, check=True)
+        subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
         for name in ['ribbon', 'snake', 'text']:
             subprocess.run(['python3', 'scripts/build.py', name, '--dynlex', str(args.dynlex.resolve())], cwd=project, check=True)
@@ -50,6 +54,8 @@ def main():
             environment = dict(os.environ, DYNLEX_BACKGROUND_BROWSER='1', XDG_SESSION_TYPE='x11')
             environment.pop('WAYLAND_DISPLAY', None)
             environment.pop('WAYLAND_SOCKET', None)
+            environment.pop('VK_DRIVER_FILES', None)
+            environment.pop('VK_ICD_FILENAMES', None)
             for mode in ['webgpu', 'webgl-no-adapter', 'webgl-no-api']:
                 subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', f'dist/{name}', mode], cwd=project, env=environment, check=True)
 

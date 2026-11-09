@@ -1,8 +1,9 @@
 import { createGpu } from "./gpu.js";
 import { loadFonts, createFontServices } from "./fonts.js";
 import { connectInput } from "./input.js";
+import { createGraphicsServices } from './graphics-services.js';
 
-export async function createUiHost(root, fontPaths, base, runtime) {
+export async function createUiHost(root, fontPaths, base, runtime, options = {}) {
   const surfaces = new Map(), resources = new Map(), drawings = new Map();
   let instance, nextId = 1;
   const id = () => nextId++;
@@ -28,7 +29,9 @@ export async function createUiHost(root, fontPaths, base, runtime) {
   const gpu = await createGpu(reportError);
   const faces = await loadFonts(fontPaths, base);
   const fonts = createFontServices(gpu, faces, resources, id);
+  const graphics = createGraphicsServices({ gpu, surfaces, resources, id, memory, text, base });
   const callback = number => instance.exports.__indirect_function_table.get(number);
+  const requests = new Map();
 
   function schedule(surface) {
     if (surface.closed || surface.raf !== null || !surface.tick) return;
@@ -73,8 +76,10 @@ export async function createUiHost(root, fontPaths, base, runtime) {
     ui_close(handle) {
       const surface = surfaces.get(handle);
       surface.closed = true;
+      for (const request of requests.values()) if (request.surface === surface) request.controller.abort();
       if (surface.raf !== null) cancelAnimationFrame(surface.raf);
-      surface.disconnect(); gpu.releaseSurface(surface); surface.canvas.remove(); surfaces.delete(handle);
+      surface.disconnect(); graphics.closeSurface(surface);
+      gpu.releaseSurface(surface); surface.canvas.remove(); surfaces.delete(handle);
     },
     ui_poll(handle, width, height, scale, seconds) {
       const surface = surfaces.get(handle); resized(surface);
@@ -120,9 +125,37 @@ export async function createUiHost(root, fontPaths, base, runtime) {
       resources.set(handle, gpu.mask(surface, fonts.coverage(context, size * 4, size * 4), size * 4, size * 4));
       drawings.delete(handle); return handle;
     },
-    ui_release_texture(handle) { const resource = resources.get(handle);
-      resources.delete(handle); gpu.retire(resource.texture); },
+    ui_release_texture(handle) {
+      if (graphics.owns(handle)) graphics.release(handle);
+      else { const resource = resources.get(handle); resources.delete(handle); gpu.retire(resource.texture); }
+    },
     ui_copy(pointer, count) { navigator.clipboard.writeText(text(pointer, count)).catch(reportError); },
+    ui_request(handle, name, pointer, count) {
+      const surface = surfaces.get(handle), request = id(), controller = new AbortController();
+      const service = cstring(name), payload = JSON.parse(text(pointer, count));
+      requests.set(request, { controller, surface });
+      Promise.resolve().then(() => {
+        if (service === 'graphics') return graphics.request(payload, { signal: controller.signal }, surface);
+        if (!Object.hasOwn(options.services ?? {}, service)) throw new Error(`Unknown platform service: ${service}`);
+        return options.services[service](payload, { signal: controller.signal, emit: message => {
+          if (!surface.closed) { send(surface, 12, 0, 0, 0, 0, JSON.stringify(message)); schedule(surface); }
+        } });
+      }).then(result => {
+        if (!surface.closed && !controller.signal.aborted) {
+          send(surface, 11, request, 0, 0, 0, JSON.stringify(result)); schedule(surface);
+        }
+      }).catch(error => {
+        if (controller.signal.aborted) return;
+        console.error(`DynLex platform service ${service}:`, error);
+        if (!surface.closed) { send(surface, 11, request, 0, 0, 1, JSON.stringify({ error: 'An error occurred. Check the log.' })); schedule(surface); }
+      }).finally(() => requests.delete(request));
+      return request;
+    },
+    ui_cancel_request(request) {
+      const pending = requests.get(request);
+      if (pending === undefined) return false;
+      pending.controller.abort(); return true;
+    },
     ui_cursor(handle, shape) { surfaces.get(handle).canvas.style.cursor = ["default", "pointer", "text"][shape]; },
     ui_wake(handle) { schedule(surfaces.get(handle)); },
     ui_launch(handle, view, tick, dispose, input) {
@@ -132,9 +165,11 @@ export async function createUiHost(root, fontPaths, base, runtime) {
       schedule(surface);
     }
   };
+  Object.assign(imports, graphics.imports);
   return { imports, attach(value) { instance = value; },
     close() {
       for (const surface of [...surfaces.values()]) surface.dispose(surface.view);
+      for (const request of requests.values()) request.controller.abort();
       for (const { face } of faces.values()) document.fonts.delete(face);
       gpu.close();
     } };

@@ -1,0 +1,46 @@
+import ../../helpers/driver.dl
+
+window focus test:
+    text field "Name" containing "a"
+    button "Done"
+    code:
+        when the "Done" button is clicked:
+            increment the value at (this window's state as a pointer to integer)
+
+set count to 0
+set instance to an instance of focus test with state (the address of count)
+set view to a UI view of (the address of instance) sized 500 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "b" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (the control labeled "Name" in (the address of instance)) in (the address of instance))'s text = "ab") reporting "Typing after queued focus was lost before painting"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (count = 1) reporting "The blurred field consumed the next control's Enter key"
+require condition (view's selection's caret source = @intrinsic("construct", a pointer to UI text source)) reporting "Leaving the editor retained its active caret"
+close the address of view
+close the address of instance
+
+document multiline focus test:
+    editor "Program" containing "x" using no UI appearance
+    link "Finish" to "/next" using no UI appearance
+set instance to an instance of multiline focus test
+set view to a UI view of (the address of instance) sized 500 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "y" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (the control labeled "Program" in (the address of instance)) in (the address of instance))'s text = "xy") reporting "Multiline focus required a paint before accepting input"
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's focused's node's text = "Finish") reporting "Escape did not let Tab leave the multiline editor"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "Z" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (the control labeled "Program" in (the address of instance)) in (the address of instance))'s text = "xyZ") reporting "Returning focus did not reactivate editing before paint"
+close the address of view
+close the address of instance
+print line "Editor focus and blur take effect between queued events."

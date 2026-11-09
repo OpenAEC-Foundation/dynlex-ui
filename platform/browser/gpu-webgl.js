@@ -1,5 +1,6 @@
 import { createWebGlProgram } from "./graphics-backend.js";
 import { clippedCommands } from "./draw-buffer.js";
+import { createWebGlShader } from './shader-webgl.js';
 
 const vertexShader = `#version 300 es
 precision highp float;
@@ -19,11 +20,13 @@ void main() {
 const fragmentShader = `#version 300 es
 precision highp float;
 uniform sampler2D mask;
+uniform bool colored;
 in vec2 maskPoint;
 in vec4 paint;
 out vec4 color;
 void main() {
-  color = vec4(paint.rgb, paint.a * texture(mask, maskPoint).r);
+  vec4 sampleColor = texture(mask, maskPoint);
+  color = colored ? paint * sampleColor : vec4(paint.rgb, paint.a * sampleColor.r);
 }`;
 
 const copyVertexShader = `#version 300 es
@@ -71,7 +74,8 @@ export function createWebGl(reportError) {
       const lost = () => reportError(new Error("The WebGL rendering context was lost"));
       canvas.addEventListener("webglcontextlost", lost);
       return { gl, program, copy, buffer, array, empty, framebuffer, lost, destroy,
-        viewport: gl.getUniformLocation(program, "viewport"), target: null, targetWidth: 0, targetHeight: 0 };
+        viewport: gl.getUniformLocation(program, "viewport"), colored: gl.getUniformLocation(program, 'colored'),
+        target: null, targetWidth: 0, targetHeight: 0 };
     } catch (error) {
       destroy();
       throw error;
@@ -89,13 +93,22 @@ export function createWebGl(reportError) {
     gl.texStorage2D(gl.TEXTURE_2D, 1, format, width, height);
     if (pixels !== null) {
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, gl.RED, gl.UNSIGNED_BYTE, pixels);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height,
+        format === gl.R8 ? gl.RED : gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     }
     return { handle, destroy() { gl.deleteTexture(handle); } };
   }
 
   function mask(surface, pixels, width, height) {
-    return { texture: texture(surface.gl, width, height, surface.gl.R8, pixels), width, height };
+    return { texture: texture(surface.gl, width, height, surface.gl.R8, pixels), width, height, colored: false };
+  }
+  function image(surface, pixels, width, height) {
+    return { texture: texture(surface.gl, width, height, surface.gl.SRGB8_ALPHA8, pixels), width, height, colored: true };
+  }
+  function shader(surface, descriptor) {
+    return createWebGlShader(surface.gl, descriptor, (width, height) => ({
+      texture: texture(surface.gl, width, height, surface.gl.SRGB8_ALPHA8, null), width, height, colored: true
+    }));
   }
 
   function present(surface, width, height, scale) {
@@ -132,6 +145,7 @@ export function createWebGl(reportError) {
     for (const { command, left, top, width, height } of clippedCommands(surface, scale)) {
       gl.scissor(left, canvas.height - top - height, width, height);
       const resource = command.texture === null ? surface.white : command.texture;
+      gl.uniform1i(surface.colored, resource.colored ? 1 : 0);
       gl.bindTexture(gl.TEXTURE_2D, resource.texture.handle);
       gl.drawArrays(gl.TRIANGLES, command.start, command.count);
     }
@@ -148,5 +162,5 @@ export function createWebGl(reportError) {
     surface.destroy();
   }
 
-  return { surface, mask, present, releaseSurface, retire(resource) { resource.destroy(); }, close() {} };
+  return { surface, mask, image, shader, present, releaseSurface, retire(resource) { resource.destroy(); }, close() {} };
 }

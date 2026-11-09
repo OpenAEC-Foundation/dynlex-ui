@@ -1,0 +1,47 @@
+import document_fonts.dl
+
+to prepare UI paragraph {a pointer to UI layout:layout} in {a pointer to UI view:view}:
+    set layout's content to the string form of ""
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        require condition ((child's node's kind = 43) or (child's node's kind = 46)) reporting "Paragraphs contain words and inline links"
+        set appearance to default UI appearance settings
+        set appearance's foreground to layout's appearance's foreground
+        set appearance's background to layout's appearance's background
+        set appearance's font size to layout's appearance's font size
+        set appearance's font path to layout's appearance's font path
+        set appearance's bold to layout's appearance's bold
+        set appearance's line spacing to layout's appearance's line spacing
+        apply UI appearance (child's node's appearance) for (view's width as a floating-point number) to (the address of appearance)
+        set child's appearance to appearance
+        set child's typeface to a document UI font for appearance in view
+        set child's content to (the UI value for (child's node) in (view's instance))'s text
+        set child's text start to layout's content's length
+        if appearance's hidden = false:
+            set layout's content to layout's content + child's content
+        set child's text end to layout's content's length
+        set child to child's next
+
+to get the width from {integer:start} to {integer:end} in UI paragraph {a pointer to UI layout:layout}:
+    if layout's rich = false:
+        return the width of (the substring of (layout's content) from start spanning (end - start) bytes) using (layout's typeface)
+    set advance to 0.0
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set left to the maximum of start and (child's text start)
+        set right to the minimum of end and (child's text end)
+        if right > left:
+            set advance to advance + (the width of (the substring of (layout's content) from left spanning (right - left) bytes) using (child's typeface))
+        set child to child's next
+    return advance
+
+to measure UI row {a pointer to UI text line:line} in {a pointer to UI layout:layout}:
+    set line's ascent to layout's typeface's size as a floating-point number
+    set line's height to line's ascent * layout's appearance's line spacing
+    if layout's rich:
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            if (child's text end > line's start) and (child's text start < line's end):
+                set line's ascent to the maximum of (line's ascent) and (child's typeface's size as a floating-point number)
+                set line's height to the maximum of (line's height) and (child's typeface's size * child's appearance's line spacing)
+            set child to child's next

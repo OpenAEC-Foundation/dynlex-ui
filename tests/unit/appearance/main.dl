@@ -1,0 +1,22 @@
+import ../../../ui/appearance.dl
+
+appearance body appearance:
+    padding is 24
+    gap is 18
+    text is UI ink 10 20 30
+    font size is 18
+
+appearance headline appearance:
+    use body appearance
+    font size is 72
+    maximum width is 960
+    when viewport is below 640:
+        font size is 36
+        padding is 16
+
+set wide to UI appearance headline appearance resolved for 1000.0
+set narrow to UI appearance headline appearance resolved for 390.0
+require condition ((wide's font size = 72) and (wide's padding = 24.0)) reporting "Base appearance was not inherited"
+require condition ((narrow's font size = 36) and (narrow's padding = 16.0)) reporting "Responsive appearance was not resolved"
+require condition ((narrow's foreground's green = 20) and (narrow's gap = 18.0)) reporting "Responsive rules discarded the base appearance"
+print line "Static appearances support reuse and viewport rules."

@@ -1,6 +1,7 @@
 # Retained geometry: explicit regions compose with ordinary rows and columns.
 import theme.dl
 import ribbon_layout.dl
+import text_lines.dl
 
 to get a UI layout for {UI reference:node} inside {UI reference:parent} with [width] {integer:available} using {UI theme:theme}:
     if (((node's kind >= 6) and (node's kind <= 10)) or ((node's kind = 25) or (node's kind = 26))) or ((node's kind = 36) or (node's kind = 37)):
@@ -113,4 +114,6 @@ to release UI layout {a pointer to UI layout:layout}:
         set next to child's next
         release UI layout child
         set child to next
+    release UI text lines in layout
+    destroy the value at layout
     deallocate layout

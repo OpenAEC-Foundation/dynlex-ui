@@ -10,51 +10,70 @@ to get the UI text prefix of {string:text} ending at {integer:end}:
 
 to get the [first] selected UI byte in {a pointer to UI text run:run} in {a pointer to UI view:view}:
     set selection to view's selection
-    if (selection's anchor run = @intrinsic("construct", a pointer to UI text run)) or (selection's caret run = @intrinsic("construct", a pointer to UI text run)):
+    if (selection's anchor source = @intrinsic("construct", a pointer to UI text source)) or (selection's caret source = @intrinsic("construct", a pointer to UI text source)):
         return 0
-    set first to selection's anchor run
-    set last to selection's caret run
+    set first to selection's anchor source
+    set last to selection's caret source
     set start to selection's anchor
     if (first's order > last's order) or ((first = last) and (selection's anchor > selection's caret)):
-        set first to selection's caret run
-        set last to selection's anchor run
+        set first to selection's caret source
+        set last to selection's anchor source
         set start to selection's caret
-    if (run's order < first's order) or (run's order > last's order):
+    if (run's source's order < first's order) or (run's source's order > last's order):
         return 0
-    if run = first:
-        return the minimum of start and (run's text's length)
+    if run's source = first:
+        return the minimum of (run's text's length) and (the maximum of 0 and (start - run's start))
     return 0
 
 to get the [last] selected UI byte in {a pointer to UI text run:run} in {a pointer to UI view:view}:
     set selection to view's selection
-    if (selection's anchor run = @intrinsic("construct", a pointer to UI text run)) or (selection's caret run = @intrinsic("construct", a pointer to UI text run)):
+    if (selection's anchor source = @intrinsic("construct", a pointer to UI text source)) or (selection's caret source = @intrinsic("construct", a pointer to UI text source)):
         return 0
-    set first to selection's anchor run
-    set last to selection's caret run
+    set first to selection's anchor source
+    set last to selection's caret source
     set end to selection's caret
     if (first's order > last's order) or ((first = last) and (selection's anchor > selection's caret)):
-        set first to selection's caret run
-        set last to selection's anchor run
+        set first to selection's caret source
+        set last to selection's anchor source
         set end to selection's anchor
-    if (run's order < first's order) or (run's order > last's order):
+    if (run's source's order < first's order) or (run's source's order > last's order):
         return 0
-    if run = last:
-        return the minimum of end and (run's text's length)
+    if run's source = last:
+        return the minimum of (run's text's length) and (the maximum of 0 and (end - run's start))
     return run's text's length
 
 to get the selected UI text in {a pointer to UI view:view}:
+    set selection to view's selection
+    set first to selection's anchor source
+    set last to selection's caret source
+    set start to selection's anchor
+    set end to selection's caret
     set result to the string form of ""
+    if (first = @intrinsic("construct", a pointer to UI text source)) or (last = @intrinsic("construct", a pointer to UI text source)):
+        return result
+    if (first's order > last's order) or ((first = last) and (start > end)):
+        set first to selection's caret source
+        set last to selection's anchor source
+        set start to selection's caret
+        set end to selection's anchor
     set run to view's texts
+    set previous to @intrinsic("construct", a pointer to UI text source)
     set included to false
     loop while run != @intrinsic("construct", a pointer to UI text run):
-        if run's generation = view's paint count:
-            set start to the first selected UI byte in run in view
-            set end to the last selected UI byte in run in view
-            if end > start:
+        set source to run's source
+        if (run's generation = view's paint count) and (source != previous):
+            if (source's order >= first's order) and (source's order <= last's order):
+                set left to 0
+                set right to source's text's length
+                if source = first:
+                    set left to start
+                if source = last:
+                    set right to end
                 if included:
                     set result to result + "\n"
-                set result to result + (the substring of (run's text) from start spanning (end - start) bytes)
+                set result to result + (the substring of (source's text) from left spanning (right - left) bytes)
                 set included to true
+            set previous to source
         set run to run's next
     return result
 
@@ -62,12 +81,15 @@ to get UI text position of {UI point:point} in {a pointer to UI text run:run}:
     return UI point point untransformed by (run's transform)
 
 to get the UI text byte at {floating-point number:x} in {a pointer to UI text run:run}:
+    return the UI byte at x in (run's text) using (run's typeface)
+
+to get the UI byte at {floating-point number:x} in {string:content} using {UI font:typeface}:
     set offset to 0
     set width to 0.0
-    loop while offset < run's text's length:
-        set character to the UTF8 character at offset in (run's text)
+    loop while offset < content's length:
+        set character to the UTF8 character at offset in content
         require condition (character's valid) reporting "UI text must contain valid UTF-8"
-        set next to the width of (the UI text prefix of (run's text) ending at (character's next)) using (run's typeface)
+        set next to the width of (the UI text prefix of content ending at (character's next)) using typeface
         if x < ((width + next) / 2.0):
             return offset
         set width to next
@@ -85,17 +107,29 @@ to get remember UI [text] {string:text} at {UI point:origin} using {UI font:type
             set view's texts to run
         else:
             set view's last text's next to run
-    if (run's text != text) and (run's element = @intrinsic("construct", UI reference)):
-        if (view's selection's anchor run = run) or (view's selection's caret run = run):
-            clear UI selection in view
+    set source to view's text source
+    set run's paint serial to view's paint serial
+    set run's start to view's text offset
+    set run's end caret to view's text end caret
+    if source = @intrinsic("construct", a pointer to UI text source):
+        set source to the address of (run's owned source)
+        set run's start to 0
+        set run's end caret to true
+        if source's text != text:
+            if (view's selection's anchor source = source) or (view's selection's caret source = source):
+                clear UI selection in view
+        set source's text to text
+    set run's source to source
+    set run's control to view's text control
     set run's text to text
     set run's origin to origin
     set run's typeface to typeface
     set run's transform to view's transform
     set run's clip to view's hit bounds
-    set run's element to view's text element
     increment view's text count
-    set run's order to view's text count
+    if source's generation != view's paint count:
+        set source's order to view's text count
+        set source's generation to view's paint count
     set run's generation to view's paint count
     set view's last text to run
     set view's next text to run's next
@@ -113,15 +147,19 @@ to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
         set left to the width of (the UI text prefix of (run's text) ending at start) using (run's typeface)
         set right to the width of (the UI text prefix of (run's text) ending at end) using (run's typeface)
         draw a rectangle at x (x + left) and y y with width (right - left) and height (run's typeface's size + 4) in color red 190, green 216 and blue 250 in frame
-    if (run's element != @intrinsic("construct", UI reference)) and (view's selection's caret run = run):
-        set caret to the minimum of (view's selection's caret) and (run's text's length)
+    if (run's source's element != @intrinsic("construct", UI reference)) and (view's selection's caret source = run's source):
+        set caret to view's selection's caret - run's start
+        if (caret < 0) or ((caret >= run's text's length) and (run's end caret = false)):
+            return nothing
+        if caret > run's text's length:
+            return nothing
         set offset to the width of (the UI text prefix of (run's text) ending at caret) using (run's typeface)
         draw a rectangle at x (x + offset) and y y with width 1.2 and height (run's typeface's size + 3) in color red 60, green 100 and blue 190 in frame
 
 to finish UI text painting in {a pointer to UI view:view}:
     set run to view's next text
-    if view's selection's anchor run != @intrinsic("construct", a pointer to UI text run):
-        if (view's selection's anchor run's generation != view's paint count) or (view's selection's caret run's generation != view's paint count):
+    if view's selection's anchor source != @intrinsic("construct", a pointer to UI text source):
+        if (view's selection's anchor source's generation != view's paint count) or (view's selection's caret source's generation != view's paint count):
             clear UI selection in view
     loop while run != @intrinsic("construct", a pointer to UI text run):
         set next to run's next
@@ -134,9 +172,9 @@ to finish UI text painting in {a pointer to UI view:view}:
         set view's last text's next to @intrinsic("construct", a pointer to UI text run)
     set view's next text to @intrinsic("construct", a pointer to UI text run)
 
-to synchronize editable UI text {a pointer to UI text run:run} in {a pointer to UI view:view}:
-    set entry to the UI value for (run's element) in (view's instance)
-    if run's text != entry's text:
-        set run's text to entry's text
-        set view's selection's anchor to the minimum of (view's selection's anchor) and (run's text's length)
-        set view's selection's caret to the minimum of (view's selection's caret) and (run's text's length)
+to synchronize editable UI text {a pointer to UI text source:source} in {a pointer to UI view:view}:
+    set entry to the UI value for (source's element) in (view's instance)
+    if source's text != entry's text:
+        set source's text to entry's text
+        set view's selection's anchor to the minimum of (view's selection's anchor) and (source's text's length)
+        set view's selection's caret to the minimum of (view's selection's caret) and (source's text's length)

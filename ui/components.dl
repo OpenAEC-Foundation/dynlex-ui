@@ -16,7 +16,7 @@ primary button {C string:text} means: a UI text component 2 labeled text styled 
 quiet button {C string:text} means: a UI text component 2 labeled text styled "quiet"
 switch {C string:text} means: a UI text component 17 labeled text styled ""
 option {C string:text} means: a UI text component 19 labeled text styled ""
-text field {C string:label} containing {C string:initial} means: a UI text component 39 labeled label styled initial
+text field {C string:label} containing {C string:initial} means: (a UI text component 39 labeled label styled "") with initial text initial
 statistic {C string:text} means: a UI text component 21 labeled text styled ""
 
 section panel at {integer:left} {integer:top} sized {integer:width} by {integer:height}:
@@ -90,12 +90,12 @@ to get the UI value for {UI reference:node} in {a pointer to UI instance:instanc
         set entry to entry's next
     set {new entry} to a new UI value
     set new entry's target to node
-    set new entry's text to node's text
+    set new entry's text to node's content
+    if node's kind = 43:
+        set new entry's destination to node's destination
     if node's kind = 34:
         set index to the position of UI option (the string form of (node's text)) in node
         select UI option index from node into (the address of new entry)
-    if node's kind = 39:
-        set new entry's text to node's variant
     if node's kind = 21:
         set new entry's text to "0"
     set new entry's next to instance's values
@@ -124,6 +124,14 @@ to set the value of {C string:label} in {a pointer to UI instance:instance} to {
     else:
         set entry's number to number
     invalidate instance
+
+to set the destination of {C string:label} in {a pointer to UI instance:instance} to {string:destination}:
+    set node to the control labeled label in instance
+    require condition (node's kind = 43) reporting "Only a link has a navigation destination"
+    set entry to the UI value for node in instance
+    if entry's destination != destination:
+        set entry's destination to destination
+        invalidate instance
 
 to get the value of {C string:label} in {a pointer to UI instance:instance}:
     return (the UI value for (the control labeled label in instance) in instance)'s number
@@ -156,6 +164,12 @@ to get the action for {UI reference:target} in {a pointer to UI instance:instanc
         set handler to handler's next
     return no UI action
 
+to get the UI element {UI reference:node} is interactive in {a pointer to UI instance:instance}:
+    set kind to node's kind
+    if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or ((kind = 35) or (kind = 38))) or (((kind = 39) or (kind = 43)) or (kind = 44)):
+        return true
+    return (the action for node in instance for event 0) != no UI action
+
 to activate {UI reference:node} belonging to {UI reference:parent} in {a pointer to UI instance:instance}:
     set target to node
     if node's kind = 17:
@@ -170,5 +184,8 @@ to activate {UI reference:node} belonging to {UI reference:parent} in {a pointer
         set entry's number to index
     set action to the action for target in instance for event 0
     if action != no UI action:
+        set previous to instance's event target
+        set instance's event target to node
         @intrinsic("call pointer", action, nothing, instance)
+        set instance's event target to previous
     invalidate instance

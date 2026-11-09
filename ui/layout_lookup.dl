@@ -1,0 +1,24 @@
+import layout_types.dl
+
+to get the UI layout for element {UI reference:node} in {a pointer to UI layout:layout}:
+    if layout's node = node:
+        return layout
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set found to the UI layout for element node in child
+        if found != @intrinsic("construct", a pointer to UI layout):
+            return found
+        set child to child's next
+    return @intrinsic("construct", a pointer to UI layout)
+
+to get the UI layout labeled {a value:label} in {a pointer to UI layout:layout}:
+    if layout's node's text = label:
+        return layout
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set found to the UI layout labeled label in child
+        if found != @intrinsic("construct", a pointer to UI layout):
+            return found
+        set child to child's next
+    return @intrinsic("construct", a pointer to UI layout)
+

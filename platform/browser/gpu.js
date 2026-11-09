@@ -6,7 +6,7 @@ import { createDrawBuffer, begin, triangles } from "./draw-buffer.js";
 export async function createGpu(reportError) {
   const { backend, device } = await requestGraphicsBackend();
   const driver = backend === "webgpu" ? await createWebGpu(device, reportError) : createWebGl(reportError);
-  return { ...driver, begin, triangles,
+  return { ...driver, backend, begin, triangles,
     surface(canvas) {
       const surface = Object.assign(driver.surface(canvas), createDrawBuffer(canvas));
       surface.white = driver.mask(surface, new Uint8Array([255]), 1, 1);

@@ -1,0 +1,1 @@
+Multiline editing, visual navigation, indentation and undo work.

@@ -1,6 +1,7 @@
 # Popup content belongs to the description. Views own capture and focus only.
 import view.dl
 import ribbon_scroll.dl
+import focus.dl
 
 to dismiss the UI popup in {a pointer to UI view:view}:
     set view's popup to @intrinsic("construct", a pointer to UI layout)
@@ -8,8 +9,16 @@ to dismiss the UI popup in {a pointer to UI view:view}:
 
 to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     set node to layout's node
-    if node's kind = 39:
+    if (node's kind = 39) or (node's kind = 44):
+        set view's focus order to layout's order
+        set view's keyboard focus to true
+        set view's text focus to @intrinsic("construct", UI reference)
+        refresh UI focus in view
         return nothing
+    if (node's kind = 29) and (layout's parent's kind = 48):
+        clear UI selection in view
+        set group to the UI layout for element (layout's parent) in (view's layout)
+        set view's focus order to group's order
     if node's kind = 38:
         set ribbon to the UI layout for element (layout's parent) in (view's layout)
         set tab to the active UI tab in ribbon for (view's instance)

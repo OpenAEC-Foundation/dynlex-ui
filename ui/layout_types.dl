@@ -1,6 +1,8 @@
 # Renderer-independent data used to arrange UI descriptions.
 import components.dl
 import geometry.dl
+import document_types.dl
+import text_source_types.dl
 
 class:
     patterns:
@@ -36,9 +38,22 @@ class:
         transition as a floating-point number
         painted as a boolean
         paint generation as an integer
+        paint serial as an integer
         hit bounds as UI bounds
         extent as a floating-point number
         order as an integer
         focus next as a pointer to UI layout
         first as a pointer to UI layout
         next as a pointer to UI layout
+        appearance as UI appearance settings
+        typeface as UI font
+        content as a string
+        lines as a pointer to UI text line
+        text source as UI text source
+        text height as a floating-point number
+        text width as a floating-point number
+        text scroll as a floating-point number
+        text start as an integer
+        text end as an integer
+        rich as a boolean
+        tab bounds as UI bounds

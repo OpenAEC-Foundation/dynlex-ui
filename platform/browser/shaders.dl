@@ -1,0 +1,8 @@
+import requests.dl
+
+to get the browser UI texture of shader {a pointer:shader} sized {integer:width} by {integer:height} using {string:values}:
+    set resource to @intrinsic("call", "dynlex_ui", "ui_shader_frame", a pointer, shader, width, height, the data of values, values's length)
+    return @intrinsic("construct", UI texture, resource, width, height)
+
+to set browser UI shader {a pointer:shader} pass {integer:pass} to vertices {a pointer to a 32 bit floating-point number:vertices} counting {integer:count} indexed by {a pointer to a 32 bit unsigned integer:indices} counting {integer:index count}:
+    @intrinsic("call", "dynlex_ui", "ui_shader_geometry", nothing, shader, pass, vertices, count, indices, index count)

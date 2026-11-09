@@ -1,0 +1,8 @@
+# Generic asynchronous platform services. Responses enter the shared input queue.
+import services.dl
+
+to get a browser UI request named {C string:name} containing {string:payload} in {a pointer to UI view:view}:
+    return @intrinsic("call", "dynlex_ui", "ui_request", an integer, view's window, name, the data of payload, payload's length)
+
+to get cancel browser UI request {integer:request}:
+    return @intrinsic("call", "dynlex_ui", "ui_cancel_request", a boolean, request)

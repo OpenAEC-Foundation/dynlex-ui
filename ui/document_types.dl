@@ -1,0 +1,22 @@
+import platform_types.dl
+import appearance.dl
+
+class:
+    patterns:
+        UI text line
+    members:
+        start as an integer
+        end as an integer
+        width as a floating-point number
+        top as a floating-point number
+        height as a floating-point number
+        ascent as a floating-point number
+        next as a pointer to UI text line
+
+class:
+    patterns:
+        UI font cache entry
+    members:
+        path as a C string
+        font as UI font
+        next as a pointer to UI font cache entry

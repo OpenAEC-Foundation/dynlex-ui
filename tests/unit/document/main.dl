@@ -1,0 +1,73 @@
+import ../../helpers/driver.dl
+
+appearance page appearance:
+    maximum width is 800
+    padding is 20
+    gap is 24
+appearance grid appearance:
+    columns are 2
+    stack below 600
+    gap is 20
+appearance text appearance:
+    font size is 20
+    line spacing is 1.5
+appearance link appearance:
+    use text appearance
+    padding is 8
+    background is UI ink 230 240 250
+    corner radius is 6
+
+appearance root appearance:
+    background is UI ink 250 250 249
+
+document responsive page using root appearance:
+    region "page" using page appearance:
+        region "columns" using grid appearance:
+            paragraph "A paragraph that wraps across multiple lines." using text appearance
+            link "Go to documentation" to "/wiki/" using link appearance
+        paragraph "A long document." using text appearance
+        surface "scene" using tall appearance
+
+appearance tall appearance:
+    height is 900
+
+set instance to an instance of responsive page
+bind (the control labeled "scene" in (the address of instance)) in (the address of instance) to (the function named "paint nothing $") for event 1
+set view to a UI view of (the address of instance) sized 1000 by 600 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+require condition view's layout's appearance's filled reporting "The document appearance was not applied"
+set page to the UI layout labeled "page" in (view's layout)
+set columns to the UI layout labeled "columns" in (view's layout)
+set link to the UI layout labeled "Go to documentation" in (view's layout)
+require condition (columns's first's appearance's background's red = 250) reporting "Transparent content lost the background beneath it"
+set the destination of "Go to documentation" in (the address of instance) to (the string form of "/wiki/terms.html")
+require condition ((the UI value for (link's node) in (the address of instance))'s destination = "/wiki/terms.html") reporting "A link did not retain its updated destination"
+require condition ((page's bounds' width = 800.0) and (page's bounds' x = 100.0)) reporting "The document's maximum width was not centered"
+require condition (link's bounds' x > columns's first's bounds' x) reporting "Desktop columns were stacked"
+set view's width to 390
+ignore update UI view (the address of view)
+require condition ((link's bounds' x = columns's first's bounds' x) and (link's bounds' y > columns's first's bounds' y)) reporting "Mobile columns did not stack"
+require condition (columns's first's lines' next != @intrinsic("construct", a pointer to UI text line)) reporting "Paragraph text was not wrapped"
+set view's selection's anchor source to the address of (columns's first's text source)
+set view's selection's caret source to view's selection's anchor source
+set view's selection's anchor to 2
+set view's selection's caret to 40
+set selected to the selected UI text in (the address of view)
+require condition (selected = "paragraph that wraps across multiple l") reporting "Soft wrapping inserted text into the selection"
+set view's width to 1000
+ignore update UI view (the address of view)
+require condition ((the selected UI text in (the address of view)) = selected) reporting "Reflow moved the selection to another source offset"
+queue UI input of kind 5 key 0 at 0.0 450.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's layout's scroll target = 450.0) reporting "The document did not accept wheel scrolling"
+require condition ((the selected UI text in (the address of view)) = selected) reporting "Scrolling changed the selected text"
+set view's layout's scroll position to 450.0
+set view's height to 2000
+ignore update UI view (the address of view)
+require condition ((view's layout's scroll position = 0.0) and (view's layout's scroll target = 0.0)) reporting "Growing the viewport left the document scrolled past its end"
+close the address of view
+close the address of instance
+print line "Document width, responsive columns, wrapping and scrolling work."
+
+to paint nothing {a pointer to UI canvas frame:painting}:
+    ignore painting

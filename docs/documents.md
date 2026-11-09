@@ -1,0 +1,54 @@
+# Responsive documents
+
+`ui/document_declarations.dl` defines document sections as ordinary DynLex data.
+The renderer uses the same description on native windows and browser canvases.
+Named appearances contain inherited typography and responsive layout rules.
+
+```dynlex
+appearance page appearance:
+    maximum width is 1000
+    padding is 32
+    gap is 24
+    when viewport is below 700:
+        padding is 16
+
+appearance editor appearance:
+    height is 300
+    font size is 14
+    lines do not wrap
+
+document workspace using page appearance:
+    paragraph "Title" containing "Working ideas" using no UI appearance
+    tab group "Files" using page appearance:
+        tab "main.dl":
+            editor "Main source" containing "print line 42" using editor appearance
+        tab "notes":
+            paragraph "Notes" containing "Define the interface first." using no UI appearance
+    paragraph "Output" containing "" using no UI appearance
+```
+
+Names remain stable when content changes. In the controller:
+
+```dynlex
+set instance to an instance of workspace
+set the text of "Output" in (the address of instance) to "42"
+set the value of "Files" in (the address of instance) to 1
+```
+
+Tab selection is zero-based. Mouse, arrow keys, Home and End use the same
+selection state. In a document, Tab enters the selected header and then its
+active panel; inactive panels retain their editor values and undo history.
+`the active UI editor within group in instance` resolves the selected editor
+without coupling a controller to the number or names of its tabs.
+
+`paragraph "Name" containing "Text"` separates an element's name from its initial
+content, including empty content. Editors use that same distinction. Links store
+their destinations separately from content and visual variants.
+
+Regions support columns, maximum widths, stacking thresholds, padding, gaps,
+overlays and sticky positioning. Paragraphs support inline `words` and `link`
+sections; selection copies their source text through line wrapping and reflow.
+Borders preserve transparent interiors over pictures and shader surfaces.
+
+See [sections](sections.md) for defining additional declarative shapes and
+[the examples](../examples) for application and platform setup.

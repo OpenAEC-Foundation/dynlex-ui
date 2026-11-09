@@ -1,7 +1,8 @@
 // WebGPU submission for the shared 32-byte DynLex UI vertex format.
 // https://www.w3.org/TR/webgpu/#canvas-configuration
 import { clippedCommands } from "./draw-buffer.js";
-const shader = `
+import { createWebGpuShader } from './shader-webgpu.js';
+const uiShaderSource = `
 struct Viewport { size: vec2f, padding: vec2f }
 @group(0) @binding(0) var<uniform> viewport: Viewport;
 @group(0) @binding(1) var mask: texture_2d<f32>;
@@ -22,6 +23,9 @@ struct Vertex {
 }
 @fragment fn fragment(input: Vertex) -> @location(0) vec4f {
   return vec4f(input.ink.rgb, input.ink.a * textureSample(mask, filtering, input.uv).r);
+}
+@fragment fn imageFragment(input: Vertex) -> @location(0) vec4f {
+  return input.ink * textureSample(mask, filtering, input.uv);
 }`;
 
 export async function createWebGpu(device, reportError) {
@@ -30,11 +34,17 @@ export async function createWebGpu(device, reportError) {
   device.lost.then(info => { if (!closed) reportError(new Error(info.message)); });
   const format = navigator.gpu.getPreferredCanvasFormat();
   const renderFormat = `${format}-srgb`;
-  const module = device.createShaderModule({ code: shader });
-  let pipeline;
+  const module = device.createShaderModule({ code: uiShaderSource });
+  let pipeline, imagePipeline, groupLayout;
   try {
-    pipeline = await device.createRenderPipelineAsync({
-      layout: "auto",
+    groupLayout = device.createBindGroupLayout({ entries: [
+      { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } }
+    ] });
+    const layout = device.createPipelineLayout({ bindGroupLayouts: [groupLayout] });
+    const description = {
+      layout,
       vertex: { module, entryPoint: "vertex", buffers: [{ arrayStride: 32, attributes: [
         { shaderLocation: 0, offset: 0, format: "float32x2" },
         { shaderLocation: 1, offset: 8, format: "float32x2" },
@@ -45,7 +55,10 @@ export async function createWebGpu(device, reportError) {
         alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }
       } }] },
       primitive: { topology: "triangle-list" }
-    });
+    };
+    pipeline = await device.createRenderPipelineAsync(description);
+    imagePipeline = await device.createRenderPipelineAsync({ ...description,
+      fragment: { ...description.fragment, entryPoint: 'imageFragment' } });
   } catch (error) {
     closed = true;
     device.destroy();
@@ -53,16 +66,30 @@ export async function createWebGpu(device, reportError) {
   }
   const sampler = device.createSampler({ magFilter: "linear", minFilter: "linear" });
 
-  function mask(surface, pixels, width, height) {
-    const texture = device.createTexture({ size: [width, height], format: "r8unorm",
+  function pixelsTexture(surface, pixels, width, height, colored) {
+    const texture = device.createTexture({ size: [width, height], format: colored ? 'rgba8unorm-srgb' : 'r8unorm',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
-    device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width }, [width, height]);
-    const group = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [
+    device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * (colored ? 4 : 1) }, [width, height]);
+    return textureResource(surface, texture, width, height, colored);
+  }
+
+  function textureResource(surface, texture, width, height, colored) {
+    const group = device.createBindGroup({ layout: groupLayout, entries: [
       { binding: 0, resource: { buffer: surface.uniform } },
       { binding: 1, resource: texture.createView() },
       { binding: 2, resource: sampler }
     ] });
-    return { texture, group, width, height };
+    return { texture, group, width, height, colored };
+  }
+  const mask = (surface, pixels, width, height) => pixelsTexture(surface, pixels, width, height, false);
+  const image = (surface, pixels, width, height) => pixelsTexture(surface, pixels, width, height, true);
+
+  function shader(surface, descriptor) {
+    return createWebGpuShader(device, descriptor, (width, height) => {
+      const texture = device.createTexture({ size: [width, height], format: 'rgba8unorm-srgb',
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT });
+      return textureResource(surface, texture, width, height, true);
+    }, retire);
   }
 
   function surface(canvas) {
@@ -92,11 +119,12 @@ export async function createWebGpu(device, reportError) {
       view: surface.context.getCurrentTexture().createView({ format: renderFormat }),
       clearValue: surface.clear, loadOp: "clear", storeOp: "store"
     }] });
-    pass.setPipeline(pipeline);
     if (byteLength) pass.setVertexBuffer(0, surface.buffer);
     for (const { command, left, top, width, height } of clippedCommands(surface, scale)) {
       pass.setScissorRect(left, top, width, height);
-      pass.setBindGroup(0, (command.texture === null ? surface.white : command.texture).group);
+      const resource = command.texture === null ? surface.white : command.texture;
+      pass.setPipeline(resource.colored ? imagePipeline : pipeline);
+      pass.setBindGroup(0, resource.group);
       pass.draw(command.count, 1, command.start);
     }
     pass.end();
@@ -108,6 +136,6 @@ export async function createWebGpu(device, reportError) {
     surface.uniform.destroy();
     if (surface.buffer) surface.buffer.destroy();
   }
-  return { surface, present, mask, retire, releaseSurface,
+  return { surface, present, mask, image, shader, retire, releaseSurface,
     close() { closed = true; device.queue.onSubmittedWorkDone().then(() => device.destroy()); } };
 }

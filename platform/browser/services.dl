@@ -71,6 +71,10 @@ to get the browser UI icon in {a pointer to UI view:view} from {a pointer to UI 
 to release browser UI texture in {a pointer to UI view:view} holding {a pointer:texture}:
     @intrinsic("call", "dynlex_ui", "ui_release_texture", nothing, texture)
 
+to get a UI texture from RGBA bytes {a pointer to a byte:pixels} sized {integer:width} by {integer:height} in {a pointer to UI view:view}:
+    set resource to @intrinsic("call", "dynlex_ui", "ui_image_upload", a pointer, view's window, pixels, width, height)
+    return @intrinsic("construct", UI texture, resource, width, height)
+
 to copy browser UI text in {a pointer to UI view:view} containing {C string:text} counting {integer:count}:
     @intrinsic("call", "dynlex_ui", "ui_copy", nothing, text, count)
 

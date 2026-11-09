@@ -8,6 +8,21 @@ export async function verifyRendering() {
   canvas.width = 96; canvas.height = 72;
   const surface = gpu.surface(canvas);
   const mask = gpu.mask(surface, new Uint8Array(6).fill(128), 3, 2);
+  const image = gpu.image(surface, new Uint8Array([255, 0, 0, 128]), 1, 1);
+  const shader = await gpu.shader(surface, { passes: [{ vertex: null, uniforms: [], depth: false,
+    blend: 'opaque', topology: 'triangle-list', fragment: gpu.backend === 'webgpu'
+      ? '@fragment fn main() -> @location(0) vec4f { return vec4f(0,0,1,1); }'
+      : '#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(0,0,1,1);}'
+  }, { vertex: gpu.backend === 'webgpu'
+      ? '@vertex fn main(@location(0) position: vec4f) -> @builtin(position) vec4f { return position; }'
+      : '#version 300 es\nlayout(location=0) in vec4 position;void main(){gl_Position=position;}',
+    uniforms: [{ name: 'gain', group: 1, binding: 5 }], depth: true, blend: 'additive', topology: 'triangle-list',
+    fragment: gpu.backend === 'webgpu'
+      ? '@group(1) @binding(5) var<uniform> gain:vec4f;@fragment fn main()->@location(0) vec4f{return vec4f(gain.x,0,0,0);}'
+      : '#version 300 es\nprecision highp float;layout(std140) uniform Settings{vec4 _group_1_binding_5_fs;};out vec4 color;void main(){color=vec4(_group_1_binding_5_fs.x,0,0,0);}'
+  }] });
+  shader.geometry(1, new Float32Array([-1,-1,0,1, 3,-1,0,1, -1,3,0,1]), new Uint32Array());
+  const rendered = shader.render(5, 3, [{}, { gain: 0.25 }]);
   const clip = { x: -3, y: 4, width: 43, height: 24 };
   const box = (left, top, width, height, value, alpha, texture, bounds) => {
     const vertices = [];
@@ -21,6 +36,8 @@ export async function verifyRendering() {
     box(0, 0, 64, 48, 0.25, 1, null, clip);
     box(8, 8, 16, 16, 1, 0.5, null, clip);
     box(28, 8, 8, 16, 1, 1, mask, clip);
+    box(48, 28, 12, 12, 1, 1, image, { x: 0, y: 0, width: 64, height: 48 });
+    box(48, 4, 12, 12, 1, 1, rendered, { x: 0, y: 0, width: 64, height: 48 });
     gpu.present(surface, 64, 48, 1.5);
     const context = new OffscreenCanvas(96, 72).getContext('2d');
     context.drawImage(canvas, 0, 0);
@@ -38,10 +55,18 @@ export async function verifyRendering() {
     expected(48, 30, 207);   // Odd-width R8 texture, second row.
     expected(65, 18, 0);     // Right scissor edge.
     expected(18, 45, 0);     // Bottom scissor edge.
+    const red = pixel(78, 48);
+    if (Math.abs(red[0] - 188) > 3 || red[1] !== 0 || red[2] !== 0 || red[3] !== 255)
+      throw new Error(`RGBA texture color or alpha was lost: ${red}`);
+    const purple = pixel(78, 12);
+    if (Math.abs(purple[0] - 137) > 3 || purple[1] !== 0 || purple[2] !== 255)
+      throw new Error(`Shader passes, geometry, uniform groups or texture composition failed: ${purple}`);
     if (surface.gl && surface.gl.getError() !== surface.gl.NO_ERROR) throw new Error('WebGL rendering produced an API error');
     if (errors.length) throw errors[0];
   } finally {
     gpu.retire(mask.texture);
+    gpu.retire(image.texture);
+    shader.close();
     gpu.releaseSurface(surface);
     gpu.close();
   }
@@ -54,6 +79,7 @@ export async function verifyFailureBoundaries() {
   const failure = new Error('A rendering pipeline failed after device selection');
   const device = { addEventListener() {}, lost: new Promise(() => {}),
     createShaderModule() { return {}; },
+    createBindGroupLayout() { return {}; }, createPipelineLayout() { return {}; },
     async createRenderPipelineAsync() { throw failure; },
     destroy() { destroyed = true; } };
   const use = gpu => Object.defineProperty(Navigator.prototype, 'gpu', { configurable: true, get: () => gpu });

@@ -1,0 +1,52 @@
+import ../../helpers/driver.dl
+
+appearance editor appearance:
+    padding is 12
+    font size is 16
+    height is 100
+    lines do not wrap
+
+document editor test:
+    editor "Program" containing "Aé🙂B\nC" using editor appearance
+
+set instance to an instance of editor test
+set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set source to view's selection's caret source
+require condition (source's text = "Aé🙂B\nC") reporting "Tab did not focus the editor"
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's selection's caret = 9) reporting "Home did not move to the logical line start"
+queue UI input of kind 3 key 265 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's selection's caret = 0) reporting "Up did not preserve the visual column"
+queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "Aé🙂B\nC\n    ") reporting "Multiline insertion or indentation failed"
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "Aé🙂B\nC\n") reporting "Undo did not restore the previous source"
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "Aé🙂B\nC") reporting "Undo did not retain the full edit history"
+queue UI input of kind 3 key 89 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "Aé🙂B\nC\n") reporting "Redo did not restore the edit"
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "tail" in (the address of view)
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's selection's caret = 11) and (source's text = "Aé🙂B\nC\ntail")) reporting "Queued navigation used geometry from before the edit"
+queue UI input of kind 1 key 0 at 12.0 20.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "Z" in (the address of view)
+ignore update UI view (the address of view)
+require condition view's keyboard focus reporting "The editor caret lost focus after a pointer click"
+require condition (source's text = "ZAé🙂B\nC\ntail") reporting "Clicking the editor did not retain editing focus"
+close the address of view
+close the address of instance
+print line "Multiline editing, visual navigation, indentation and undo work."

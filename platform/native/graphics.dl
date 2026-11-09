@@ -67,3 +67,8 @@ to get the native UI icon in {a pointer to UI view:view} from {a pointer to UI S
 
 to release native UI texture in {a pointer to UI view:view} holding {a pointer:texture}:
     release graphics texture resource (texture as a pointer to DynlexGraphicsTexture)
+
+to get a UI texture from RGBA bytes {a pointer to a byte:pixels} sized {integer:width} by {integer:height} in {a pointer to UI view:view}:
+    set surface to view's window as a pointer to native UI surface
+    set resource to a graphics texture resource from pixels with width width height height channels (4 as a 32 bit unsigned integer) in (surface's resource as a pointer to DynlexGraphics)
+    return @intrinsic("construct", UI texture, resource as a pointer, width, height)

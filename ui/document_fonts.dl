@@ -1,0 +1,19 @@
+import platform.dl
+
+to get a document UI font for {UI appearance settings:appearance} in {a pointer to UI view:view}:
+    set path to appearance's font path
+    if path = "":
+        set path to view's regular path
+        if appearance's bold:
+            set path to view's bold path
+    set entry to view's fonts
+    loop while entry != @intrinsic("construct", a pointer to UI font cache entry):
+        if (entry's path = path) and (entry's font's size = appearance's font size):
+            return entry's font
+        set entry to entry's next
+    set entry to storage for one slot initialized with (a new UI font cache entry)
+    set entry's path to path
+    set entry's font to a UI font from path sized (appearance's font size) in view
+    set entry's next to view's fonts
+    set view's fonts to entry
+    return entry's font

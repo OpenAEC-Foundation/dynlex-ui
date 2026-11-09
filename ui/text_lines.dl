@@ -1,0 +1,9 @@
+import layout_types.dl
+
+to release UI text lines in {a pointer to UI layout:layout}:
+    set line to layout's lines
+    loop while line != @intrinsic("construct", a pointer to UI text line):
+        set next to line's next
+        deallocate line
+        set line to next
+    set layout's lines to @intrinsic("construct", a pointer to UI text line)

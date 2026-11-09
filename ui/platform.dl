@@ -68,7 +68,11 @@ to draw a rectangle at x {a value:x} and y {a value:y} with width {a value:width
     finish triangles in frame
 
 to draw UI texture {UI texture:texture} in {UI bounds:box} in {UI paint:ink} on {UI frame:frame}:
+    draw UI texture texture in box in ink with opacity 255 on frame
+
+to draw UI texture {UI texture:texture} in {UI bounds:box} in {UI paint:ink} with opacity {integer:opacity} on {UI frame:frame}:
     set view to frame's view
+    set alpha to ((opacity as a floating-point number) / 255.0) * ((view's current alpha as a floating-point number) / 255.0)
     start triangles in frame
     set corners to [0, 1, 2, 0, 2, 3]
     set index to 0
@@ -76,7 +80,7 @@ to draw UI texture {UI texture:texture} in {UI bounds:box} in {UI paint:ink} on 
         set corner to the item at index in corners
         set u to 1.0 if ((corner = 1) or (corner = 2)), else 0.0
         set v to 1.0 if ((corner = 2) or (corner = 3)), else 0.0
-        set vertex to @intrinsic("construct", UI vertex, (box's x + u * box's width) as a 32 bit floating-point number, (box's y + v * box's height) as a 32 bit floating-point number, u as a 32 bit floating-point number, v as a 32 bit floating-point number, (the UI color channel (ink's red) in view) as a 32 bit floating-point number, (the UI color channel (ink's green) in view) as a 32 bit floating-point number, (the UI color channel (ink's blue) in view) as a 32 bit floating-point number, 1.0 as a 32 bit floating-point number)
+        set vertex to @intrinsic("construct", UI vertex, (box's x + u * box's width) as a 32 bit floating-point number, (box's y + v * box's height) as a 32 bit floating-point number, u as a 32 bit floating-point number, v as a 32 bit floating-point number, (the UI color channel (ink's red) in view) as a 32 bit floating-point number, (the UI color channel (ink's green) in view) as a 32 bit floating-point number, (the UI color channel (ink's blue) in view) as a 32 bit floating-point number, alpha as a 32 bit floating-point number)
         append UI vertex vertex to frame
         increment index
     submit UI triangles with texture (texture's resource) on frame

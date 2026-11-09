@@ -1,0 +1,43 @@
+import ../../helpers/driver.dl
+import lib/text_scan.dl
+
+appearance group appearance:
+    font size is 16
+    line spacing is 1.5
+    gap is 8
+
+document tabs test:
+    tab group "Examples" using group appearance:
+        tab "First":
+            editor "First source" containing "First content" using no UI appearance
+        tab "Second":
+            editor "Second source" containing "Second content" using no UI appearance
+        tab "Third":
+            paragraph "Third content" using no UI appearance
+
+set instance to an instance of tabs test
+set view to a UI view of (the address of instance) sized 316 by 220 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set group to the control labeled "Examples" in (the address of instance)
+require condition ((the active UI editor within group in (the address of instance))'s text = "First source") reporting "The initial tab has no active editor"
+require condition (view's control count = 2) reporting "Inactive tabs participated in keyboard traversal"
+queue UI input of kind 1 key 0 at 158.0 18.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the value of "Examples" in (the address of instance)) = 1) reporting "A tab header did not select its panel"
+require condition ((view's window as a pointer to test UI surface)'s drawn contains "Second content") reporting "The selected tab panel was not painted"
+set the text of "Second source" in (the address of instance) to "Edited second"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the value of "Examples" in (the address of instance)) = 0) reporting "Arrow navigation did not select the previous tab"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set the value of "Examples" in (the address of instance) to 1
+ignore update UI view (the address of view)
+require condition ((the UI value for (the active UI editor within group in (the address of instance)) in (the address of instance))'s text = "Edited second") reporting "Changing tabs discarded the editor's content"
+require condition (view's selection's caret source's element = (the active UI editor within group in (the address of instance))) reporting "A programmatic tab switch kept the hidden editor's caret"
+close the address of view
+close the address of instance
+print line "Document tabs share selection, keyboard traversal and persistent editor state."

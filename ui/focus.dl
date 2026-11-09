@@ -1,6 +1,7 @@
 # Keyboard focus is input state; painting never decides which control receives a key.
 import view.dl
 import ribbon_scroll.dl
+import text.dl
 
 to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     increment view's control count
@@ -14,6 +15,8 @@ to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view
 
 to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     set kind to layout's node's kind
+    if layout's appearance's hidden:
+        return nothing
     if kind = 22:
         if layout's node != view's instance's page:
             return nothing
@@ -36,13 +39,54 @@ to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI vie
         if UI ribbon arrow later is visible in (view's layout) for (view's instance):
             append UI focus later in view
         return nothing
-    if ((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 39):
+    if kind = 48:
+        set active to the selected tab of (layout's node) in (view's instance)
+        set child to layout's first
+        loop while child's node != active:
+            set child to child's next
+        append UI focus child in view
+        set layout's order to child's order
+        set child to child's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            collect UI focus from child in view
+            set child to child's next
+        return nothing
+    if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 39)) or ((kind = 43) or (kind = 44)):
         append UI focus layout in view
         return nothing
     set child to layout's first
     loop while child != @intrinsic("construct", a pointer to UI layout):
         collect UI focus from child in view
         set child to child's next
+
+to reconcile UI editing focus in {a pointer to UI view:view}:
+    set element to @intrinsic("construct", UI reference)
+    if view's keyboard focus and (view's focused != @intrinsic("construct", a pointer to UI layout)):
+        set node to view's focused's node
+        if (node's kind = 39) or (node's kind = 44):
+            set element to node
+    set changed to element != view's text focus
+    set view's text focus to element
+    if element = @intrinsic("construct", UI reference):
+        set source to view's selection's caret source
+        if source != @intrinsic("construct", a pointer to UI text source):
+            if source's element != @intrinsic("construct", UI reference):
+                clear UI selection in view
+                set view's damaged to true
+        return nothing
+    set source to the address of (view's focused's text source)
+    set source's element to element
+    if changed and (view's selection's caret source != source):
+        set source's text to (the UI value for element in (view's instance))'s text
+        set view's selection's anchor source to source
+        set view's selection's caret source to source
+        set view's selection's anchor to source's text's length
+        set view's selection's caret to source's text's length
+        set view's selection's vertical to false
+        set view's reveal caret to true
+        set view's damaged to true
+    if view's selection's caret source = source:
+        synchronize editable UI text source in view
 
 to refresh UI focus in {a pointer to UI view:view}:
     set previous to view's focus first
@@ -60,5 +104,7 @@ to refresh UI focus in {a pointer to UI view:view}:
     set view's focused to view's focus first
     loop while view's focused != @intrinsic("construct", a pointer to UI layout):
         if view's focused's order = view's focus order:
+            reconcile UI editing focus in view
             return nothing
         set view's focused to view's focused's focus next
+    reconcile UI editing focus in view

@@ -1,0 +1,20 @@
+import ../../helpers/driver.dl
+
+document content test:
+    paragraph "Output" containing "" using no UI appearance
+    editor "Code" containing "print 42" using no UI appearance
+    link "Reference" to "/docs" using no UI appearance
+
+set instance to an instance of content test
+set output to the control labeled "Output" in (the address of instance)
+require condition ((the UI value for output in (the address of instance))'s text = "") reporting "Empty initial content became its label"
+set the text of "Output" in (the address of instance) to "42"
+require condition ((the control labeled "Output" in (the address of instance)) = output) reporting "Updating content changed element identity"
+require condition ((the UI value for output in (the address of instance))'s text = "42") reporting "Named paragraph content was not updated"
+set code to the control labeled "Code" in (the address of instance)
+require condition (code's content = "print 42") reporting "Editor content was stored as a style variant"
+set link to the control labeled "Reference" in (the address of instance)
+require condition (link's destination = "/docs") reporting "The link destination was lost"
+require condition ((link's variant = "") and (code's variant = "")) reporting "Content or navigation still occupies the style variant"
+close the address of instance
+print line "Names, initial content, style variants and destinations remain separate."

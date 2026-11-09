@@ -1,0 +1,38 @@
+import outlines.dl
+import animation.dl
+import tabs.dl
+
+to draw document UI tabs {a pointer to UI layout:layout} in {UI bounds:box} in {a pointer to UI view:view} on {UI frame:frame}:
+    set selected to the selected tab of (layout's node) in (view's instance)
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set header to child's tab bounds
+        set header's x to header's x + box's x
+        set header's y to header's y + box's y
+        increment view's paint serial
+        set child's paint serial to view's paint serial
+        set child's painted bounds to header
+        set child's hit bounds to the UI intersection of header and (view's hit bounds)
+        set child's paint generation to view's paint count
+        set active to child's node = selected
+        set target to 1.0 if (view's hot = child), else 0.0
+        set child's hover to UI value (child's hover) approaching target at speed 14.0 in view
+        set ink to layout's appearance's foreground
+        draw a rounded UI surface header with radius (layout's appearance's radius) from ink to ink opacity ((child's hover * 20.0) as an integer) feathered by 0.75 on frame
+        if active:
+            draw a rounded UI box (UI box at (header's x) ((header's y + header's height) - 2.0) sized (header's width) 2.0) with radius 1.0 in ink on frame
+        if (view's focused = child) and (view's keyboard focus):
+            draw a rounded UI outline header with radius (layout's appearance's radius) width 1.0 in ink on frame
+        set view's selectable to false
+        set label to (the UI value for (child's node) in (view's instance))'s text
+        draw UI text label at (header's x + (header's width - (the width of label using (layout's typeface))) / 2.0) (header's y + (header's height - layout's typeface's size) / 2.0 + layout's typeface's size * 0.8) with (layout's typeface) in ink on frame
+        set view's selectable to true
+        set child to child's next
+    set child to layout's first
+    loop while child's node != selected:
+        set child to child's next
+    set panel to child
+    set child to panel's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        draw document UI layout child at (box's x + panel's bounds' x) (box's y + panel's bounds' y) in view on frame
+        set child to child's next

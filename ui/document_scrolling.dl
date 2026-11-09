@@ -1,0 +1,56 @@
+import view.dl
+
+to keep the UI caret visible in {a pointer to UI layout:layout} within {UI bounds:box} in {a pointer to UI view:view}:
+    set limit to the maximum of 0.0 and (layout's text height - box's height)
+    set layout's scroll position to the minimum of limit and (layout's scroll position)
+    set horizontal to the maximum of 0.0 and ((layout's text width - box's width) + 2.0)
+    set layout's text scroll to the minimum of horizontal and (layout's text scroll)
+    if (view's reveal caret = false) or (view's selection's caret source != (the address of (layout's text source))):
+        return nothing
+    set position to view's selection's caret
+    set line to layout's lines
+    loop while line != @intrinsic("construct", a pointer to UI text line):
+        if (position >= line's start) and (position <= line's end):
+            set height to line's height
+            set top to line's top
+            set offset to the width of (the substring of (layout's content) from (line's start) spanning (position - line's start) bytes) using (layout's typeface)
+            set layout's scroll position to the maximum of (layout's scroll position) and ((top + height) - box's height)
+            set layout's scroll position to the minimum of (layout's scroll position) and top
+            set layout's text scroll to the maximum of (layout's text scroll) and ((offset - box's width) + 2.0)
+            set layout's text scroll to the minimum of (layout's text scroll) and offset
+            return nothing
+        set line to line's next
+
+to scroll the UI document in {a pointer to UI view:view}:
+    set layout to view's layout
+    set height to view's height as a floating-point number
+    if view's hot != @intrinsic("construct", a pointer to UI layout):
+        if view's hot's node's kind = 44:
+            set editor to view's hot
+            set height to editor's bounds' height - editor's appearance's padding * 2.0
+            set limit to the maximum of 0.0 and (editor's text height - height)
+            set horizontal to the maximum of 0.0 and (editor's text width - (editor's bounds' width - editor's appearance's padding * 2.0))
+            set destination to the minimum of limit and (the maximum of 0.0 and (editor's scroll position + view's scroll y))
+            set sideways to the minimum of horizontal and (the maximum of 0.0 and (editor's text scroll + view's scroll x))
+            if (destination != editor's scroll position) or (sideways != editor's text scroll):
+                set editor's scroll position to destination
+                set editor's text scroll to sideways
+                set view's damaged to true
+                return nothing
+    set limit to the maximum of 0.0 and (layout's bounds' height - view's height)
+    set layout's scroll target to the minimum of limit and (the maximum of 0.0 and (layout's scroll target + view's scroll y))
+    if layout's scroll position != layout's scroll target:
+        set view's damaged to true
+
+to reveal focused UI content in {a pointer to UI view:view}:
+    if (view's focused = @intrinsic("construct", a pointer to UI layout)) or (view's keyboard focus = false):
+        return nothing
+    set box to view's focused's painted bounds
+    set top to box's y + view's layout's scroll position
+    set target to view's layout's scroll target
+    if top < target:
+        set target to top
+    if (top + box's height) > (target + view's height):
+        set target to (top + box's height) - view's height
+    set limit to the maximum of 0.0 and (view's layout's bounds' height - view's height)
+    set view's layout's scroll target to the minimum of limit and (the maximum of 0.0 and target)

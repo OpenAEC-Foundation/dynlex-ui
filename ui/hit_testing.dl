@@ -1,0 +1,22 @@
+import view.dl
+import ribbon.dl
+
+to get the UI hit at {UI point:point} in {a pointer to UI layout:layout} during {integer:generation} for {a pointer to UI instance:instance}:
+    if layout's node's kind = 22:
+        if layout's node != instance's page:
+            return @intrinsic("construct", a pointer to UI layout)
+    set found to @intrinsic("construct", a pointer to UI layout)
+    if (layout's paint generation = generation) and (point is inside (layout's hit bounds)):
+        set found to layout
+    if layout's node's kind = 29:
+        if (the selected tab of (layout's parent) in instance) != layout's node:
+            return found
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set candidate to the UI hit at point in child during generation for instance
+        if candidate != @intrinsic("construct", a pointer to UI layout):
+            if (found = @intrinsic("construct", a pointer to UI layout)) or (candidate's paint serial >= found's paint serial):
+                set found to candidate
+        set child to child's next
+    return found
+
