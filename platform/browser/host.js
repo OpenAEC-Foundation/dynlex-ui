@@ -91,6 +91,13 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
     ui_present(handle) {
       const surface = surfaces.get(handle);
       gpu.present(surface, surface.width, surface.height, surface.scale); fonts.trim();
+      if (surface.inputConnection !== undefined) surface.inputConnection.updateContext(surface.textContext);
+    },
+    ui_input_context(handle, owner, pointer, count, anchor, caret, font, x, y, width, height, line, prefix) {
+      surfaces.get(handle).textContext = owner === 0 ? { owner } : {
+        owner, text: text(pointer, count), anchor, caret, font: fonts.description(font),
+        bounds: { x, y, width, height }, line, prefix
+      };
     },
     ui_triangles(handle, pointer, count, texture, x, y, width, height) {
       gpu.triangles(surfaces.get(handle), new Float32Array(memory.buffer, pointer, count * 8),
@@ -161,7 +168,8 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
     ui_launch(handle, view, tick, dispose, input) {
       const surface = surfaces.get(handle);
       Object.assign(surface, { view, tick: callback(tick), dispose: callback(dispose), input: callback(input) });
-      surface.disconnect = connectInput(surface, (...args) => send(surface, ...args), () => schedule(surface));
+      surface.inputConnection = connectInput(surface, (...args) => send(surface, ...args), () => schedule(surface));
+      surface.disconnect = surface.inputConnection.close;
       schedule(surface);
     }
   };

@@ -88,5 +88,6 @@ export function createFontServices(gpu, faces, resources, id) {
     for (const [key, entry] of cache) if (entry.font === handle) release(key, entry);
     fonts.delete(handle);
   }
-  return { open, close, width, mask, trim, coverage };
+  return { open, close, width, mask, trim, coverage,
+    description(handle) { const { family, size } = fonts.get(handle); return { family, size }; } };
 }

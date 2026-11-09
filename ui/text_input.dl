@@ -1,10 +1,12 @@
 import text.dl
 import text_navigation.dl
 import hit_testing.dl
+import lib/unicode.dl
 
 # Selection anchors are byte offsets on Unicode scalar boundaries.
 to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
     set result to @intrinsic("construct", a pointer to UI text run)
+    set distance to 1.0e30
     set covering to the UI hit at point in (view's layout) during (view's paint count) for (view's instance)
     set run to view's texts
     loop while run != @intrinsic("construct", a pointer to UI text run):
@@ -19,7 +21,16 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
             if run's source's element != @intrinsic("construct", UI reference):
                 set inside to (local's y >= box's y) and (local's y < (box's y + box's height))
             if inside:
-                set result to run
+                set candidate to 0.0
+                if run's source's element != @intrinsic("construct", UI reference):
+                    set candidate to the maximum of 0.0 and (the maximum of (run's origin's x - local's x) and (local's x - (run's origin's x + (the width of (run's text) using (run's typeface)))))
+                set take to true
+                if result != @intrinsic("construct", a pointer to UI text run):
+                    if result's source = run's source:
+                        set take to candidate <= distance
+                if take:
+                    set result to run
+                    set distance to candidate
         set run to run's next
     return result
 
@@ -89,38 +100,116 @@ to handle UI text pointer at {UI point:point} over {a pointer to UI layout:hot} 
     if view's down = false:
         set view's selection's dragging to false
 
+to get UI text accepted from {string:inserted} by {UI reference:element}:
+    set filtered to a new string buffer containing (inserted's length) bytes
+    set count to 0
+    set index to 0
+    loop while index < inserted's length:
+        set character to the UTF8 character at index in inserted
+        require condition (character's valid) reporting "UI text must contain valid UTF-8"
+        set allowed to (character's code >= 32) and (character's code != 127)
+        if element's kind = 44:
+            set allowed to allowed or ((character's code = 10) or (character's code = 9))
+        if allowed:
+            set cursor to index
+            loop while cursor < character's next:
+                store (the character at cursor in inserted) into (the data of filtered) at count
+                increment cursor
+                increment count
+        set index to character's next
+    set filtered's length to count
+    store (0 as a byte) into (the data of filtered) at count
+    return filtered
+
+to commit UI text {string:updated} selecting {integer:anchor} through {integer:caret} in {a pointer to UI view:view}:
+    set composing to view's selection's composing
+    set source to view's selection's caret source
+    set entry to the UI value for (source's element) in (view's instance)
+    set changed to updated != entry's text
+    if changed:
+        release UI text edits entry's redo
+        set entry's redo to @intrinsic("construct", a pointer to UI text edit)
+        set edit to @intrinsic("construct", UI text edit, entry's text, updated, view's selection's anchor, view's selection's caret, anchor, caret, entry's undo)
+        set entry's undo to storage for one slot initialized with edit
+        set entry's text to updated
+    set view's selection's anchor to anchor
+    set view's selection's caret to caret
+    set source's text to entry's text
+    set view's selection's vertical to false
+    set view's selection's composition to ""
+    set view's selection's composing to false
+    set view's reveal caret to true
+    set view's damaged to true
+    if changed:
+        activate (source's element) belonging to (source's element) in (view's instance)
+    if composing and (view's instance's description's kind = 40):
+        reflow the UI document in view
+
 to replace UI text selection with {string:inserted} in {a pointer to UI view:view}:
     set source to view's selection's caret source
     require condition (source's element != @intrinsic("construct", UI reference)) reporting "Only editable UI text can be replaced"
     set entry to the UI value for (source's element) in (view's instance)
     set start to the minimum of (view's selection's anchor) and (view's selection's caret)
     set end to the maximum of (view's selection's anchor) and (view's selection's caret)
-    set filtered to the string form of ""
-    set index to 0
-    loop while index < inserted's length:
-        set character to the UTF8 character at index in inserted
-        require condition (character's valid) reporting "UI text must contain valid UTF-8"
-        set allowed to (character's code >= 32) and (character's code != 127)
-        if source's element's kind = 44:
-            set allowed to allowed or ((character's code = 10) or (character's code = 9))
-        if allowed:
-            set filtered to filtered + (the substring of inserted from index spanning (character's next - index) bytes)
-        set index to character's next
-    set changed to ((the substring of (entry's text) from 0 spanning start bytes) + filtered) + (the substring of (entry's text) from end spanning (entry's text's length - end) bytes)
-    if changed = entry's text:
+    set filtered to UI text accepted from inserted by (source's element)
+    set updated to ((the substring of (entry's text) from 0 spanning start bytes) + filtered) + (the substring of (entry's text) from end spanning (entry's text's length - end) bytes)
+    commit UI text updated selecting (start + filtered's length) through (start + filtered's length) in view
+
+to get the UI input source for {integer:epoch} in {a pointer to UI view:view}:
+    set candidate to view's selection's caret source
+    set context to view's input context
+    set empty to @intrinsic("construct", a pointer to UI text source)
+    if ((candidate = empty) or (view's keyboard focus = false)) or (view's active = false):
+        return empty
+    if (context's active = false) or ((epoch != context's epoch) or (candidate's element != context's element)):
+        return empty
+    if (context's byte anchor != view's selection's anchor) or (context's byte caret != view's selection's caret):
+        return empty
+    if (the UI value for (candidate's element) in (view's instance))'s text != context's text:
+        return empty
+    return candidate
+
+to receive platform UI text {string:updated} for {integer:epoch} selecting {integer:anchor} through {integer:caret} in {a pointer to UI view:view}:
+    set source to the UI input source for epoch in view
+    if source = @intrinsic("construct", a pointer to UI text source):
         return nothing
-    release UI text edits entry's redo
-    set entry's redo to @intrinsic("construct", a pointer to UI text edit)
-    set edit to @intrinsic("construct", UI text edit, entry's text, changed, view's selection's anchor, view's selection's caret, start + filtered's length, entry's undo)
-    set entry's undo to storage for one slot initialized with edit
-    set entry's text to changed
-    set view's selection's anchor to start + filtered's length
-    set view's selection's caret to view's selection's anchor
-    set source's text to entry's text
-    set view's selection's vertical to false
-    set view's selection's composition to ""
+    set first to the UTF-8 byte offset of UTF-16 position anchor in updated
+    set last to the UTF-8 byte offset of UTF-16 position caret in updated
+    require condition ((first succeeded) and (last succeeded)) reporting "A platform text selection splits a Unicode character"
+    set filtered to UI text accepted from updated by (source's element)
+    set left to UI text accepted from (the substring of updated from 0 spanning (first's position) bytes) by (source's element)
+    set right to UI text accepted from (the substring of updated from 0 spanning (last's position) bytes) by (source's element)
+    commit UI text filtered selecting (left's length) through (right's length) in view
+
+to receive UI composition {string:content} for {integer:epoch} at phase {integer:phase} selecting {integer:anchor} through {integer:caret} in {a pointer to UI view:view}:
+    set source to the UI input source for epoch in view
+    if source = @intrinsic("construct", a pointer to UI text source):
+        return nothing
+    if phase = 0:
+        set view's selection's composing to false
+        set view's selection's composition to ""
+    else:
+        if phase = 1:
+            set view's selection's composing to true
+            set view's selection's composition start to the minimum of (view's selection's anchor) and (view's selection's caret)
+            set view's selection's composition end to the maximum of (view's selection's anchor) and (view's selection's caret)
+        else:
+            require condition ((phase = 2) and (view's selection's composing)) reporting "A composition update has no active composition"
+        set first to the UTF-8 byte offset of UTF-16 position anchor in content
+        set last to the UTF-8 byte offset of UTF-16 position caret in content
+        require condition ((first succeeded) and (last succeeded)) reporting "A composition selection splits a Unicode character"
+        set filtered to UI text accepted from content by (source's element)
+        set left to UI text accepted from (the substring of content from 0 spanning (first's position) bytes) by (source's element)
+        set right to UI text accepted from (the substring of content from 0 spanning (last's position) bytes) by (source's element)
+        set view's selection's composition to filtered
+        set view's selection's composition anchor to left's length
+        set view's selection's composition caret to right's length
     set view's reveal caret to true
-    activate (source's element) belonging to (source's element) in (view's instance)
+    set view's damaged to true
+    if view's instance's description's kind = 40:
+        reflow the UI document in view
+    else:
+        refresh UI text geometry for source in view
 
 to restore UI text history in {a pointer to UI view:view} forward {boolean:forward}:
     set source to view's selection's caret source
@@ -135,8 +224,8 @@ to restore UI text history in {a pointer to UI view:view} forward {boolean:forwa
         set edit's next to entry's undo
         set entry's undo to edit
         set entry's text to edit's after
-        set view's selection's anchor to edit's position
-        set view's selection's caret to edit's position
+        set view's selection's anchor to edit's after anchor
+        set view's selection's caret to edit's after caret
     else:
         set entry's undo to edit's next
         set edit's next to entry's redo
@@ -149,8 +238,14 @@ to restore UI text history in {a pointer to UI view:view} forward {boolean:forwa
     activate (source's element) belonging to (source's element) in (view's instance)
 
 to handle UI [text] keys in {a pointer to UI view:view}:
+    if view's active = false:
+        set view's key press to -1
+        return nothing
     set source to view's selection's caret source
     if source = @intrinsic("construct", a pointer to UI text source):
+        return nothing
+    if view's selection's composing:
+        set view's key press to -1
         return nothing
     set editable to source's element != @intrinsic("construct", UI reference)
     if editable:

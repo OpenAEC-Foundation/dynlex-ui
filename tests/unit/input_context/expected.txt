@@ -1,0 +1,1 @@
+Text contexts share focus, caret geometry, Unicode selection and undo.

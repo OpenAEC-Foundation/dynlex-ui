@@ -14,6 +14,7 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
     set result's height to height
     set result's pixel scale to 1.0
     set result's focus order to 1
+    set result's active to true
     set result's key press to -1
     set result's current alpha to 255
     set result's current color to UI ink 255 255 255

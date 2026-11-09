@@ -2,10 +2,14 @@ import paragraph_rendering.dl
 import text_colors.dl
 
 to get draw colored UI row {a pointer to UI text line:line} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} starting with {a pointer to UI text color span:span} on {UI frame:frame}:
-    set offset to line's start
     set ending to true
     if line's next != @intrinsic("construct", a pointer to UI text line):
         set ending to line's end < line's next's start
+    return draw colored UI text (layout's content) from (line's start) through (line's end) in layout at left baseline ending ending starting with span on frame
+
+to get draw colored UI text {string:text} from {integer:start} through {integer:finish} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} ending {boolean:ending} starting with {a pointer to UI text color span:span} on {UI frame:frame}:
+    set offset to start
+    set x to left
     set more to true
     loop while more:
         set searching to true
@@ -14,7 +18,7 @@ to get draw colored UI row {a pointer to UI text line:line} in {a pointer to UI 
                 set searching to false
             else:
                 set span to span's next
-        set end to line's end
+        set end to finish
         set ink to layout's appearance's foreground
         if span != @intrinsic("construct", a pointer to UI text color span):
             if span's start > offset:
@@ -22,11 +26,11 @@ to get draw colored UI row {a pointer to UI text line:line} in {a pointer to UI 
             else:
                 set ink to span's ink
                 set end to the minimum of end and (span's end)
-        set content to the substring of (layout's content) from offset spanning (end - offset) bytes
+        set content to the substring of text from offset spanning (end - offset) bytes
         set frame's view's text offset to offset
-        set frame's view's text end caret to ending and (end = line's end)
-        draw UI text content at left baseline with (layout's typeface) in ink on frame
-        set left to left + (the width of content using (layout's typeface))
+        set frame's view's text end caret to ending and (end = finish)
+        draw UI text content at x baseline with (layout's typeface) in ink on frame
+        set x to x + (the width of content using (layout's typeface))
         set offset to end
-        set more to offset < line's end
+        set more to offset < finish
     return span

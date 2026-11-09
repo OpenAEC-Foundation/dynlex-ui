@@ -20,10 +20,48 @@ export function connectInput(surface, send, schedule) {
   const input = document.createElement("textarea");
   input.setAttribute("aria-label", `${surface.title} keyboard input`);
   input.tabIndex = -1;
+  input.readOnly = true;
+  input.spellcheck = false;
+  input.autocapitalize = 'off';
+  input.setAttribute('autocorrect', 'off');
+  input.wrap = 'off';
   Object.assign(input.style, { position: "fixed", left: "0", top: "0", width: "1px",
-    height: "1px", opacity: "0", padding: "0", border: "0", pointerEvents: "none" });
+    height: "1px", opacity: "0", padding: "0", border: "0", margin: "0", pointerEvents: "none",
+    overflow: 'hidden', resize: 'none', fontKerning: 'none' });
   canvas.parentElement.append(input);
   let composing = false;
+  let compositionOwner = 0, compositionStart = 0, preedit = '';
+  let context = { owner: 0 };
+  const ownsFocus = () => document.hasFocus() && [canvas, input].includes(document.activeElement);
+  const updateContext = value => {
+    const owned = ownsFocus();
+    if (value.owner !== context.owner && composing) {
+      composing = false;
+      if (owned) canvas.focus({ preventScroll: true });
+    }
+    context = value;
+    if (value.owner === 0) {
+      if (document.activeElement === input && owned) canvas.focus({ preventScroll: true });
+      input.readOnly = true;
+      return;
+    }
+    input.readOnly = false;
+    const bounds = canvas.getBoundingClientRect(), box = value.bounds;
+    const scale = box.height / (value.font.size + 3);
+    Object.assign(input.style, { left: bounds.left + box.x + 'px', top: bounds.top + box.y + 'px',
+      height: box.height + 'px', lineHeight: box.height + 'px', fontSize: value.font.size * scale + 'px',
+      fontFamily: '"' + value.font.family + '"' });
+    if (!composing) {
+      if (input.value !== value.text) input.value = value.text;
+      const first = Math.min(value.anchor, value.caret), last = Math.max(value.anchor, value.caret);
+      const direction = value.anchor > value.caret ? 'backward' : 'forward';
+      if (input.selectionStart !== first || input.selectionEnd !== last || input.selectionDirection !== direction)
+        input.setSelectionRange(first, last, direction);
+      if (owned && document.activeElement !== input) input.focus({ preventScroll: true });
+    }
+    input.scrollTop = value.line * box.height;
+    input.scrollLeft = value.prefix * scale;
+  };
   const modifiers = event => Number(event.shiftKey) | Number(event.ctrlKey) << 1 |
     Number(event.altKey) << 2 | Number(event.metaKey) << 3;
   const motion = event => {
@@ -36,7 +74,7 @@ export function connectInput(surface, send, schedule) {
   }, options);
   canvas.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
-    event.preventDefault(); input.focus({ preventScroll: true });
+    event.preventDefault(); canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(event.pointerId); motion(event);
     send(2, 1, 0, 0, modifiers(event));
   }, options);
@@ -46,37 +84,60 @@ export function connectInput(surface, send, schedule) {
     canvas.releasePointerCapture(event.pointerId);
   }, options);
   canvas.addEventListener("pointercancel", () => send(7), options);
-  canvas.addEventListener("focus", () => input.focus({ preventScroll: true }), options);
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
     const unit = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? canvas.clientHeight : 1;
     send(5, 0, event.deltaX * unit, event.deltaY * unit, modifiers(event));
   }, { ...options, passive: false });
 
-  input.addEventListener("keydown", event => {
+  const keydown = event => {
     const key = keyNumber(event.code);
-    if (key < 0 || event.isComposing) return;
+    if (key < 0 || event.isComposing || composing) return;
     const shortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
     if ([256, 257, 258, 259, 261, 262, 263, 264, 265, 266, 267, 268, 269].includes(key) ||
         (shortcut && [65, 67, 88, 89, 90].includes(key))) event.preventDefault();
     send(event.repeat ? 9 : 3, key, 0, 0, modifiers(event));
-  }, options);
-  input.addEventListener("keyup", event => {
+  };
+  const keyup = event => {
     const key = keyNumber(event.code);
     if (key >= 0) send(6, key, 0, 0, modifiers(event));
-  }, options);
-  input.addEventListener("blur", () => send(7), options);
+  };
+  for (const target of [canvas, input]) {
+    target.addEventListener('keydown', keydown, options);
+    target.addEventListener('keyup', keyup, options);
+    target.addEventListener('blur', event => {
+      if (![canvas, input].includes(event.relatedTarget)) send(7);
+    }, options);
+    target.addEventListener('focus', event => {
+      if (![canvas, input].includes(event.relatedTarget)) send(14);
+    }, options);
+  }
   input.addEventListener("paste", event => {
     event.preventDefault(); send(4, 0, 0, 0, 0, event.clipboardData.getData("text/plain"));
   }, options);
   const commit = () => {
-    if (!composing && input.value) { send(4, 0, 0, 0, 0, input.value); input.value = ""; }
+    if (composing || context.owner === 0) return;
+    const backward = input.selectionDirection === 'backward';
+    send(13, context.owner, backward ? input.selectionEnd : input.selectionStart,
+      backward ? input.selectionStart : input.selectionEnd, 0, input.value);
   };
-  input.addEventListener("input", commit, options);
-  input.addEventListener("compositionstart", () => { composing = true; }, options);
-  input.addEventListener("compositionupdate", event => send(10, 0, 0, 0, 0, event.data), options);
+  input.addEventListener("input", event => {
+    if (event.isComposing && !composing) return;
+    if (!composing) { commit(); return; }
+    const start = Math.max(0, Math.min(preedit.length, input.selectionStart - compositionStart));
+    const end = Math.max(0, Math.min(preedit.length, input.selectionEnd - compositionStart));
+    send(10, compositionOwner, start, end, 2, preedit);
+  }, options);
+  input.addEventListener("compositionstart", () => {
+    composing = true; compositionOwner = context.owner; compositionStart = input.selectionStart;
+    preedit = ''; send(10, compositionOwner, 0, 0, 1, '');
+  }, options);
+  input.addEventListener("compositionupdate", event => {
+    preedit = event.data; send(10, compositionOwner, preedit.length, preedit.length, 2, preedit);
+  }, options);
   input.addEventListener("compositionend", () => {
-    composing = false; send(10, 0, 0, 0, 0, ""); commit();
+    if (!composing) return;
+    composing = false; send(10, compositionOwner, 0, 0, 0, ''); commit();
   }, options);
   const observer = new ResizeObserver(schedule);
   observer.observe(canvas);
@@ -88,6 +149,8 @@ export function connectInput(surface, send, schedule) {
   };
   changed();
   document.addEventListener("visibilitychange", () => send(document.hidden ? 7 : 8), options);
-  return () => { controller.abort(); observer.disconnect();
-    resolution.removeEventListener("change", changed); input.remove(); };
+  window.addEventListener('focus', () => { if (ownsFocus()) send(14); }, options);
+  window.addEventListener('blur', () => send(7), options);
+  return { updateContext, close() { controller.abort(); observer.disconnect();
+    resolution.removeEventListener("change", changed); input.remove(); } };
 }

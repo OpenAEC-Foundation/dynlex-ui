@@ -1,0 +1,38 @@
+import ../../ui/browser.dl
+
+appearance sheet appearance:
+    padding is 24
+    gap is 16
+
+appearance source appearance:
+    font is "assets/fonts/NotoSans-Regular.ttf"
+    font size is 16
+    padding is 12
+    height is 220
+    border is UI ink 150 150 150
+    border width is 1
+    lines do not wrap
+
+document editing workspace using sheet appearance:
+    paragraph "Read only" containing "Read-only canvas text" using no UI appearance
+    editor "Source" containing "alpha selected omega\nnext line" using source appearance
+
+to close editing workspace {a pointer to UI view:view}:
+    set instance to view's instance
+    close view
+    close instance
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open editing workspace:
+    globals:
+        editing workspace
+    execute:
+        set instance to storage for one slot initialized with (an instance of editing workspace)
+        set view to storage for one slot initialized with (a UI view of instance sized 800 by 600 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with the browser UI driver)
+        set view's close action to (the function named "close editing workspace $") as a pointer
+        run view
+
+open editing workspace

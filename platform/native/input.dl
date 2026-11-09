@@ -35,9 +35,9 @@ to receive native UI scroll from {a pointer:handle} at {floating-point number:x}
     queue UI input of kind 5 key 0 at (-40.0 * x) (-40.0 * y) with modifiers 0 containing "" in (surface's view)
 
 to receive native UI focus from {a pointer:handle} active {integer:active}:
-    if active = 0:
-        set surface to the native UI surface for handle handle
-        queue UI input of kind 7 key 0 at 0.0 0.0 with modifiers 0 containing "" in (surface's view)
+    set surface to the native UI surface for handle handle
+    set kind to 7 if active = 0, else 14
+    queue UI input of kind kind key 0 at 0.0 0.0 with modifiers 0 containing "" in (surface's view)
 
 to receive native UI refresh from {a pointer:handle}:
     set surface to the native UI surface for handle handle

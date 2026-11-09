@@ -1,6 +1,7 @@
 # Text runs, UTF-8 boundaries and selection geometry belong to the shared engine.
 import platform.dl
 import lib/utf8.dl
+import input_context.dl
 
 to get the UI text boundary at or before {integer:offset} in {string:text}:
     require condition (offset >= 0) reporting "A UI selection offset cannot be negative"
@@ -148,6 +149,8 @@ to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
     if run = @intrinsic("construct", a pointer to UI text run):
         return nothing
     set view to frame's view
+    if view's selection's composing and (view's selection's caret source = run's source):
+        return nothing
     set start to the first selected UI byte in run in view
     set end to the last selected UI byte in run in view
     set x to run's origin's x
@@ -156,13 +159,14 @@ to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
         set left to the width of (the UI text prefix of (run's text) ending at start) using (run's typeface)
         set right to the width of (the UI text prefix of (run's text) ending at end) using (run's typeface)
         draw a rectangle at x (x + left) and y y with width (right - left) and height (run's typeface's size + 4) in color red 190, green 216 and blue 250 in frame
-    if (run's source's element != @intrinsic("construct", UI reference)) and (view's selection's caret source = run's source):
+    if view's active and ((run's source's element != @intrinsic("construct", UI reference)) and (view's selection's caret source = run's source)):
         set caret to view's selection's caret - run's start
         if (caret < 0) or ((caret >= run's text's length) and (run's end caret = false)):
             return nothing
         if caret > run's text's length:
             return nothing
         set offset to the width of (the UI text prefix of (run's text) ending at caret) using (run's typeface)
+        position UI input for (run's source) displaying (run's source's text) with caret (view's selection's caret) at (a UI point at (x + offset) and y) using (run's typeface) in view
         draw a rectangle at x (x + offset) and y y with width 1.2 and height (run's typeface's size + 3) in color red 60, green 100 and blue 190 in frame
 
 to finish UI text painting in {a pointer to UI view:view}:
@@ -184,6 +188,14 @@ to finish UI text painting in {a pointer to UI view:view}:
 to synchronize editable UI text {a pointer to UI text source:source} in {a pointer to UI view:view}:
     set entry to the UI value for (source's element) in (view's instance)
     if source's text != entry's text:
+        set view's selection's composing to false
+        set view's selection's composition to ""
         set source's text to entry's text
         set view's selection's anchor to the UI text boundary at or before (view's selection's anchor) in (source's text)
         set view's selection's caret to the UI text boundary at or before (view's selection's caret) in (source's text)
+
+to get the presented UI text of {a pointer to UI text source:source} in {a pointer to UI view:view}:
+    if view's selection's composing and (view's selection's caret source = source):
+        set selection to view's selection
+        return ((the substring of (source's text) from 0 spanning (selection's composition start) bytes) + selection's composition) + (the substring of (source's text) from (selection's composition end) spanning (source's text's length - selection's composition end) bytes)
+    return source's text

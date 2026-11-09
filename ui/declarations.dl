@@ -107,7 +107,8 @@ class:
         after as a string
         anchor as an integer
         caret as an integer
-        position as an integer
+        after anchor as an integer
+        after caret as an integer
         next as a pointer to UI text edit
 
 class:

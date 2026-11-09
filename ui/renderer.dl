@@ -82,6 +82,8 @@ to paint UI view {a pointer to UI view:view}:
     update the UI viewport in view
     @intrinsic("call pointer", view's driver's begin, nothing, view)
     set frame to @intrinsic("construct", UI frame, view, view's drawable)
+    set view's input context's was active to view's input context's active
+    set view's input context's active to false
     if frame's drawable = false:
         @intrinsic("call pointer", view's driver's present, nothing, view)
         return nothing

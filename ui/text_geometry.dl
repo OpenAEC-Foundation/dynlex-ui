@@ -5,9 +5,10 @@ import layout_lookup.dl
 to refresh UI text geometry for {a pointer to UI text source:source} in {a pointer to UI view:view}:
     set layout to the UI layout for element (source's element) in (view's layout)
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "Editable text has no retained layout"
-    if (layout's content = source's text) and (layout's lines != @intrinsic("construct", a pointer to UI text line)):
+    set content to the presented UI text of source in view
+    if (layout's content = content) and (layout's lines != @intrinsic("construct", a pointer to UI text line)):
         return nothing
-    set layout's content to source's text
+    set layout's content to content
     set span to 1.0e30
     if layout's node's kind = 39:
         set layout's typeface to view's typeface

@@ -1,0 +1,48 @@
+import ../../helpers/driver.dl
+
+appearance source appearance:
+    font size is 16
+    padding is 12
+    height is 100
+
+document input test:
+    editor "Source" containing "Aé🙂B\nC" using source appearance
+    link "Leave editor" to "" using no UI appearance
+
+set instance to an instance of input test
+set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+require condition (view's input context's active = false) reporting "An unfocused editor activated platform text input"
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's input context's active) reporting "Focusing the editor did not activate platform text input"
+require condition ((view's input context's anchor = 7) and (view's input context's caret = 7)) reporting "A platform text context used UTF-8 positions instead of UTF-16"
+require condition (view's input context's line = 1) reporting "The input context lost its source line"
+require condition ((view's input context's prefix width = 8.0) and (view's input context's bounds' x = 20.0)) reporting "The platform caret did not use shared text geometry"
+set owner to view's input context's epoch
+queue UI input of kind 13 key owner at 1.0 4.0 with modifiers 0 containing "Aé🙂!\nC" in (the address of view)
+ignore update UI view (the address of view)
+set source to view's selection's caret source
+require condition (source's text = "Aé🙂!\nC") reporting "A platform text edit did not update its source"
+require condition ((view's selection's anchor = 1) and (view's selection's caret = 7)) reporting "The platform selection did not retain Unicode boundaries"
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((source's text = "Aé🙂B\nC") and (view's selection's caret = 10)) reporting "Undo lost the original platform edit selection"
+queue UI input of kind 3 key 89 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's selection's anchor = 1) and (view's selection's caret = 7)) reporting "Redo collapsed the platform edit selection"
+queue UI input of kind 7 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's input context's active = false) and (view's selection's caret = 7)) reporting "Surface focus loss discarded the editing selection"
+queue UI input of kind 14 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's input context's active) reporting "Surface focus return did not restore its input context"
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's input context's active = false) reporting "Leaving editing kept platform text input active"
+queue UI input of kind 13 key owner at 0.0 0.0 with modifiers 0 containing "stale edit" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "Aé🙂!\nC") reporting "A late platform event edited an inactive source"
+close the address of view
+close the address of instance
+print line "Text contexts share focus, caret geometry, Unicode selection and undo."

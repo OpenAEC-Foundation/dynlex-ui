@@ -1,0 +1,59 @@
+import ../../helpers/driver.dl
+import lib/text_scan.dl
+
+appearance source appearance:
+    font size is 16
+    padding is 12
+    height is 140
+
+document composition test:
+    editor "Source" containing "Aé🙂B\nC" using source appearance
+
+set instance to an instance of composition test
+set view to a UI view of (the address of instance) sized 300 by 240 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set source to view's selection's caret source
+set view's selection's anchor to 1
+set view's selection's caret to 7
+set view's damaged to true
+ignore update UI view (the address of view)
+set epoch to view's input context's epoch
+queue UI input of kind 10 key epoch at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 10 key epoch at 2.0 2.0 with modifiers 2 containing "東京" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's input context's bounds' x = 36.0) reporting "The source prefix shifted its composition caret twice"
+queue UI input of kind 10 key epoch at 4.0 4.0 with modifiers 2 containing "東京\n語" in (the address of view)
+ignore update UI view (the address of view)
+set layout to the UI layout labeled "Source" in (view's layout)
+require condition (layout's content = "A東京\n語B\nC") reporting "Composition did not replace its selected presentation range"
+require condition (source's text = "Aé🙂B\nC") reporting "Tentative composition changed the source"
+set recorded to (view's window as a pointer to test UI surface)'s drawn
+require condition ((recorded contains "東京") and (recorded contains "語")) reporting "Multiline composition was not painted"
+require condition ((recorded contains "é🙂") = false) reporting "The selected source remained under its preedit"
+require condition (view's input context's line = 1) reporting "The native composition caret lost its presented source line"
+require condition (view's input context's prefix width = 8.0) reporting "The native composition caret ignored its tentative text"
+require condition (view's input context's epoch = epoch) reporting "Tentative composition invalidated its native input session"
+set entry to the UI value for (source's element) in (the address of instance)
+require condition (entry's undo = @intrinsic("construct", a pointer to UI text edit)) reporting "Tentative composition created an undo entry"
+queue UI input of kind 10 key epoch at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 13 key epoch at 5.0 5.0 with modifiers 0 containing "A東京\n語B\nC" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((source's text = "A東京\n語B\nC") and (view's selection's caret = 11)) reporting "A committed composition lost its Unicode caret"
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((source's text = "Aé🙂B\nC") and (view's selection's anchor = 1)) reporting "Composition undo did not restore its original source and selection"
+set epoch to view's input context's epoch
+queue UI input of kind 10 key epoch at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 10 key epoch at 1.0 1.0 with modifiers 2 containing "仮" in (the address of view)
+ignore update UI view (the address of view)
+set the text of "Source" in (the address of instance) to "replacement"
+ignore update UI view (the address of view)
+require condition (view's selection's composing = false) reporting "Replacing a document retained its old composition"
+queue UI input of kind 13 key epoch at 1.0 1.0 with modifiers 0 containing "old composition" in (the address of view)
+ignore update UI view (the address of view)
+require condition (source's text = "replacement") reporting "An old native composition overwrote its replacement document"
+close the address of view
+close the address of instance
+print line "Composition presents Unicode replacements without changing source or undo until commit."

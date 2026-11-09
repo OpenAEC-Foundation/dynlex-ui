@@ -4,7 +4,11 @@ import lib/utf8.dl
 
 # Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
 # 6 key release, 7 focus loss, 8 refresh, 9 repeat, 10 composition,
-# 11 platform response (key=request ID, modifiers=status), 12 platform notification.
+# 11 platform response (key=request ID, modifiers=status), 12 platform notification,
+# 13 native text edit (key=input epoch, x/y=UTF-16 selection anchor/caret),
+# 14 surface focus gained.
+# Composition: key=input epoch, modifiers=0 end/1 begin/2 update,
+# x/y=UTF-16 selection anchor/caret within the composition text.
 to queue UI input of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {string:text} in {a pointer to UI view:view}:
     set event to @intrinsic("construct", UI input event, kind, key, x, y, modifiers, text, @intrinsic("construct", a pointer to UI input event))
     set entry to storage for one slot initialized with event
@@ -42,14 +46,24 @@ to process UI input in {a pointer to UI view:view}:
             set view's scroll x to event's x
             set view's scroll y to event's y
         if event's kind = 7:
+            if view's selection's composing:
+                receive UI composition (the string form of "") for (view's input context's epoch) at phase 0 selecting 0 through 0 in view
             set view's keys to a new boolean array of 512 items
             set view's down to false
             set view's pressed to @intrinsic("construct", a pointer to UI layout)
+            set view's active to false
+            set view's selection's composition to ""
+            set view's selection's composing to false
+            set view's damaged to true
+        if event's kind = 14:
+            set view's active to true
+            set view's damaged to true
         if event's kind = 8:
             set view's damaged to true
         if event's kind = 10:
-            set view's selection's composition to event's text
-            set view's damaged to true
+            receive UI composition (event's text) for (event's key) at phase (event's modifiers) selecting (event's x as an integer) through (event's y as an integer) in view
+        if event's kind = 13:
+            receive platform UI text (event's text) for (event's key) selecting (event's x as an integer) through (event's y as an integer) in view
         if view's input action != (0 as a pointer):
             @intrinsic("call pointer", view's input action, nothing, view)
         handle UI input in view

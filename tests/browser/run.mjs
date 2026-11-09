@@ -81,6 +81,21 @@ try {
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `
     // Test-side instrumentation: the application has no paint counters or test API.
     const frames = new Set();
+    let drawn = [];
+    const instantiate = WebAssembly.instantiate.bind(WebAssembly);
+    WebAssembly.instantiate = function(bytes, imports, ...args) {
+      const env = imports?.env;
+      if (env?.ui_text_mask) {
+        const begin = env.ui_begin, mask = env.ui_text_mask, decoder = new TextDecoder();
+        env.ui_begin = (...args) => { drawn = []; return begin(...args); };
+        env.ui_text_mask = (font, pointer, count, ...args) => {
+          const result = mask(font, pointer, count, ...args);
+          if (result) drawn.push(decoder.decode(new Uint8Array(env.__linear_memory.buffer, pointer, count)));
+          return result;
+        };
+      }
+      return instantiate(bytes, imports, ...args);
+    };
     let paints = 0;
     const requestFrame = requestAnimationFrame.bind(window);
     const cancelFrame = cancelAnimationFrame.bind(window);
@@ -124,7 +139,7 @@ try {
       return adapter;
     };
     }
-    window.uiTest = { stats() {
+    window.uiTest = { drawn: () => drawn, stats() {
       const canvas = document.querySelector('canvas');
       return canvas ? [{ paints, api, scheduled: frames.size > 0,
         width: canvas.clientWidth, height: canvas.clientHeight }] : [];
@@ -190,6 +205,9 @@ try {
     assert((await evaluate('window.uiTest.stats()[0]')).paints > paused, 'Escape must resume the run');
     await key('Escape', 'Escape', 27); await settled();
   } else if (example === 'text') {
+    await click(33, 450); await settled();
+    assert.equal(await evaluate('document.activeElement.tagName'), 'CANVAS',
+      'Selecting read-only text activated the browser text editor');
     await click(180, 250);
     assert.equal(await evaluate('document.querySelector("canvas").style.cursor'), 'text');
     await key('a', 'KeyA', 65, 2);
@@ -240,6 +258,9 @@ try {
       if (resources.size !== 0) throw new Error('Closing the font retained masks');
     })()`);
 
+  } else if (example === 'editor') {
+    const { verifyEditor } = await import('./editor.mjs');
+    await verifyEditor({ click, key, evaluate, command, waitFor, settled, screenshot });
   } else throw new Error(`Unknown example: ${example}`);
   const after = await evaluate('window.uiTest.stats()[0]');
   assert(after.paints > before.paints, 'Interaction must repaint');

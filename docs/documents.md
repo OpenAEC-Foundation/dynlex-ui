@@ -85,5 +85,19 @@ Selection, copying and caret navigation retain the original source coordinates.
 Starting another color set releases the old spans; closing the instance releases
 its annotations. The UI library does not parse language tokens.
 
+Composition temporarily replaces the selected source range in the presentation,
+including line wrapping, scrolling and the caret. The surrounding source keeps
+its semantic colors. Committing creates one undoable edit; cancelling leaves the
+source and history unchanged. Surface focus loss hides the caret and ends
+composition while retaining the editor selection.
+
+`view's input context` supplies the active editor, an input epoch, its complete
+source and UTF-16 selection, the caret bounds in surface coordinates, and the
+font and source-line offset used by native text services. The browser adapter
+uses this context for its invisible IME input. Read-only selection and command
+controls keep canvas keyboard focus. A source, selection or focus change retires
+the previous input epoch, so delayed native events cannot overwrite a newly
+loaded document.
+
 See [sections](sections.md) for defining additional declarative shapes and
 [the examples](../examples) for application and platform setup.

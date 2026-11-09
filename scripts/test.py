@@ -46,8 +46,10 @@ def main():
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
-        for name in ['ribbon', 'snake', 'text']:
-            subprocess.run(['python3', 'scripts/build.py', name, '--dynlex', str(args.dynlex.resolve())], cwd=project, check=True)
+        applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
+        applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
+        for arguments, directory in applications:
+            subprocess.run(['python3', 'scripts/build.py', *arguments, '--dynlex', str(args.dynlex.resolve())], cwd=project, check=True)
             xvfb = shutil.which('xvfb-run')
             if not xvfb:
                 parser.error('Browser visual tests require xvfb-run')
@@ -57,7 +59,7 @@ def main():
             environment.pop('VK_DRIVER_FILES', None)
             environment.pop('VK_ICD_FILENAMES', None)
             for mode in ['webgpu', 'webgl-no-adapter', 'webgl-no-api']:
-                subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', f'dist/{name}', mode], cwd=project, env=environment, check=True)
+                subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', directory, mode], cwd=project, env=environment, check=True)
 
 
 if __name__ == '__main__':

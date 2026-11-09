@@ -1,0 +1,43 @@
+import editor_rendering.dl
+
+# Composition replaces a source range only in the presentation. Prefix and
+# suffix runs keep their original source offsets and semantic colors.
+to get draw composing UI row {a pointer to UI text line:line} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} starting with {a pointer to UI text color span:span} on {UI frame:frame}:
+    set view to frame's view
+    set selection to view's selection
+    set start to selection's composition start
+    set end to start + selection's composition's length
+    set ending to true
+    if line's next != @intrinsic("construct", a pointer to UI text line):
+        set ending to line's end < line's next's start
+    set prefix to the minimum of (line's end) and start
+    if prefix >= line's start:
+        set span to draw colored UI text (layout's text source's text) from (line's start) through prefix in layout at left baseline ending false starting with span on frame
+    set first to the maximum of (line's start) and start
+    set last to the minimum of (line's end) and end
+    if last > first:
+        set x to left + (the width of (the substring of (layout's content) from (line's start) spanning (first - line's start) bytes) using (layout's typeface))
+        set preedit to the substring of (selection's composition) from (first - start) spanning (last - first) bytes
+        set view's selectable to false
+        draw UI text preedit at x baseline with (layout's typeface) in (view's theme's accent) on frame
+        set view's selectable to true
+        set width to the width of preedit using (layout's typeface)
+        draw a rectangle at x x and y (baseline + 2.0) with width width and height 1.0 in color red view's theme's accent's red, green view's theme's accent's green and blue view's theme's accent's blue in frame
+        set {marked first} to the maximum of first and (start + (the minimum of (selection's composition anchor) and (selection's composition caret)))
+        set {marked last} to the minimum of last and (start + (the maximum of (selection's composition anchor) and (selection's composition caret)))
+        if marked last > marked first:
+            set offset to the width of (the substring of (layout's content) from first spanning (marked first - first) bytes) using (layout's typeface)
+            set {marked width} to the width of (the substring of (layout's content) from marked first spanning (marked last - marked first) bytes) using (layout's typeface)
+            draw a rectangle at x (x + offset) and y (baseline + 1.0) with width marked width and height 3.0 in color red view's theme's accent's red, green view's theme's accent's green and blue view's theme's accent's blue in frame
+    set suffix to the maximum of (line's start) and end
+    if suffix <= line's end:
+        set x to left + (the width of (the substring of (layout's content) from (line's start) spanning (suffix - line's start) bytes) using (layout's typeface))
+        set shift to selection's composition end - end
+        set span to draw colored UI text (layout's text source's text) from (suffix + shift) through (line's end + shift) in layout at x baseline ending ending starting with span on frame
+    set position to start + selection's composition caret
+    if (position >= line's start) and ((position < line's end) or ((position = line's end) and ending)):
+        set x to left + (the width of (the substring of (layout's content) from (line's start) spanning (position - line's start) bytes) using (layout's typeface))
+        set y to baseline - layout's typeface's size
+        position UI input for (the address of (layout's text source)) displaying (layout's content) with caret position at (a UI point at x and y) using (layout's typeface) in view
+        draw a rectangle at x x and y y with width 1.2 and height (layout's typeface's size + 3) in color red view's theme's accent's red, green view's theme's accent's green and blue view's theme's accent's blue in frame
+    return span

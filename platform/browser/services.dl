@@ -18,6 +18,11 @@ to begin browser UI {a pointer to UI view:view}:
     set view's drawable to true
 
 to present browser UI {a pointer to UI view:view}:
+    set context to view's input context
+    set owner to context's epoch
+    if context's active = false:
+        set owner to 0
+    @intrinsic("call", "dynlex_ui", "ui_input_context", nothing, view's window, owner, the data of (context's text), context's text's length, context's anchor, context's caret, context's font's resource, context's bounds' x, context's bounds' y, context's bounds' width, context's bounds' height, context's line, context's prefix width)
     @intrinsic("call", "dynlex_ui", "ui_present", nothing, view's window)
 
 to submit browser UI {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
@@ -84,6 +89,11 @@ to wake browser UI {a pointer to UI view:view}:
 to receive browser UI input in {a pointer to UI view:view} of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {C string:text} counting {integer:count}:
     set content to the substring of (a new string from text containing count bytes) from 0 spanning count bytes
     queue UI input of kind kind key key at x y with modifiers modifiers containing content in view
+    # Resolve editing focus inside the browser's user gesture, so a touch can
+    # activate the native keyboard. Text commits also refresh source geometry
+    # before the next pointer event can inspect it.
+    if (((kind = 2) and (key = 1)) or ((kind = 3) or (kind = 9))) or ((kind = 4) or (kind = 13)):
+        ignore update UI view view
 
 to get the next browser UI frame in {a pointer to UI view:view}:
     set animation to update UI view view

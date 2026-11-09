@@ -32,6 +32,9 @@ require condition (recorded contains "end:202;") reporting "A color on a later s
 require condition (view's texts' start = 0) reporting "Coloring changed the text source coordinates"
 require condition (view's texts' next's start = 1) reporting "A colored text run lost its original byte offset"
 require condition (view's texts' next's next's start = 5) reporting "A colored Unicode run changed the following byte offset"
+require condition ((the UI text hit at (a UI point at 1.0 and 8.0) in (the address of view))'s start = 0) reporting "A later colored run captured a click on the first token"
+require condition ((the UI text hit at (a UI point at 12.0 and 8.0) in (the address of view))'s start = 1) reporting "A colored token did not own its painted horizontal range"
+require condition ((the UI text hit at (a UI point at 60.0 and 8.0) in (the address of view))'s start = 5) reporting "Clicking beyond a colored line did not resolve its last token"
 set recorded to ""
 set the text of "Source" in (the address of instance) to "new text"
 ignore update UI view (the address of view)

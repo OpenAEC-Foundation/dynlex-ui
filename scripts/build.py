@@ -9,25 +9,32 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("example", choices=["ribbon", "snake", "text"])
+    parser.add_argument("example", nargs="?", choices=["ribbon", "snake", "text"])
+    parser.add_argument("--entry", type=Path, help="Build a custom DynLex UI application instead of an example")
     parser.add_argument("--dynlex", type=Path, required=True, help="DynLex source checkout containing build/dynlex")
     parser.add_argument("--target", choices=["browser", "native"], default="browser")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if bool(args.example) == bool(args.entry):
+        parser.error("Choose an example or --entry")
     project = Path(__file__).resolve().parents[1]
     dynlex = args.dynlex.resolve()
     compiler = dynlex / "build/dynlex"
     if not compiler.is_file():
         parser.error(f"Build the compiler first: {compiler}")
+    name = args.example or args.entry.stem
+    source = args.entry.resolve() if args.entry else project / "examples" / args.example / ("main.dl" if args.target == "native" else "browser.dl")
+    if not source.is_file():
+        parser.error(f"The application source does not exist: {source}")
     if args.target == "native":
-        output = (args.output or project / "build" / f"{args.example}.out").resolve()
+        output = (args.output or project / "build" / f"{name}.out").resolve()
         output.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run([str(compiler), f"examples/{args.example}/main.dl", "-o", str(output)], cwd=project, check=True)
+        subprocess.run([str(compiler), str(source), "-o", str(output)], cwd=project, check=True)
         print(output)
         return
-    output = (args.output or project / "dist" / args.example).resolve()
+    output = (args.output or project / "dist" / name).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    subprocess.run([str(compiler), f"examples/{args.example}/browser.dl", "--emit-wasm", "-o", str(output / "application.wasm")], cwd=project, check=True)
+    subprocess.run([str(compiler), str(source), "--emit-wasm", "-o", str(output / "application.wasm")], cwd=project, check=True)
     shutil.copy2(project / "LICENSE.md", output / "LICENSE.md")
     licenses = output / "licenses"
     licenses.mkdir(exist_ok=True)

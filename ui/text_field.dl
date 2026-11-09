@@ -1,5 +1,6 @@
 import shapes.dl
 import clipping.dl
+import composition_rendering.dl
 
 to draw UI text field {a pointer to UI layout:layout} in {UI bounds:box} focused {boolean:focused} in {a pointer to UI view:view} on {UI frame:frame}:
     set value to the UI value for (layout's node) in (view's instance)
@@ -10,29 +11,37 @@ to draw UI text field {a pointer to UI layout:layout} in {UI bounds:box} focused
     draw a rounded UI box (UI box at (box's x + 1.0) (box's y + 1.0) sized (box's width - 2.0) (box's height - 2.0)) with radius 7.0 in (view's theme's surface) on frame
     set clip to UI box at (box's x + 10.0) (box's y + 3.0) sized (box's width - 20.0) (box's height - 6.0)
     set saved to a UI clip restricted to clip in view on frame
-    set limit to the maximum of 0.0 and ((the width of (value's text) using (view's typeface)) - (clip's width - 2.0))
+    set layout's text source's element to layout's node
+    if view's selection's caret source = (the address of (layout's text source)):
+        synchronize editable UI text (the address of (layout's text source)) in view
+    set layout's text source's text to value's text
+    set layout's content to the presented UI text of (the address of (layout's text source)) in view
+    set layout's typeface to view's typeface
+    set layout's appearance's foreground to view's theme's text
+    set limit to the maximum of 0.0 and ((the width of (layout's content) using (view's typeface)) - (clip's width - 2.0))
     set layout's scroll position to the minimum of limit and (layout's scroll position)
     set caret to view's selection's caret source
     if caret != @intrinsic("construct", a pointer to UI text source):
         if caret's element = layout's node:
             synchronize editable UI text caret in view
-            set offset to the width of (the UI text prefix of (value's text) ending at (view's selection's caret)) using (view's typeface)
+            set position to view's selection's caret
+            if view's selection's composing:
+                set position to view's selection's composition start + view's selection's composition caret
+            set offset to the width of (the UI text prefix of (layout's content) ending at position) using (view's typeface)
             set layout's scroll position to the minimum of (layout's scroll position) and offset
             set layout's scroll position to the maximum of (layout's scroll position) and (offset - (clip's width - 2.0))
-    set layout's text source's element to layout's node
-    set layout's text source's text to value's text
     set view's text source to the address of (layout's text source)
     set view's text offset to 0
     set view's text end caret to true
     set view's selectable to true
-    draw UI text (value's text) at (clip's x - layout's scroll position) (box's y + (((box's height + view's typeface's size) / 2.0) - 2.0)) with (view's typeface) in (view's theme's text) on frame
-    if (view's selection's caret source = view's last text's source) and (view's selection's composition's length > 0):
-        set offset to the width of (the UI text prefix of (value's text) ending at (view's selection's caret)) using (view's typeface)
-        set view's selectable to false
-        set left to (clip's x - layout's scroll position) + offset
-        set baseline to box's y + ((box's height + view's typeface's size) / 2.0 - 2.0)
-        draw UI text (view's selection's composition) at left baseline with (view's typeface) in (view's theme's accent) on frame
-        draw a rectangle at x left and y (baseline + 3.0) with width (the width of (view's selection's composition) using (view's typeface)) and height 1.0 in color red 60, green 100 and blue 190 in frame
+    set left to clip's x - layout's scroll position
+    set baseline to box's y + ((box's height + view's typeface's size) / 2.0 - 2.0)
+    if view's selection's composing and (view's selection's caret source = (the address of (layout's text source))):
+        set line to a new UI text line
+        set line's end to layout's content's length
+        ignore draw composing UI row (the address of line) in layout at left baseline starting with (@intrinsic("construct", a pointer to UI text color span)) on frame
+    else:
+        draw UI text (value's text) at left baseline with (view's typeface) in (view's theme's text) on frame
     set view's text source to @intrinsic("construct", a pointer to UI text source)
     set view's selectable to false
     restore UI clip saved in view on frame

@@ -8,6 +8,8 @@ to keep the UI caret visible in {a pointer to UI layout:layout} within {UI bound
     if (view's reveal caret = false) or (view's selection's caret source != (the address of (layout's text source))):
         return nothing
     set position to view's selection's caret
+    if view's selection's composing:
+        set position to view's selection's composition start + view's selection's composition caret
     set line to layout's lines
     loop while line != @intrinsic("construct", a pointer to UI text line):
         if (position >= line's start) and (position <= line's end):

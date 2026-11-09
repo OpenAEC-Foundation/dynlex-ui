@@ -5,6 +5,7 @@ import text_types.dl
 import icon_types.dl
 import transform_types.dl
 import input_types.dl
+import input_context_types.dl
 
 class:
     patterns:
@@ -56,6 +57,7 @@ class:
         text end caret as a boolean
         reveal caret as a boolean
         selection as UI text selection
+        input context as UI input context
         instance as a pointer to UI instance
         typeface as a UI font
         heading as a UI font
@@ -83,6 +85,7 @@ class:
         focus first as a pointer to UI layout
         focus last as a pointer to UI layout
         keyboard focus as a boolean
+        active as a boolean
         page as UI reference
         fitted as a boolean
         adaptive as a boolean

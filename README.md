@@ -21,6 +21,10 @@ python3 scripts/build.py ribbon --dynlex ../dynlex
 python3 -m http.server --directory dist/ribbon 8000
 ```
 
+To package an application from another source file, use `--entry path/to/app.dl`
+in place of the example name. The entry selects its native or browser adapter;
+`--target native` builds an executable. `--output` chooses the output location.
+
 Visit `http://localhost:8000` in your normal browser. The host prefers WebGPU when
 it can acquire a device; otherwise it selects WebGL2 before creating any surfaces.
 The selection and shader-program services are shared with the DynLex homepage and
@@ -72,6 +76,9 @@ including a press/release pair received before the next paint.
 
 Text selection and editing use UTF-8 scalar boundaries and measured advances on
 both platforms. Clipboard copy/cut/paste and browser IME composition are supported.
+The shared renderer positions native text input at the active caret. Browser IME
+composition works in single-line fields and multiline editors, with commit,
+cancellation and undo; read-only content does not activate the text input bridge.
 Documents also support rich paragraphs, source-anchored selection, multiline
 editing and undo/redo. Grapheme-cluster navigation, bidirectional editing and a
 screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform

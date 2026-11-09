@@ -6,6 +6,7 @@ import document_scrolling.dl
 import paragraph_rendering.dl
 import document_tabs_rendering.dl
 import editor_rendering.dl
+import composition_rendering.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to layout's appearance
@@ -48,7 +49,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         set colors to @intrinsic("construct", a pointer to UI text color span)
         if kind = 44:
             set value to the UI value for (layout's node) in (view's instance)
-            if value's colored text = layout's content:
+            if value's colored text = layout's text source's text:
                 set colors to value's colors
         loop while line != @intrinsic("construct", a pointer to UI text line):
             set left to box's x + appearance's padding
@@ -57,7 +58,10 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             if appearance's centered:
                 set left to box's x + (box's width - line's width) / 2.0
             if kind = 44:
-                set colors to draw colored UI row line in layout at left (top + line's top + line's ascent) starting with colors on frame
+                if view's selection's composing and (view's selection's caret source = (the address of (layout's text source))):
+                    set colors to draw composing UI row line in layout at left (top + line's top + line's ascent) starting with colors on frame
+                else:
+                    set colors to draw colored UI row line in layout at left (top + line's top + line's ascent) starting with colors on frame
             else:
                 draw UI row line in layout at left (top + line's top + line's ascent) on frame
             set line to line's next

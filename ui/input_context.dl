@@ -1,0 +1,32 @@
+# Text services do not repeat the renderer's focus, Unicode or caret geometry.
+import platform.dl
+import lib/unicode.dl
+
+to position UI input for {a pointer to UI text source:source} displaying {string:content} with caret {integer:position} at {UI point:origin} using {UI font:typeface} in {a pointer to UI view:view}:
+    if ((view's active = false) or (view's keyboard focus = false)) or (view's text focus != source's element):
+        return nothing
+    set anchor to the UTF-16 position of UTF-8 byte offset (view's selection's anchor) in (source's text)
+    set destination to the UTF-16 position of UTF-8 byte offset (view's selection's caret) in (source's text)
+    require condition ((anchor succeeded) and (destination succeeded)) reporting "A text service selection splits a Unicode character"
+    set context to the address of (view's input context)
+    if (((context's was active = false) or (context's element != source's element)) or (context's text != source's text)) or ((context's byte anchor != view's selection's anchor) or (context's byte caret != view's selection's caret)):
+        increment context's epoch
+    set context's active to true
+    set context's element to source's element
+    set context's text to source's text
+    set context's anchor to anchor's position
+    set context's caret to destination's position
+    set context's byte anchor to view's selection's anchor
+    set context's byte caret to view's selection's caret
+    set context's font to typeface
+    set first to UI surface point (UI point origin transformed by (view's transform)) in view
+    set last to UI surface point (UI point (a UI point at (origin's x + 1.2) and (origin's y + typeface's size + 3)) transformed by (view's transform)) in view
+    set context's bounds to UI box at (first's x) (first's y) sized (last's x - first's x) (last's y - first's y)
+    set index, line and start to 0
+    loop while index < position:
+        if (the character at index in content) = 10:
+            increment line
+            set start to index + 1
+        increment index
+    set context's line to line
+    set context's prefix width to the width of (the substring of content from start spanning (position - start) bytes) using typeface

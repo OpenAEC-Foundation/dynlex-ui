@@ -19,5 +19,10 @@ class:
         caret as an integer
         dragging as a boolean
         composition as a string
+        composing as a boolean
+        composition start as an integer
+        composition end as an integer
+        composition anchor as an integer
+        composition caret as an integer
         preferred x as a floating-point number
         vertical as a boolean

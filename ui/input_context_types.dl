@@ -1,0 +1,22 @@
+import geometry.dl
+import components.dl
+import platform_types.dl
+
+# A platform text service receives shared editing state and surface coordinates.
+class:
+    patterns:
+        UI input context
+    members:
+        active as a boolean
+        was active as a boolean
+        epoch as an integer
+        element as UI reference
+        text as a string
+        anchor as an integer
+        caret as an integer
+        byte anchor as an integer
+        byte caret as an integer
+        bounds as UI bounds
+        font as UI font
+        line as an integer
+        prefix width as a floating-point number
