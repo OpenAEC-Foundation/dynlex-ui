@@ -26,6 +26,25 @@ Visit `http://localhost:8000`. WebGPU requires a secure context (localhost or HT
 and a WebGPU-capable browser. There is no alternate renderer. Build `snake` or `text`
 instead of `ribbon` for the game or selection/editor demo.
 
+If Chrome exposes `navigator.gpu` but reports "No WebGPU adapter is available",
+check `chrome://gpu`. Browser GPU configuration and driver support determine
+whether an adapter can be exposed; the application cannot enable one itself.
+On Linux, explicitly selecting Vulkan worked with Chrome 157, Mesa 26.0.8 and
+Intel UHD Graphics 630. With the server running, use a separate browser profile:
+
+```sh
+google-chrome --user-data-dir="$HOME/.cache/dynlex-ui-browser" \
+  --ozone-platform=x11 --enable-features=Vulkan --use-angle=vulkan \
+  --disable-vulkan-surface http://localhost:8000
+```
+
+This configuration was verified on the hardware adapter in an isolated X11 display,
+including rendering, interaction, resize and idle redraw checks. It does not need
+`--enable-unsafe-webgpu`, `--ignore-gpu-blocklist` or `--no-sandbox`. It is a local
+launch configuration, not a requirement a website can apply to its visitors. See
+[Chrome's WebGPU troubleshooting guide](https://developer.chrome.com/docs/web-platform/webgpu/troubleshooting-tips)
+for browser support and adapter diagnostics.
+
 For native:
 
 ```sh
