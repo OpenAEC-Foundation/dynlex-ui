@@ -1,0 +1,40 @@
+import painting.dl
+import ../input.dl
+
+to read breakout input from {a pointer to UI view:view}:
+    close a game from view
+    if view's input kind = 9:
+        if view's key press is one of [the UI space key, the UI R key]:
+            set view's key press to -1
+        return nothing
+    if view's input kind != 3:
+        return nothing
+    set session to the breakout in (view's instance)
+    if view's key press = the UI space key:
+        set session's paused to not session's paused
+        if session's paused:
+            show page "paused" in (view's instance)
+        else:
+            show page "playing" in (view's instance)
+    if view's key press = the UI R key:
+        restart session
+        show page "playing" in (view's instance)
+    if view's key press is one of [the UI space key, the UI R key]:
+        set view's damaged to true
+        set view's key press to -1
+
+to advance the breakout frame in {a pointer to UI view:view}:
+    set session to the breakout in (view's instance)
+    set left to (key (the UI left arrow key) is held in view) or (key (the UI A key) is held in view)
+    set right to (key (the UI right arrow key) is held in view) or (key (the UI D key) is held in view)
+    set machine key 4 to left as an integer
+    set machine key 6 to right as an integer
+    update session after (view's frame seconds) seconds
+    refresh breakout in (view's instance)
+    if not session's paused:
+        animate UI view view
+
+to play breakout using {a pointer to UI view:view}:
+    watch UI input in view using (the function named "read breakout input from $")
+    update UI frames in view using (the function named "advance the breakout frame in $")
+    run view

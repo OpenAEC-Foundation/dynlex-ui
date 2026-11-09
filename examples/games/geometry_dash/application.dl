@@ -1,0 +1,7 @@
+import painting.dl
+import controls.dl
+
+to explore routes using {a pointer to UI view:view}:
+    watch UI input in view using (the function named "read route input from $")
+    update UI frames in view using (the function named "advance the route frame in $")
+    run view
