@@ -1,0 +1,1 @@
+Source replacements preserve Unicode caret boundaries before input and paint.

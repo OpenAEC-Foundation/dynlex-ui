@@ -1,0 +1,26 @@
+import ../../helpers/driver.dl
+
+document replacement test:
+    editor "Source" containing "abcd" using no UI appearance
+
+set instance to an instance of replacement test
+set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's selection's caret = 2) reporting "The test did not place its initial caret"
+set the text of "Source" in (the address of instance) to "😀"
+ignore update UI view (the address of view)
+require condition ((view's selection's anchor = 0) and (view's selection's caret = 0)) reporting "Replacing a source left its caret inside a Unicode character"
+queue UI input of kind 3 key 262 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's selection's caret = 4) reporting "The replaced source lost Unicode navigation"
+set the text of "Source" in (the address of instance) to "éx"
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "!" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (the control labeled "Source" in (the address of instance)) in (the address of instance))'s text = "éx!") reporting "Queued input after replacement used an old text offset"
+close the address of view
+close the address of instance
+print line "Source replacements preserve Unicode caret boundaries before input and paint."

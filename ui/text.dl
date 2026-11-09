@@ -2,6 +2,15 @@
 import platform.dl
 import lib/utf8.dl
 
+to get the UI text boundary at or before {integer:offset} in {string:text}:
+    require condition (offset >= 0) reporting "A UI selection offset cannot be negative"
+    set position to the minimum of offset and (text's length)
+    if position < text's length:
+        set octet to ((the character at position in text) as an integer) bitwise and 192
+        if octet = 128:
+            return the previous UTF8 boundary before position in text
+    return position
+
 to clear UI selection in {a pointer to UI view:view}:
     set view's selection to a new UI text selection
 
@@ -176,5 +185,5 @@ to synchronize editable UI text {a pointer to UI text source:source} in {a point
     set entry to the UI value for (source's element) in (view's instance)
     if source's text != entry's text:
         set source's text to entry's text
-        set view's selection's anchor to the minimum of (view's selection's anchor) and (source's text's length)
-        set view's selection's caret to the minimum of (view's selection's caret) and (source's text's length)
+        set view's selection's anchor to the UI text boundary at or before (view's selection's anchor) in (source's text)
+        set view's selection's caret to the UI text boundary at or before (view's selection's caret) in (source's text)

@@ -56,8 +56,8 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         if source's text != layout's content:
             if (view's selection's anchor source = source) or (view's selection's caret source = source):
                 if node's kind = 44:
-                    set view's selection's anchor to the minimum of (view's selection's anchor) and (layout's content's length)
-                    set view's selection's caret to the minimum of (view's selection's caret) and (layout's content's length)
+                    set view's selection's anchor to the UI text boundary at or before (view's selection's anchor) in (layout's content)
+                    set view's selection's caret to the UI text boundary at or before (view's selection's caret) in (layout's content)
                     set view's reveal caret to true
                 else:
                     clear UI selection in view
