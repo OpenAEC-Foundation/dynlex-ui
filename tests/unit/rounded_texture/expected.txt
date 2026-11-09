@@ -1,0 +1,1 @@
+Rounded textures preserve UV coordinates, transparent corners and edge coverage.

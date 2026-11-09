@@ -64,6 +64,9 @@ Regions support columns, maximum widths, stacking thresholds, padding, gaps,
 overlays and sticky positioning. Paragraphs support inline `words` and `link`
 sections; selection copies their source text through line wrapping and reflow.
 Borders preserve transparent interiors over pictures and shader surfaces.
+Custom surfaces can use `ui/texture_shapes.dl` to draw a texture rounded by a
+radius, with smooth edge coverage and optional opacity. Its geometry and texture
+coordinates are shared across native and browser drivers.
 
 Editors accept source-bound annotations from any language service or controller:
 

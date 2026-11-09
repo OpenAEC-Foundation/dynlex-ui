@@ -1,0 +1,39 @@
+import ../../helpers/driver.dl
+import ../../../ui/texture_shapes.dl
+
+document texture test:
+
+set instance to an instance of texture test
+set view to a UI view of (the address of instance) sized 200 by 120 using font "regular" with the test UI driver
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+set texture to @intrinsic("construct", UI texture, 7 as a pointer, 100, 80)
+set view's current alpha to 128
+draw UI texture texture in (UI box at 10 10 sized 100 80) rounded by 12.0 in (UI ink 255 255 255) with opacity 128 on frame
+require condition (view's vertex count > 6) reporting "The texture has no rounded boundary"
+set index to 0
+loop while index < view's vertex count:
+    set a to the item at index in (view's vertices)
+    set b to the item at (index + 1) in (view's vertices)
+    set c to the item at (index + 2) in (view's vertices)
+    set first to (b's x - a's x) * (10.0 - a's y) - (b's y - a's y) * (10.0 - a's x)
+    set second to (c's x - b's x) * (10.0 - b's y) - (c's y - b's y) * (10.0 - b's x)
+    set third to (a's x - c's x) * (10.0 - c's y) - (a's y - c's y) * (10.0 - c's x)
+    require condition ((((first > 0.0) and (second > 0.0)) and (third > 0.0)) = false) reporting "A rounded texture covered its transparent corner"
+    set index to index + 3
+set index to 0
+set feathered to false
+loop while index < view's vertex count:
+    set vertex to the item at index in (view's vertices)
+    set horizontal to the minimum of 1.0 and (the maximum of 0.0 and ((vertex's x - 10.0) / 100.0))
+    set vertical to the minimum of 1.0 and (the maximum of 0.0 and ((vertex's y - 10.0) / 80.0))
+    require condition ((the absolute value of (vertex's u - horizontal)) < 0.00001) reporting "Rounded texture coordinates moved horizontally"
+    require condition ((the absolute value of (vertex's v - vertical)) < 0.00001) reporting "Rounded texture coordinates moved vertically"
+    require condition ((0.0 <= vertex's u <= 1.0) and (0.0 <= vertex's v <= 1.0)) reporting "Edge coverage sampled a repeated texture"
+    require condition (vertex's alpha <= 0.252) reporting "Rounded texture opacity ignored the frame alpha"
+    if vertex's alpha = 0.0:
+        set feathered to true
+    increment index
+require condition feathered reporting "The texture edge has no smooth coverage"
+close the address of view
+close the address of instance
+print line "Rounded textures preserve UV coordinates, transparent corners and edge coverage."
