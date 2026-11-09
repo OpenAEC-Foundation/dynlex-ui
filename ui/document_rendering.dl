@@ -65,6 +65,12 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         restore UI clip saved in view on frame
     else if kind = 48:
         draw document UI tabs layout in box in view on frame
+    else if kind = 49:
+        set selected to the selected UI child of (layout's node) in (view's instance)
+        set child to layout's first
+        loop while child's node != selected:
+            set child to child's next
+        draw document UI layout child at (box's x) (box's y) in view on frame
     else if kind = 20:
         set action to the action for (layout's node) in (view's instance) for event 1
         require condition (action != no UI action) reporting "The UI surface has no painting callback"

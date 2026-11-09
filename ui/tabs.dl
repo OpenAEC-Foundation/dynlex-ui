@@ -17,8 +17,12 @@ section tab group {C string:name} using {UI appearance reference:appearance}:
 
 to get the selected tab of {UI reference:group} in {a pointer to UI instance:instance}:
     require condition (((group's kind = 28) or (group's kind = 48)) and (group's count > 0)) reporting "A tab group requires at least one tab"
+    return the selected UI child of group in instance
+
+to get the selected UI child of {UI reference:group} in {a pointer to UI instance:instance}:
+    require condition (group's count > 0) reporting "A selection group requires at least one view"
     set index to (the UI value for group in instance)'s number
-    require condition ((index >= 0) and (index < group's count)) reporting "The selected tab is outside its description"
+    require condition ((index >= 0) and (index < group's count)) reporting "The selected view is outside its description"
     return the UI child at index in group
 
 to get the active UI editor within {UI reference:node} in {a pointer to UI instance:instance}:
@@ -26,6 +30,8 @@ to get the active UI editor within {UI reference:node} in {a pointer to UI insta
         return node
     if node's kind = 48:
         return the active UI editor within (the selected tab of node in instance) in instance
+    if node's kind = 49:
+        return the active UI editor within (the selected UI child of node in instance) in instance
     set index to 0
     loop while index < node's count:
         set found to the active UI editor within (the UI child at index in node) in instance

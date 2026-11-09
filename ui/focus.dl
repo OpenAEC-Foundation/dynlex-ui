@@ -39,6 +39,13 @@ to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI vie
         if UI ribbon arrow later is visible in (view's layout) for (view's instance):
             append UI focus later in view
         return nothing
+    if kind = 49:
+        set selected to the selected UI child of (layout's node) in (view's instance)
+        set child to layout's first
+        loop while child's node != selected:
+            set child to child's next
+        collect UI focus from child in view
+        return nothing
     if kind = 48:
         set active to the selected tab of (layout's node) in (view's instance)
         set child to layout's first

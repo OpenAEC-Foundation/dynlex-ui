@@ -3,8 +3,8 @@ import text_layout.dl
 import text.dl
 
 to get a document UI layout for {UI reference:node} inside {UI reference:parent}:
-    if node's kind = 48:
-        require condition (node's count > 0) reporting "A tab group requires at least one tab"
+    if (node's kind = 48) or (node's kind = 49):
+        require condition (node's count > 0) reporting "A selection group requires at least one view"
     set result to storage for one slot initialized with (a new UI layout)
     set result's node to node
     set result's parent to parent
@@ -74,6 +74,16 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             set layout's text width to the maximum of (layout's text width) and (line's width)
             set line to line's next
         set layout's bounds' height to layout's text height + appearance's padding * 2.0
+    else if node's kind = 49:
+        set selected to the selected UI child of node in (view's instance)
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            reflow document UI layout child within inner inheriting appearance in view
+            set child's bounds' x to appearance's padding
+            set child's bounds' y to appearance's padding
+            if child's node = selected:
+                set layout's bounds' height to child's bounds' height + appearance's padding * 2.0
+            set child to child's next
     else if node's kind = 48:
         set selected to the selected tab of node in (view's instance)
         set layout's typeface to a document UI font for appearance in view

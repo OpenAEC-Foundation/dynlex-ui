@@ -41,6 +41,21 @@ active panel; inactive panels retain their editor values and undo history.
 `the active UI editor within group in instance` resolves the selected editor
 without coupling a controller to the number or names of its tabs.
 
+A `view group` selects a panel without adding tab headers. Its children can be
+any document elements; inactive panels retain their values and undo history and
+do not participate in painting or keyboard focus. This lets one set of tabs
+control a second region:
+
+```dynlex
+view group "Results" using no UI appearance:
+    paragraph "Program output" containing "Ready." using no UI appearance
+    surface "Shader preview" using no UI appearance
+
+set the value of "Results" in (the address of instance) to (the value of "Files" in (the address of instance))
+```
+
+Selection is zero-based and must identify an existing child.
+
 `paragraph "Name" containing "Text"` separates an element's name from its initial
 content, including empty content. Editors use that same distinction. Links store
 their destinations separately from content and visual variants.

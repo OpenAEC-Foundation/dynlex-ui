@@ -1,0 +1,29 @@
+import ../../helpers/driver.dl
+import lib/text_scan.dl
+
+document view test:
+    view group "Current view" using no UI appearance:
+        region "First view" using no UI appearance:
+            editor "First source" containing "First text" using no UI appearance
+        region "Second view" using no UI appearance:
+            editor "Second source" containing "Second text" using no UI appearance
+
+set instance to an instance of view test
+set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set group to the control labeled "Current view" in (the address of instance)
+require condition (view's control count = 1) reporting "An inactive view participated in keyboard focus"
+require condition ((the active UI editor within group in (the address of instance))'s text = "First source") reporting "The view group did not resolve its first editor"
+set the text of "First source" in (the address of instance) to "Retained first edit"
+set the value of "Current view" in (the address of instance) to 1
+ignore update UI view (the address of view)
+set drawn to (view's window as a pointer to test UI surface)'s drawn
+require condition (drawn contains "Second text") reporting "The selected view was not painted"
+require condition ((drawn contains "Retained first edit") = false) reporting "An inactive view was painted"
+require condition ((the active UI editor within group in (the address of instance))'s text = "Second source") reporting "The active editor did not follow the selected view"
+set the value of "Current view" in (the address of instance) to 0
+ignore update UI view (the address of view)
+require condition (((view's window as a pointer to test UI surface)'s drawn) contains "Retained first edit") reporting "Changing views discarded editor data"
+close the address of view
+close the address of instance
+print line "View groups retain panels while selecting their layout, painting and focus."

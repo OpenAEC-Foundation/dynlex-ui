@@ -1,0 +1,1 @@
+View groups retain panels while selecting their layout, painting and focus.

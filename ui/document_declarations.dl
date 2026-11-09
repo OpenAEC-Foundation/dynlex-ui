@@ -42,6 +42,13 @@ editor {C string:name} containing {C string:initial} using {UI appearance refere
 picture {C string:name} from {C string:path} using {UI appearance reference:appearance} means: (a UI text component 45 labeled name styled path) wearing appearance
 surface {C string:name} using {UI appearance reference:appearance} means: (a UI text component 20 labeled name styled "") wearing appearance
 
+section view group {C string:name} using {UI appearance reference:appearance}:
+    result: UI reference
+    body:
+        children: many UI reference
+    value:
+        (a UI container of kind 49 containing (the body's children) named name) wearing appearance
+
 section when the {C string:label} link is followed:
     receiver: a pointer to UI instance
     returns: nothing
