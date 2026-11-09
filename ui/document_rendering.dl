@@ -5,6 +5,7 @@ import clipping.dl
 import document_scrolling.dl
 import paragraph_rendering.dl
 import document_tabs_rendering.dl
+import editor_rendering.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to layout's appearance
@@ -44,13 +45,21 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             keep the UI caret visible in layout within clip in view
             set top to top - layout's scroll position
         set line to layout's lines
+        set colors to @intrinsic("construct", a pointer to UI text color span)
+        if kind = 44:
+            set value to the UI value for (layout's node) in (view's instance)
+            if value's colored text = layout's content:
+                set colors to value's colors
         loop while line != @intrinsic("construct", a pointer to UI text line):
             set left to box's x + appearance's padding
             if kind = 44:
                 set left to left - layout's text scroll
             if appearance's centered:
                 set left to box's x + (box's width - line's width) / 2.0
-            draw UI row line in layout at left (top + line's top + line's ascent) on frame
+            if kind = 44:
+                set colors to draw colored UI row line in layout at left (top + line's top + line's ascent) starting with colors on frame
+            else:
+                draw UI row line in layout at left (top + line's top + line's ascent) on frame
             set line to line's next
         set view's text source to @intrinsic("construct", a pointer to UI text source)
         restore UI clip saved in view on frame

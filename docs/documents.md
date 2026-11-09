@@ -50,5 +50,22 @@ overlays and sticky positioning. Paragraphs support inline `words` and `link`
 sections; selection copies their source text through line wrapping and reflow.
 Borders preserve transparent interiors over pictures and shader surfaces.
 
+Editors accept source-bound annotations from any language service or controller:
+
+```dynlex
+import ui/text_colors.dl
+
+set editor to the control labeled "Main source" in (the address of instance)
+color UI text (the string form of "print line 42") in editor in (the address of instance)
+add UI text color (UI ink 210 170 240) from 0 to 10 in editor in (the address of instance)
+add UI text color (UI ink 230 196 124) from 11 to 13 in editor in (the address of instance)
+```
+
+Offsets are UTF-8 bytes; spans must be ordered, disjoint and on character
+boundaries. Colors apply only while the editor matches their source snapshot.
+Selection, copying and caret navigation retain the original source coordinates.
+Starting another color set releases the old spans; closing the instance releases
+its annotations. The UI library does not parse language tokens.
+
 See [sections](sections.md) for defining additional declarative shapes and
 [the examples](../examples) for application and platform setup.

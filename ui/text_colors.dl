@@ -1,0 +1,26 @@
+# Source-bound colors preserve the editor's original text and byte coordinates.
+import components.dl
+import lib/utf8.dl
+
+to color UI text {string:source} in {UI reference:node} in {a pointer to UI instance:instance}:
+    require condition (node's kind = 44) reporting "Text colors require an editor"
+    set value to the UI value for node in instance
+    release UI text colors value
+    set value's colored text to source
+    invalidate instance
+
+to add UI text color {UI paint:ink} from {integer:start} to {integer:end} in {UI reference:node} in {a pointer to UI instance:instance}:
+    set value to the UI value for node in instance
+    set content to value's colored text
+    require condition ((0 <= start < end) and (end <= content's length)) reporting "Text colors must cover bytes inside the source"
+    require condition ((((the character at start in content) as an integer) bitwise and 192) != 128) reporting "A text color must begin on a UTF-8 boundary"
+    if end < content's length:
+        require condition ((((the character at end in content) as an integer) bitwise and 192) != 128) reporting "A text color must end on a UTF-8 boundary"
+    set span to storage for one slot initialized with @intrinsic("construct", UI text color span, start, end, ink, @intrinsic("construct", a pointer to UI text color span))
+    if value's last color = @intrinsic("construct", a pointer to UI text color span):
+        set value's colors to span
+    else:
+        require condition (start >= value's last color's end) reporting "Text colors must be ordered without overlap"
+        set value's last color's next to span
+    set value's last color to span
+    invalidate instance

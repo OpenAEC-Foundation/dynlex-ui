@@ -1,0 +1,1 @@
+Editor colors retain Unicode coordinates and follow their source snapshot.

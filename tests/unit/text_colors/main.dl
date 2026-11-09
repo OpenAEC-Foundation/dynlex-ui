@@ -1,0 +1,47 @@
+import ../../helpers/driver.dl
+import ../../../ui/text_colors.dl
+import lib/text_scan.dl
+
+appearance editor appearance:
+    font size is 16
+    height is 120
+    lines do not wrap
+
+document colors test:
+    editor "Source" containing "a😀b\nend" using editor appearance
+
+set recorded to the string form of ""
+function record colored text in {a pointer to UI view:view} using {a pointer:font} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
+    globals:
+        recorded
+    execute:
+        set content to a new string from text containing count bytes
+        set recorded to recorded + (formatted "{content}:{ink's red};")
+
+set driver to the value at the test UI driver
+set driver's draw text to (the function named "record colored text in $ using $ containing $ counting $ at $ $ in $") as a pointer
+set instance to an instance of colors test
+set view to a UI view of (the address of instance) sized 316 by 180 using font "regular" with (the address of driver)
+set source to the control labeled "Source" in (the address of instance)
+color UI text (the string form of "a😀b\nend") in source in (the address of instance)
+add UI text color (UI ink 201 0 0) from 1 to 5 in source in (the address of instance)
+add UI text color (UI ink 202 0 0) from 7 to 10 in source in (the address of instance)
+ignore update UI view (the address of view)
+require condition (recorded contains "😀:201;") reporting "The editor did not paint its Unicode token color"
+require condition (recorded contains "end:202;") reporting "A color on a later source line was lost"
+require condition (view's texts' start = 0) reporting "Coloring changed the text source coordinates"
+require condition (view's texts' next's start = 1) reporting "A colored text run lost its original byte offset"
+require condition (view's texts' next's next's start = 5) reporting "A colored Unicode run changed the following byte offset"
+set recorded to ""
+set the text of "Source" in (the address of instance) to "new text"
+ignore update UI view (the address of view)
+require condition ((recorded contains ":201;") = false) reporting "An old analysis colored newly edited text"
+set recorded to ""
+set the text of "Source" in (the address of instance) to "a😀b\nend"
+ignore update UI view (the address of view)
+require condition (recorded contains "😀:201;") reporting "An unchanged source snapshot lost its annotations"
+color UI text (the string form of "a😀b\nend") in source in (the address of instance)
+require condition ((the UI value for source in (the address of instance))'s colors = @intrinsic("construct", a pointer to UI text color span)) reporting "Replacing a color set retained its old spans"
+close the address of view
+close the address of instance
+print line "Editor colors retain Unicode coordinates and follow their source snapshot."
