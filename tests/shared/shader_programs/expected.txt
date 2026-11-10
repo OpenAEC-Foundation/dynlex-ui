@@ -1,0 +1,1 @@
+Shader linkage shares stage sources, reflected bindings and ownership.

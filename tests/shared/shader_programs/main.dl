@@ -1,0 +1,36 @@
+import ../../../ui/shader_programs.dl
+
+to get a test shader binding named {C string:name} at {integer:binding}:
+    return a JSON object containing [JSON text "name" is name, JSON number "group" is 2, JSON number "binding" is binding]
+
+to get a test shader stage containing {a pointer to JSON value:binding}:
+    return a JSON object containing [JSON text "webgpu" is "gpu source", JSON text "webgl" is "gl source", JSON child "uniforms" is (a JSON array containing [binding])]
+
+set stage to a test shader stage containing (a test shader binding named "camera" at 4)
+set bindings to a new JSON-RPC array
+require condition ((the error from merging UI shader bindings from stage into bindings) = "") reporting "An ordinary binding failed to link."
+require condition ((the error from merging UI shader bindings from stage into bindings) = "") reporting "A shared binding failed to link."
+require condition (bindings's length = 1) reporting "Shared bindings were duplicated."
+set linked to the linked UI shader stage stage stored as "url"
+free stage
+set gpu to the JSON member named "webgpu" in linked
+require condition ((the JSON text named "kind" in gpu) = "url") reporting "Shader source storage changed."
+require condition ((the JSON text named "value" in gpu) = "gpu source") reporting "A stage borrowed released source text."
+require condition ((the JSON text named "name" in (the JSON value at index 0 in bindings)) = "camera") reporting "A binding borrowed released reflection data."
+free linked
+set stage to a test shader stage containing (a test shader binding named "light" at 4)
+require condition ((the error from merging UI shader bindings from stage into bindings) != "") reporting "Two inputs acquired one binding."
+free stage
+set stage to a test shader stage containing (a test shader binding named "camera" at 5)
+require condition ((the error from merging UI shader bindings from stage into bindings) != "") reporting "One input acquired two bindings."
+free stage
+set pass to a JSON object containing [JSON child "uniforms" is bindings]
+set program to a JSON object containing [JSON child "passes" is (a JSON array containing [pass])]
+require condition (UI shader program program uses input "camera") reporting "A linked input was not found."
+require condition ((UI shader program program uses input "light") = false) reporting "A rejected input survived linkage."
+set result to a successful UI shader linkage to program
+require condition ((result succeeded) and ((result failed) = false)) reporting "Successful linkage lost its program."
+free result's program
+set result to a failed UI shader linkage reporting "Link error"
+require condition ((result failed) and (result's error = "Link error")) reporting "Failed linkage lost its error."
+print line "Shader linkage shares stage sources, reflected bindings and ownership."

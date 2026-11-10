@@ -2,6 +2,7 @@
 import renderer.dl
 import events.dl
 import input.dl
+import invalidation.dl
 
 to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
     set result to a new UI view
@@ -51,10 +52,6 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
 
 to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using font {C string:path} with {a pointer to UI driver:driver}:
     return a UI view of instance sized width by height using fonts path and path with driver
-
-to request a UI redraw in {a pointer to UI view:view}:
-    set view's damaged to true
-    @intrinsic("call pointer", view's driver's wake, nothing, view)
 
 to get update UI view {a pointer to UI view:view}:
     set continuing to view's animating

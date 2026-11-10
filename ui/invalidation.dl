@@ -1,0 +1,9 @@
+# View invalidation is shared by renderers and controllers without input dispatch.
+import view.dl
+
+to request a UI redraw in {a pointer to UI view:view}:
+    set view's damaged to true
+    @intrinsic("call pointer", view's driver's wake, nothing, view)
+
+to animate UI view {a pointer to UI view:view}:
+    set view's animating to true

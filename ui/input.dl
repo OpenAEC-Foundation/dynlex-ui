@@ -1,5 +1,6 @@
 # Platforms enqueue input; shared DynLex code owns dispatch and interaction.
 import events.dl
+import invalidation.dl
 import lib/utf8.dl
 
 # Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
@@ -80,9 +81,6 @@ to watch UI input in {a pointer to UI view:view} using {a callback:action}:
 
 to update UI frames in {a pointer to UI view:view} using {a callback:action}:
     set view's frame action to action as a pointer
-
-to animate UI view {a pointer to UI view:view}:
-    set view's animating to true
 
 the UI escape key means: 256
 the UI space key means: 32

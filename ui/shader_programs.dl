@@ -1,0 +1,64 @@
+# Source linkage and reflected inputs are shared by every programmable scene.
+import shader_types.dl
+import lib/json_rpc_values.dl
+
+class:
+    patterns:
+        UI shader linkage
+    members:
+        program as a pointer to JSON value
+        error as a string
+
+{UI shader linkage:result} succeeded means: result's program != @intrinsic("construct", a pointer to JSON value)
+{UI shader linkage:result} failed means: result's program = @intrinsic("construct", a pointer to JSON value)
+
+to get [a failed UI shader linkage reporting] {C string:message}:
+    return @intrinsic("construct", UI shader linkage, @intrinsic("construct", a pointer to JSON value), the string form of message)
+
+to get [a successful UI shader linkage to] {a pointer to JSON value:program}:
+    return @intrinsic("construct", UI shader linkage, program, the string form of "")
+
+to get [UI shader program] {a pointer to JSON value:program} [uses input] {C string:name}:
+    set passes to the JSON member named "passes" in program
+    set index to 0
+    loop while index < passes's length:
+        set uniforms to the JSON member named "uniforms" in (the JSON value at index index in passes)
+        set cursor to 0
+        loop while cursor < uniforms's length:
+            if (the JSON text named "name" in (the JSON value at index cursor in uniforms)) = name:
+                return true
+            increment cursor
+        increment index
+    return false
+
+to get [the linked UI shader stage] {a pointer to JSON value:stage} [stored as] {C string:kind}:
+    return a JSON object containing [
+        JSON child "webgpu" is (a JSON object containing [JSON text "kind" is kind, JSON text "value" is (the JSON text named "webgpu" in stage)]),
+        JSON child "webgl" is (a JSON object containing [JSON text "kind" is kind, JSON text "value" is (the JSON text named "webgl" in stage)])
+    ]
+
+to get [the error from merging UI shader bindings from] {a pointer to JSON value:stage} [into] {a pointer to JSON value:bindings}:
+    set uniforms to the JSON member named "uniforms" in stage
+    set index to 0
+    loop while index < uniforms's length:
+        set uniform to the JSON value at index index in uniforms
+        set group to the JSON number named "group" in uniform
+        set binding to the JSON number named "binding" in uniform
+        set name to the JSON text named "name" in uniform
+        set cursor to 0
+        set found to false
+        loop while cursor < bindings's length:
+            set existing to the JSON value at index cursor in bindings
+            set same to ((the JSON number named "group" in existing) = group) and ((the JSON number named "binding" in existing) = binding)
+            if same:
+                if (the JSON text named "name" in existing) != name:
+                    return "Shader stages disagree about a uniform binding"
+                set found to true
+            else:
+                if (the JSON text named "name" in existing) = name:
+                    return "A shader uniform uses different bindings across stages"
+            increment cursor
+        if found = false:
+            add (a copy of JSON-RPC node uniform) to the JSON array bindings
+        increment index
+    return ""

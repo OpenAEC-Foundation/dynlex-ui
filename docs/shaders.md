@@ -12,6 +12,15 @@ GPU commands. Shader resources and their output textures belong to a surface.
 Closing the resource releases its streams and output texture; closing a surface
 releases every resource it owns.
 
+Scene controllers can import `ui/invalidation.dl` to request a redraw or animate
+a view without importing input dispatch or the application loop.
+
+`ui/shader_programs.dl` shares source-stage descriptions, reflected uniform
+binding linkage and program-input lookup. `UI shader linkage` contains either an
+owned program or an error. Merged bindings copy their reflection data, reject
+conflicting names or slots, and deduplicate bindings shared by both stages.
+Applications supply their scene's vertex layouts, depth/blend settings and draws.
+
 ## Layout and source data
 
 Each pass declares `vertexBuffers`, an array of layouts with `arrayStride`,
