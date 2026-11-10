@@ -51,6 +51,13 @@ validation. Index uploads snapshot their source before caller memory is reused.
 
 `UI shader draw` is six unsigned 32-bit words, in this order:
 
+Its constructor accepts values from zero through 2,147,483,647 for counts and
+offsets, matching the portable backend range. It checks that range before
+converting wider integer arguments to the stored 32-bit representation.
+
+Shader operations accept any integer width within that range, then pass the
+provider's fixed 32-bit representation. Texture dimensions must also be positive.
+
 | Field | Meaning |
 | --- | --- |
 | `count` | Number of vertices or indices |

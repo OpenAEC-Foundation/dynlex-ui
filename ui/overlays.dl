@@ -1,0 +1,52 @@
+import view.dl
+
+to get [a UI overlay in] {a pointer to UI view:view} [with context] {a pointer:context} [handling input] {a pointer:input} [painting] {a pointer:paint} [closing] {a pointer:closing}:
+    set overlay to @intrinsic("construct", UI overlay, context, input, paint, closing, view's overlays)
+    set view's overlays to storage for one slot initialized with overlay
+    set view's damaged to true
+    return view's overlays
+
+to [detach UI overlay] {a pointer to UI overlay:target} [in] {a pointer to UI view:view}:
+    set previous to @intrinsic("construct", a pointer to UI overlay)
+    set overlay to view's overlays
+    loop while (overlay != @intrinsic("construct", a pointer to UI overlay)) and (overlay != target):
+        set previous to overlay
+        set overlay to overlay's next
+    require condition (overlay = target) reporting "The overlay does not belong to this view"
+    require condition (overlay != @intrinsic("construct", a pointer to UI overlay)) reporting "An absent overlay cannot be detached"
+    if previous = @intrinsic("construct", a pointer to UI overlay):
+        set view's overlays to overlay's next
+    else:
+        set previous's next to overlay's next
+    deallocate overlay
+    set view's damaged to true
+
+to get [process UI overlays in] {a pointer to UI view:view}:
+    # Platform replies retain their application owner independently of UI capture.
+    if (view's input kind = 11) or (view's input kind = 12):
+        return false
+    set overlay to view's overlays
+    loop while overlay != @intrinsic("construct", a pointer to UI overlay):
+        if overlay's input != (0 as a pointer):
+            if @intrinsic("call pointer", overlay's input, boolean, overlay's context, view):
+                return true
+        set overlay to overlay's next
+    return false
+
+to [draw UI overlay] {a pointer to UI overlay:overlay} [on] {UI frame:frame}:
+    if overlay = @intrinsic("construct", a pointer to UI overlay):
+        return nothing
+    draw UI overlay (overlay's next) on frame
+    if overlay's paint != (0 as a pointer):
+        @intrinsic("call pointer", overlay's paint, nothing, overlay's context, frame)
+
+to [draw UI overlays on] {UI frame:frame}:
+    draw UI overlay (frame's view's overlays) on frame
+
+to [close UI overlays in] {a pointer to UI view:view}:
+    loop while view's overlays != @intrinsic("construct", a pointer to UI overlay):
+        set overlay to view's overlays
+        set view's overlays to overlay's next
+        if overlay's closing != (0 as a pointer):
+            @intrinsic("call pointer", overlay's closing, nothing, overlay's context, view)
+        deallocate overlay

@@ -2,6 +2,7 @@
 import lib/sections.dl
 import lib/json_builders.dl
 import lib/lsp_json.dl
+import source_query_types.dl
 
 class:
     patterns:
@@ -22,6 +23,7 @@ class:
         diagnostics as a pointer to JSON value
         tokens as a pointer to JSON value
         token types as a pointer to JSON value
+        queries as a pointer to UI source query
 
 # Analysis profiles are ordinary protocol data; clients may supply any supported set.
 to get [UI CPU analysis]:
@@ -67,6 +69,7 @@ to [edit UI source document] {a pointer to UI source document:document} [to] {st
         set document's source to source
         increment document's revision
         set document's edited at to seconds
+        cancel UI source queries (document's queries)
 
 # Reconfiguration consumes profiles; files are borrowed and copied.
 to [configure UI source document] {a pointer to UI source document:document} [named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [using] {a pointer to JSON value:profiles} [with files] {a pointer to JSON value:files}:
@@ -82,8 +85,10 @@ to [configure UI source document] {a pointer to UI source document:document} [na
     refresh the context of UI source document document
     if document's context != previous:
         increment document's revision
+        cancel UI source queries (document's queries)
 
 to [free UI source document] {a pointer to UI source document:document}:
+    free UI source queries (document's queries)
     free document's profiles
     free document's files
     free document's diagnostics

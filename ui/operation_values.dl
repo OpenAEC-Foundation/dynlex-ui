@@ -1,0 +1,8 @@
+# Public integers may be wider than a platform's fixed 32-bit operation ABI.
+import lib/check.dl
+
+{integer:value} [is a valid UI operation integer] means: 0 <= value <= 2147483647
+
+to get [a UI operation integer from] {integer:value}:
+    require condition (value is a valid UI operation integer) reporting "UI operation integers must be between 0 and 2147483647"
+    return value as a 32 bit integer

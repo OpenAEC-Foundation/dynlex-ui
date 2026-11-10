@@ -1,0 +1,32 @@
+import ../../helpers/driver.dl
+import ../../../ui/overlays.dl
+
+to get [capture an overlay key] {a pointer:context} [in] {a pointer to UI view:view}:
+    return true
+
+to [observe application input] {a pointer to UI view:view}:
+    set count to view's instance's state as a pointer to an integer
+    store ((the value at count) + 1) at count
+
+window example:
+    button "Action"
+
+set observations to 0
+set instance to an instance of example with state (the address of observations)
+set view to a UI view of (the address of instance) sized 500 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+watch UI input in (the address of view) using (the function named "observe application input $")
+set overlay to a UI overlay in (the address of view) with context (0 as a pointer) handling input ((the function named "capture an overlay key $ in $") as a pointer) painting (0 as a pointer) closing (0 as a pointer)
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's closed = false) and (observations = 0)) reporting "Captured overlay input reached the application or closed its window."
+queue UI input of kind 11 key 9 at 0.0 0.0 with modifiers 0 containing "{}" in (the address of view)
+process UI input in (the address of view)
+require condition (observations = 1) reporting "An overlay blocked a platform response."
+detach UI overlay overlay in (the address of view)
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's closed) and (observations = 2)) reporting "Uncaptured input did not reach the application and controls."
+close the address of view
+close the address of instance
+print line "Overlay capture stops application input while preserving platform responses."

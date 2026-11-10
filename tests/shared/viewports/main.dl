@@ -1,0 +1,18 @@
+import ../../../ui/view.dl
+import lib/check.dl
+
+set view to a new UI view
+set view's width to 640
+set view's height to 480
+set view's logical width to 1280
+set view's logical height to 720
+set bounds to the UI viewport bounds in (the address of view)
+require condition ((bounds's width = 640.0) and (bounds's height = 480.0)) reporting "An unfitted view used its initial logical size after resizing."
+set view's fitted to true
+set bounds to the UI viewport bounds in (the address of view)
+require condition ((bounds's width = 1280.0) and (bounds's height = 720.0)) reporting "A fitted view used physical units for logical painting."
+set view's logical width to 800
+set view's logical height to 600
+set bounds to the UI viewport bounds in (the address of view)
+require condition ((bounds's width = 800.0) and (bounds's height = 600.0)) reporting "An adaptive view retained its preceding viewport."
+print line "Shared viewport bounds follow window or fitted coordinates consistently."

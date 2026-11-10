@@ -1,0 +1,64 @@
+import source_annotations.dl
+
+to get {a pointer to UI source query:query} [is current for UI source document] {a pointer to UI source document:document}:
+    return (query's revision = document's revision) and (query's context = document's context)
+
+to get [the next pending UI source query in] {a pointer to UI source document:document}:
+    set query to document's queries
+    loop while query != @intrinsic("construct", a pointer to UI source query):
+        if (query is current for UI source document document) = false:
+            cancel UI source query query
+        if query's queued:
+            return query
+        set query to query's next
+    return @intrinsic("construct", a pointer to UI source query)
+
+to get {a pointer to UI source document:document} [has pending UI source queries]:
+    return (the next pending UI source query in document) != @intrinsic("construct", a pointer to UI source query)
+
+to get [request UI source feature] {string:method} [with parameters] {a pointer to JSON value:parameters} [in] {a pointer to UI source document:document}:
+    set query to document's queries
+    set found to false
+    loop while (query != @intrinsic("construct", a pointer to UI source query)) and (found = false):
+        set found to query's method = method
+        if found = false:
+            set query to query's next
+    if query = @intrinsic("construct", a pointer to UI source query):
+        set query to storage for one slot initialized with (a new UI source query)
+        set query's method to method
+        set query's parameters to a new JSON-RPC null
+        set query's result to a new JSON-RPC null
+        set query's next to document's queries
+        set document's queries to query
+    set copied to a copy of JSON-RPC node parameters
+    free query's parameters
+    set query's parameters to copied
+    free query's result
+    set query's result to a new JSON-RPC null
+    set query's context to document's context
+    set query's revision to document's revision
+    increment query's generation
+    set query's queued to true
+    set query's ready to false
+    set query's notification to false
+    return query
+
+to get [request UI source feature] {string:method} [at byte] {integer:offset} [in] {a pointer to UI source document:document}:
+    set parameters to a JSON object containing [
+        JSON child "textDocument" is (an LSP text document identifier for (document's uri)),
+        JSON child "position" is (the UI analysis position for source byte offset in document)
+    ]
+    set query to request UI source feature method with parameters parameters in document
+    free parameters
+    return query
+
+to get [request UI source feature] {string:method} [in] {a pointer to UI source document:document}:
+    set parameters to a JSON object containing [JSON child "textDocument" is (an LSP text document identifier for (document's uri))]
+    set query to request UI source feature method with parameters parameters in document
+    free parameters
+    return query
+
+to get [notify UI source feature] {string:method} [with parameters] {a pointer to JSON value:parameters} [in] {a pointer to UI source document:document}:
+    set query to request UI source feature method with parameters parameters in document
+    set query's notification to true
+    return query

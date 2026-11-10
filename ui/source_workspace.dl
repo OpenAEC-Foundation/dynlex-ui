@@ -5,6 +5,7 @@ import source_annotations.dl
 import tabs.dl
 import view.dl
 import layout_lookup.dl
+import source_tools_types.dl
 
 class:
     patterns:
@@ -30,6 +31,7 @@ class:
         instance as a pointer to UI instance
         client as a pointer to UI language client
         editors as a pointer to UI source editor
+        tools as a pointer to UI source tools
 
 to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI source workspace:workspace}:
     if node's kind = 44:
@@ -87,7 +89,7 @@ to get [the next UI source workspace work in] {a pointer to UI source workspace:
     set chosen to @intrinsic("construct", a pointer to UI source editor)
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
-        if entry's document's revision != entry's document's analyzed revision:
+        if (entry's document's revision != entry's document's analyzed revision) or (entry's document has pending UI source queries):
             if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
                 if (chosen = @intrinsic("construct", a pointer to UI source editor)) or (entry's node = focused):
                     set chosen to entry
@@ -107,6 +109,8 @@ to get [UI source workspace] {a pointer to UI source workspace:workspace} [await
 
 to [fail UI source workspace] {a pointer to UI source workspace:workspace}:
     set workspace's client's phase to 8
+    if workspace's tools != @intrinsic("construct", a pointer to UI source tools):
+        dismiss UI source tools (workspace's tools)
 
 to [present UI source workspace] {a pointer to UI source workspace:workspace} [using] {an array:theme}:
     set instance to workspace's instance
@@ -143,6 +147,7 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
         set entry to entry's next
 
 to [free UI source workspace] {a pointer to UI source workspace:workspace}:
+    free UI source tools (workspace's tools)
     free UI language client (workspace's client)
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):

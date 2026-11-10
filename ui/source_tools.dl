@@ -1,0 +1,167 @@
+# One source-control interaction layer for standalone and embedded workspaces.
+import application.dl
+import source_workspace.dl
+import source_completions.dl
+import source_tools_rendering.dl
+
+to get [focus UI source tools] {a pointer to UI source tools:tools}:
+    set workspace to tools's workspace as a pointer to UI source workspace
+    set view to tools's view
+    if workspace's client's phase = 8:
+        dismiss UI source tools tools
+        return false
+    set editor to workspace's editors
+    loop while editor != @intrinsic("construct", a pointer to UI source editor):
+        if editor's node = view's text focus:
+            if (UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (the UI element (editor's node) is enabled in (view's instance)):
+                edit UI source document (editor's document) to ((the UI value for (editor's node) in (view's instance))'s text) at (view's seconds) seconds
+                if tools's node != editor's node:
+                    dismiss UI source tools tools
+                    set tools's edited to false
+                set tools's node to editor's node
+                set tools's document to editor's document
+                return true
+        set editor to editor's next
+    dismiss UI source tools tools
+    set tools's node to @intrinsic("construct", UI reference)
+    set tools's document to @intrinsic("construct", a pointer to UI source document)
+    set tools's edited to false
+    return false
+
+to [request UI source completions in] {a pointer to UI source tools:tools}:
+    set tools's position to tools's view's selection's caret
+    set tools's query to request UI source feature "textDocument/completion" at byte (tools's position) in (tools's document)
+    set tools's generation to 0
+    set tools's selected and tools's first to 0
+    set tools's mode to 1
+    set tools's edited to false
+    free tools's items
+    set tools's items to a new JSON-RPC array
+    animate UI view (tools's view)
+
+to [accept the UI source completion in] {a pointer to UI source tools:tools}:
+    set query to tools's query
+    if (query's ready = false) or ((query is current for UI source document (tools's document)) = false):
+        dismiss UI source tools tools
+        return nothing
+    set item to the JSON value at index (tools's selected) in (tools's items)
+    set change to the UI source completion change for item at byte (tools's position) in (tools's document)
+    set command to a new JSON-RPC null
+    if item has JSON member named "command":
+        free command
+        set command to a copy of JSON-RPC node (the JSON member named "command" in item)
+    if change's succeeded:
+        commit UI text (change's text) selecting (change's caret) through (change's caret) in (tools's view)
+        edit UI source document (tools's document) to (change's text) at (tools's view's seconds) seconds
+    dismiss UI source tools tools
+    if change's succeeded = false:
+        set tools's mode to 2
+        set tools's message to change's reason
+    if change's succeeded and (command's kind != the JSON null kind):
+        set name to the JSON text named "command" in command
+        if name = "editor.action.triggerSuggest":
+            request UI source completions in tools
+        else:
+            set parameters to a JSON object containing [JSON text "command" is name]
+            if command has JSON member named "arguments":
+                add JSON-RPC member "arguments" containing (a copy of JSON-RPC node (the JSON member named "arguments" in command)) to parameters
+            ignore request UI source feature "workspace/executeCommand" with parameters parameters in (tools's document)
+            free parameters
+    free command
+
+to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
+    set tools to context as a pointer to UI source tools
+    if view's active = false:
+        dismiss UI source tools tools
+        return false
+    if (focus UI source tools tools) = false:
+        return false
+    if (view's selection's composing) or (view's input kind = 10):
+        dismiss UI source tools tools
+        set tools's edited to true
+        set tools's deadline to view's seconds + 0.12
+        return false
+    if tools's mode = 1:
+        if ((tools's query is current for UI source document (tools's document)) = false) or (tools's position != view's selection's caret):
+            dismiss UI source tools tools
+    set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)
+    if command and (view's key press = 32):
+        request UI source completions in tools
+        return true
+    if (view's input kind = 4) or ((view's input kind = 13) or ((view's key press = 259) or (view's key press = 261))):
+        dismiss UI source tools tools
+        set tools's edited to true
+        set tools's deadline to view's seconds + 0.12
+        return false
+    if tools's mode = 0:
+        return false
+    set count to tools's items's length
+    if view's key press = 256:
+        dismiss UI source tools tools
+        set tools's edited to false
+        return true
+    if ((view's key press = 264) or (view's key press = 265)) and (count > 0):
+        set direction to 1 if (view's key press = 264), else -1
+        set tools's selected to (tools's selected + count + direction) mod count
+        set view's damaged to true
+        return true
+    if ((view's key press = 257) or (view's key press = 258)) and (count > 0):
+        accept the UI source completion in tools
+        return true
+    set cursor to the UI cursor in view
+    if cursor is inside (tools's bounds):
+        if (view's input kind = 1) or (view's input kind = 2):
+            set row to ((cursor's y - tools's bounds' y - 6.0) / 28.0) as an integer
+            set selected to tools's first + row
+            if (cursor's y >= (tools's bounds' y + 6.0)) and ((0 <= row < tools's rows) and (selected < count)):
+                set tools's selected to selected
+                set view's damaged to true
+                if (view's input kind = 2) and view's down:
+                    accept the UI source completion in tools
+            return true
+        if view's input kind = 5:
+            set direction to 1 if (view's scroll y > 0.0), else -1
+            set tools's selected to the minimum of (the maximum of 0 and (tools's selected + direction)) and (the maximum of 0 and (count - 1))
+            set view's damaged to true
+            return true
+    if ((view's input kind = 2) and view's down) or (view's key press >= 0):
+        dismiss UI source tools tools
+    return false
+
+to [close UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
+    set tools to context as a pointer to UI source tools
+    set tools's view to @intrinsic("construct", a pointer to UI view)
+    set tools's overlay to @intrinsic("construct", a pointer to UI overlay)
+
+to [enable UI source tools for] {a pointer to UI source workspace:workspace} [in] {a pointer to UI view:view}:
+    require condition (workspace's tools = @intrinsic("construct", a pointer to UI source tools)) reporting "Source tools are already enabled for this workspace"
+    set tools to storage for one slot initialized with (a new UI source tools)
+    set workspace's tools to tools
+    set tools's workspace to workspace as a pointer
+    set tools's view to view
+    set tools's items to a new JSON-RPC array
+    set tools's overlay to a UI overlay in view with context (tools as a pointer) handling input ((the function named "read UI source tools $ in $") as a pointer) painting ((the function named "paint UI source tools $ on $") as a pointer) closing ((the function named "close UI source tools $ in $") as a pointer)
+
+to [update UI source tools in] {a pointer to UI source workspace:workspace}:
+    set tools to workspace's tools
+    if tools = @intrinsic("construct", a pointer to UI source tools):
+        return nothing
+    set view to tools's view
+    if (focus UI source tools tools) = false:
+        return nothing
+    if tools's mode = 1:
+        if ((tools's query is current for UI source document (tools's document)) = false) or (tools's position != view's selection's caret):
+            dismiss UI source tools tools
+    if tools's edited and (view's selection's composing = false):
+        if view's seconds >= tools's deadline:
+            request UI source completions in tools
+        else:
+            animate UI view view
+    if (tools's mode = 1) and (tools's query's ready):
+        if tools's generation != tools's query's generation:
+            free tools's items
+            set tools's items to UI source completion items from (tools's query's result)
+            set tools's generation to tools's query's generation
+            set view's damaged to true
+            if tools's items's length = 0:
+                dismiss UI source tools tools

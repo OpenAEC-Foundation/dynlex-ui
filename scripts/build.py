@@ -48,8 +48,9 @@ def main():
     shutil.copy2(source / "index.html", output / "index.html")
     runtime = platform / "runtime"
     runtime.mkdir(exist_ok=True)
-    for name in ["runtimeImports.js", "runtimeFilesystem.js", "runtimeHost.js", "runtimeLayout.js"]:
-        shutil.copy2(dynlex / "src/web/ide/public/compiler" / name, runtime / name)
+    supplied = dynlex / "src/web/ide/public/compiler"
+    for path in sorted({supplied / "runtimeImports.js", *supplied.glob("runtime*.js")}):
+        shutil.copy2(path, runtime / path.name)
     shutil.copytree(project / "assets/fonts", output / "assets/fonts", dirs_exist_ok=True)
     fonts = sorted(path.relative_to(output).as_posix() for path in (output / "assets/fonts").glob("*.ttf"))
     (output / "application.json").write_text(json.dumps({"module": "application.wasm", "fonts": fonts}, indent=2) + "\n")

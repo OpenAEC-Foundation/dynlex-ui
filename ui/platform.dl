@@ -1,14 +1,17 @@
 # Drawing commands and memory belong to DynLex; drivers submit them to the host.
 import view.dl
 import transforms.dl
+import operation_values.dl
 
 to get the width of {a value:message} using {UI font:typeface}:
     set text to the string form of message
     return @intrinsic("call pointer", typeface's driver's measure text, a floating-point number, typeface's resource, the data of text, text's length)
 
 to get a UI font from {C string:path} sized {integer:size} in {a pointer to UI view:view}:
-    set resource to @intrinsic("call pointer", view's driver's open font, a pointer, view, path, size)
-    return @intrinsic("construct", UI font, resource, view's driver, size)
+    set pixels to a UI operation integer from size
+    require condition (pixels > 0) reporting "Font sizes must be positive"
+    set resource to @intrinsic("call pointer", view's driver's open font, a pointer, view, path, pixels)
+    return @intrinsic("construct", UI font, resource, view's driver, pixels)
 
 to release UI font {a pointer to UI font:typeface}:
     @intrinsic("call pointer", typeface's driver's close font, nothing, typeface's resource)

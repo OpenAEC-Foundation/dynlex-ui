@@ -68,6 +68,9 @@ set view's driver to the address of driver
 set context to the address of view
 set shader to 777 as a pointer
 require condition ((the size of UI shader draw) = 24) reporting "Draw records do not have a portable six-word layout."
+require condition ((4294967299 is a valid UI operation integer) = false) reporting "An oversized range was narrowed before validation."
+set maximum to a UI shader draw counting 2147483647 instanced 2147483647 starting at 2147483647 with vertex offset 2147483647 and instance offset 2147483647 indexed false
+require condition ((maximum's count = 2147483647) and (maximum's instance offset = 2147483647)) reporting "A valid maximum range was narrowed."
 set vertices to [1.0,2.0] as a 32 bit floating-point number array of 2 items
 set indices to [0,1,2] as a 32 bit unsigned integer array of 3 items
 set draws to [

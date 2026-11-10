@@ -1,6 +1,6 @@
 # One asynchronous language connection can analyze independent editor projects.
 # Work is protocol data. A platform supplies transport, never editor policy.
-import source_documents.dl
+import source_queries.dl
 
 the UI source analysis delay means: 0.18
 
@@ -26,6 +26,9 @@ class:
         revision as an integer
         version as an integer
         token types as a pointer to JSON value
+        query as a pointer to UI source query
+        query generation as an integer
+        query notification as a boolean
 
 to get [a UI language client rooted at] {string:root}:
     set client to storage for one slot initialized with (a new UI language client)
@@ -66,9 +69,11 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
     set client's desired to document
     if (client's phase != 0) and (client's phase != 7):
         return a new UI language work
-    if document's analyzed revision = document's revision:
+    set query to the next pending UI source query in document
+    set pending to query != @intrinsic("construct", a pointer to UI source query)
+    if (document's analyzed revision = document's revision) and (pending = false):
         return a new UI language work
-    if seconds < (document's edited at + (the UI source analysis delay)):
+    if (pending = false) and (seconds < (document's edited at + (the UI source analysis delay))):
         return a new UI language work
     if client's phase = 0:
         return the UI language project at step 1 in client
@@ -76,6 +81,13 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
         return UI language work (a JSON object containing [JSON text "operation" is "reset"]) at step 11 in client
     if (client's document != document) or (client's context != document's context):
         return UI language message "textDocument/didClose" with (the LSP document closing parameters for URI (client's uri)) requesting false at step 9 in client
+    if (document's analyzed revision = document's revision) and (client has current UI language source):
+        require condition pending reporting "An editor feature has no pending request"
+        set client's query to query
+        set client's query generation to query's generation
+        set client's query notification to query's notification
+        set query's queued to false
+        return UI language message (query's method) with (a copy of JSON-RPC node (query's parameters)) requesting (query's notification = false) at step 12 in client
     set client's snapshot to document's prefix + document's source
     set client's revision to document's revision
     increment client's version
@@ -155,6 +167,23 @@ to get [the UI language reply] {a pointer to JSON value:response} [at step] {int
         return the UI language project at step 10 in client
     if step = 11:
         return the UI language project at step 1 in client
+    if step = 12:
+        receive UI language diagnostics response in client
+        set query to client's query
+        set result to a new JSON-RPC null
+        if client's query notification = false:
+            free result
+            set result to a copy of JSON-RPC node (the UI language result numbered 12 in response)
+        if (client has current UI language source) and (query's generation = client's query generation):
+            if query is current for UI source document (client's document):
+                free query's result
+                set query's result to result
+                set query's ready to true
+                set result to a new JSON-RPC null
+        free result
+        set client's query to @intrinsic("construct", a pointer to UI source query)
+        set client's phase to 7
+        return a new UI language work
     require condition false reporting "An unknown language-service step completed"
     return a new UI language work
 

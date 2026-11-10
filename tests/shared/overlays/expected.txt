@@ -1,0 +1,1 @@
+UI overlays share input capture, painting and lifetime across drivers.

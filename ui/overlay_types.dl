@@ -1,0 +1,10 @@
+# Views own the layer records. Feature models own their opaque contexts.
+class:
+    patterns:
+        UI overlay
+    members:
+        context as a pointer
+        input as a pointer
+        paint as a pointer
+        closing as a pointer
+        next as a pointer to UI overlay

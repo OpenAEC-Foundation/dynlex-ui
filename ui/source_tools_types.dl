@@ -1,0 +1,44 @@
+import overlays.dl
+import source_queries.dl
+
+class:
+    patterns:
+        UI source tools
+    members:
+        workspace as a pointer
+        view as a pointer to UI view
+        overlay as a pointer to UI overlay
+        node as UI reference
+        document as a pointer to UI source document
+        query as a pointer to UI source query
+        items as a pointer to JSON value
+        generation as an integer
+        mode as an integer
+        selected as an integer
+        first as an integer
+        rows as an integer
+        position as an integer
+        bounds as UI bounds
+        edited as a boolean
+        deadline as a floating-point number
+        message as a string
+
+to [dismiss UI source tools] {a pointer to UI source tools:tools}:
+    if (tools's mode = 0) and (tools's query = @intrinsic("construct", a pointer to UI source query)):
+        return nothing
+    if tools's query != @intrinsic("construct", a pointer to UI source query):
+        cancel UI source query (tools's query)
+    set tools's query to @intrinsic("construct", a pointer to UI source query)
+    set tools's mode to 0
+    free tools's items
+    set tools's items to a new JSON-RPC array
+    set tools's view's damaged to true
+
+to [free UI source tools] {a pointer to UI source tools:tools}:
+    if tools = @intrinsic("construct", a pointer to UI source tools):
+        return nothing
+    if tools's view != @intrinsic("construct", a pointer to UI view):
+        detach UI overlay (tools's overlay) in (tools's view)
+    free tools's items
+    destroy the value at tools
+    deallocate tools

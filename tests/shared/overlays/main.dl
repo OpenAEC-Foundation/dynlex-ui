@@ -1,0 +1,45 @@
+import ../../../ui/overlays.dl
+
+class:
+    patterns:
+        overlay test state
+    members:
+        order as an integer
+        consumed as a boolean
+
+to get [read overlay test input] {a pointer:context} [in] {a pointer to UI view:view}:
+    set state to context as a pointer to overlay test state
+    set state's order to state's order * 10 + view's input code
+    return state's consumed
+
+to [paint overlay test] {a pointer:context} [on] {UI frame:frame}:
+    set state to context as a pointer to overlay test state
+    set state's order to state's order * 10 + frame's view's input code
+
+to [close overlay test] {a pointer:context} [in] {a pointer to UI view:view}:
+    set state to context as a pointer to overlay test state
+    set state's order to state's order * 10 + view's input code
+
+set view to a new UI view
+set context to a new overlay test state
+set input to (the function named "read overlay test input $ in $") as a pointer
+set paint to (the function named "paint overlay test $ on $") as a pointer
+set closing to (the function named "close overlay test $ in $") as a pointer
+set first to a UI overlay in (the address of view) with context ((the address of context) as a pointer) handling input input painting paint closing closing
+set second to a UI overlay in (the address of view) with context ((the address of context) as a pointer) handling input input painting paint closing closing
+set view's input code to 3
+ignore process UI overlays in (the address of view)
+require condition (context's order = 33) reporting "Input did not visit both overlays."
+set context's order to 0
+set context's consumed to true
+require condition (process UI overlays in (the address of view)) reporting "An overlay could not capture input."
+require condition (context's order = 3) reporting "Consumed overlay input reached a lower layer."
+set context's order to 0
+draw UI overlays on (@intrinsic("construct", UI frame, the address of view, true))
+require condition (context's order = 33) reporting "Painting omitted an overlay."
+detach UI overlay second in (the address of view)
+require condition (view's overlays = first) reporting "Detaching the top overlay removed the remaining layer."
+set context's order to 0
+close UI overlays in (the address of view)
+require condition ((context's order = 3) and (view's overlays = @intrinsic("construct", a pointer to UI overlay))) reporting "Closing a view leaked its overlay or skipped its notification."
+print line "UI overlays share input capture, painting and lifetime across drivers."

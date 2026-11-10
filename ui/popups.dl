@@ -16,11 +16,9 @@ to draw the UI popup with cursor {UI point:cursor} in {a pointer to UI view:view
         set width to the maximum of width and ((the width of (child's node's text) using (view's small)) + 64.0)
         set child to child's next
     set height to (owner's node's count * 32) + 12
-    set limit to view's logical width as a floating-point number
-    set bottom to view's logical height as a floating-point number
-    if view's fitted = false:
-        set limit to view's width as a floating-point number
-        set bottom to view's height as a floating-point number
+    set viewport to the UI viewport bounds in view
+    set limit to viewport's width
+    set bottom to viewport's height
     require condition ((width <= (limit - 16.0)) and (height <= (bottom - 16.0))) reporting "The popup does not fit in its window"
     set left to the maximum of 8.0 and (the minimum of (anchor's x) and ((limit - width) - 8.0))
     set top to (anchor's y + anchor's height) + 4.0

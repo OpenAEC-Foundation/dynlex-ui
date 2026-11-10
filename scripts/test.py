@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--browser', action='store_true')
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
+    subprocess.run([sys.executable, 'tests/packaging/runtime_modules.py'], cwd=project, check=True)
     compiler = args.dynlex.resolve() / 'build/dynlex'
     if not compiler.is_file():
         parser.error(f'Build the compiler first: {compiler}')
@@ -46,6 +47,10 @@ def main():
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
+        subprocess.run(['node', 'tests/browser/driver_integer_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/source_features.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]

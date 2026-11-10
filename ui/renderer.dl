@@ -12,6 +12,7 @@ import controls.dl
 import ribbon_rendering.dl
 import popups.dl
 import document_rendering.dl
+import overlays.dl
 
 to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
     set node to layout's node
@@ -93,9 +94,7 @@ to paint UI view {a pointer to UI view:view}:
     if view's instance's description's kind != 40:
         set view's hot to @intrinsic("construct", a pointer to UI layout)
     refresh UI focus in view
-    set view's hit bounds to UI box at 0 0 sized (view's width) (view's height)
-    if view's fitted:
-        set view's hit bounds to UI box at 0 0 sized (view's logical width) (view's logical height)
+    set view's hit bounds to the UI viewport bounds in view
     set view's clip to view's hit bounds
     set view's next text to view's texts
     set view's last text to @intrinsic("construct", a pointer to UI text run)
@@ -103,7 +102,7 @@ to paint UI view {a pointer to UI view:view}:
     set view's selectable to true
     increment view's paint count
     if view's theme's dark:
-        set backdrop to UI box at 0 0 sized (view's logical width) (view's logical height)
+        set backdrop to the UI viewport bounds in view
         draw a rounded UI surface backdrop with radius 0.0 from (UI ink 17 28 43) to (view's theme's background) opacity 255 feathered by 0.75 on frame
         draw a rounded UI surface (UI box at 88 104 sized 348 280) with radius 140.0 from (view's theme's accent) to (UI ink 28 61 94) opacity 9 feathered by 180.0 on frame
         draw a rounded UI surface (UI box at 690 180 sized 280 340) with radius 140.0 from (UI ink 146 113 244) to (UI ink 35 80 133) opacity 9 feathered by 190.0 on frame
@@ -119,6 +118,8 @@ to paint UI view {a pointer to UI view:view}:
         draw a rounded UI box (UI box at 32 bottom sized width 44) with radius 10.0 in (UI ink 229 236 248) on frame
         draw UI text (view's instance's status) at 48 (bottom + 27) with (view's typeface) in (view's theme's text) on frame
     draw the UI popup with cursor cursor in view on frame
+    set view's selectable to false
+    draw UI overlays on frame
     finish UI text painting in view
     set view's reveal caret to false
     if view's focus order > view's control count:

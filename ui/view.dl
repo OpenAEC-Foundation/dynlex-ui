@@ -7,6 +7,7 @@ import transform_types.dl
 import input_types.dl
 import input_context_types.dl
 import image_types.dl
+import overlay_types.dl
 
 class:
     patterns:
@@ -104,7 +105,13 @@ class:
         input action as a pointer
         frame action as a pointer
         close action as a pointer
+        overlays as a pointer to UI overlay
         keys as a boolean array of 512 items
+
+to get [the UI viewport bounds in] {a pointer to UI view:view}:
+    if view's fitted:
+        return UI box at 0 0 sized (view's logical width) (view's logical height)
+    return UI box at 0 0 sized (view's width) (view's height)
 
 class:
     patterns:

@@ -75,13 +75,17 @@ to get [the UI source span from] {integer:start} [to] {integer:end} [in] {a poin
     set visible to ((start >= prefix) and (start <= (prefix + document's source's length))) or ((end > prefix) and (start < (prefix + document's source's length)))
     return @intrinsic("construct", UI source span, first, the maximum of first and last, visible)
 
-to get [the UI source range of] {a pointer to JSON value:diagnostic} [in] {a pointer to UI source document:document} [using] {string:source} [indexed by] {a pointer to text line index:lines}:
-    set range to the JSON member named "range" in diagnostic
+to get [the UI analysis span of] {a pointer to JSON value:range} [in] {string:source} [indexed by] {a pointer to text line index:lines}:
     set first to the JSON member named "start" in range
     set last to the JSON member named "end" in range
     set start to the UI analysis byte at line ((the JSON number named "line" in first) as an integer) character ((the JSON number named "character" in first) as an integer) in source indexed by lines
     set end to the UI analysis byte at line ((the JSON number named "line" in last) as an integer) character ((the JSON number named "character" in last) as an integer) in source indexed by lines
-    return the UI source span from start to end in document
+    require condition (end >= start) reporting "A language source range is reversed"
+    return @intrinsic("construct", UI source span, start, end, true)
+
+to get [the UI source range of] {a pointer to JSON value:diagnostic} [in] {a pointer to UI source document:document} [using] {string:source} [indexed by] {a pointer to text line index:lines}:
+    set span to the UI analysis span of (the JSON member named "range" in diagnostic) in source indexed by lines
+    return the UI source span from (span's start) to (span's end) in document
 
 to get [the UI source range of] {a pointer to JSON value:diagnostic} [in] {a pointer to UI source document:document}:
     set source to document's prefix + document's source

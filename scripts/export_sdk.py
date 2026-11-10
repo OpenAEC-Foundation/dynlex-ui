@@ -19,8 +19,9 @@ def export_sdk(project, compiler, output):
             if path.is_file():
                 sources[path.relative_to(project).as_posix()] = path.read_bytes()
     sources['platform/browser/graphics-backend.js'] = (compiler / 'web/graphics-backend.js').read_bytes()
-    for name in ['runtimeImports.js', 'runtimeFilesystem.js', 'runtimeHost.js', 'runtimeLayout.js']:
-        sources[f'platform/browser/runtime/{name}'] = (compiler / 'src/web/ide/public/compiler' / name).read_bytes()
+    runtime = compiler / 'src/web/ide/public/compiler'
+    for path in sorted({runtime / 'runtimeImports.js', *runtime.glob('runtime*.js')}):
+        sources[f'platform/browser/runtime/{path.name}'] = path.read_bytes()
     digests = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(sources.items())}
     manifest = {'schema': 1, 'package': 'dynlex-ui',
                 'sourceRevision': revision(project), 'runtimeRevision': revision(compiler),

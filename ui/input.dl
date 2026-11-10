@@ -3,6 +3,8 @@ import events.dl
 import invalidation.dl
 import lib/utf8.dl
 
+import overlays.dl
+
 # Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
 # 6 key release, 7 focus loss, 8 refresh, 9 repeat, 10 composition,
 # 11 platform response (key=request ID, modifiers=status), 12 platform notification,
@@ -65,9 +67,18 @@ to process UI input in {a pointer to UI view:view}:
             receive UI composition (event's text) for (event's key) at phase (event's modifiers) selecting (event's x as an integer) through (event's y as an integer) in view
         if event's kind = 13:
             receive platform UI text (event's text) for (event's key) selecting (event's x as an integer) through (event's y as an integer) in view
-        if view's input action != (0 as a pointer):
-            @intrinsic("call pointer", view's input action, nothing, view)
-        handle UI input in view
+        set consumed to process UI overlays in view
+        if consumed:
+            set view's key press to -1
+            set view's typed text to ""
+            set view's scroll x and view's scroll y to 0.0
+            set view's was down to view's down
+            set view's pressed to @intrinsic("construct", a pointer to UI layout)
+            set view's selection's dragging to false
+        if consumed = false:
+            if view's input action != (0 as a pointer):
+                @intrinsic("call pointer", view's input action, nothing, view)
+            handle UI input in view
         set view's key press to -1
         set view's typed text to ""
         set view's scroll x to 0.0

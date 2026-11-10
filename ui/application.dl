@@ -3,16 +3,20 @@ import renderer.dl
 import events.dl
 import input.dl
 import invalidation.dl
+import operation_values.dl
 
 to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
+    set {pixel width} to a UI operation integer from width
+    set {pixel height} to a UI operation integer from height
+    require condition ((pixel width > 0) and (pixel height > 0)) reporting "UI view dimensions must be positive"
     set result to a new UI view
     set result's instance to instance
     set result's driver to driver
     set result's theme to the UI theme for (instance's description)
-    set result's logical width to width
-    set result's logical height to height
-    set result's width to width
-    set result's height to height
+    set result's logical width to pixel width
+    set result's logical height to pixel height
+    set result's width to pixel width
+    set result's height to pixel height
     set result's pixel scale to 1.0
     set result's focus order to 1
     set result's active to true
@@ -33,9 +37,9 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
     set {available width} to result's logical width
     set {available height} to result's logical height
     if result's fitted = false:
-        set available width to the maximum of 1 and (width - 64)
-        set available height to the maximum of 1 and (height - 192)
-    @intrinsic("call pointer", driver's open, nothing, the address of result, width, height, instance's description's text)
+        set available width to the maximum of 1 and (pixel width - 64)
+        set available height to the maximum of 1 and (pixel height - 192)
+    @intrinsic("call pointer", driver's open, nothing, the address of result, pixel width, pixel height, instance's description's text)
     set result's typeface to a UI font from regular sized 15 in (the address of result)
     set result's heading to a UI font from bold sized 26 in (the address of result)
     set result's small to a UI font from regular sized 12 in (the address of result)
@@ -90,6 +94,7 @@ to get update UI view {a pointer to UI view:view}:
     return (view's animating or view's damaged) or (view's input first != @intrinsic("construct", a pointer to UI input event))
 
 to close {a pointer to UI view:view}:
+    close UI overlays in view
     loop while view's input first != @intrinsic("construct", a pointer to UI input event):
         set event to view's input first
         set view's input first to event's next

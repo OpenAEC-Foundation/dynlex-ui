@@ -9,35 +9,35 @@ to get [the UI shader operations in] {a pointer to UI view:view}:
 
 to get [a UI texture from shader] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [using] {string:values} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
-    set resource to @intrinsic("call pointer", provider's frame, a pointer, view, shader, width, height, the data of values, values's length)
-    return @intrinsic("construct", UI texture, resource, width, height)
+    set {pixel width} to a UI operation integer from width
+    set {pixel height} to a UI operation integer from height
+    require condition ((pixel width > 0) and (pixel height > 0)) reporting "Shader texture dimensions must be positive"
+    set resource to @intrinsic("call pointer", provider's frame, a pointer, view, shader, pixel width, pixel height, the data of values, a UI operation integer from (values's length))
+    return @intrinsic("construct", UI texture, resource, pixel width, pixel height)
 
 to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [vertex buffer] {integer:slot} [from] {a pointer:data} [spanning] {integer:count} [bytes]:
-    require condition ((pass >= 0) and ((slot >= 0) and (count >= 0))) reporting "Shader buffer ranges must be nonnegative"
     set provider to the UI shader operations in view
-    @intrinsic("call pointer", provider's vertices, nothing, view, shader, pass, slot, data, count)
+    @intrinsic("call pointer", provider's vertices, nothing, view, shader, a UI operation integer from pass, a UI operation integer from slot, data, a UI operation integer from count)
 
 to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [to indices] {a pointer to a 32 bit unsigned integer:data} [counting] {integer:count}:
-    require condition ((pass >= 0) and (count >= 0)) reporting "Shader index ranges must be nonnegative"
     set provider to the UI shader operations in view
-    @intrinsic("call pointer", provider's indices, nothing, view, shader, pass, data, count)
+    @intrinsic("call pointer", provider's indices, nothing, view, shader, a UI operation integer from pass, data, a UI operation integer from count)
 
 to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [to draws] {a pointer to UI shader draw:data} [counting] {integer:count}:
-    require condition ((pass >= 0) and (count >= 0)) reporting "Shader draw ranges must be nonnegative"
     set provider to the UI shader operations in view
-    @intrinsic("call pointer", provider's draws, nothing, view, shader, pass, data, count)
+    @intrinsic("call pointer", provider's draws, nothing, view, shader, a UI operation integer from pass, data, a UI operation integer from count)
 
 to get [the byte count of UI shader] {a pointer:shader} [pass] {integer:pass} [buffer] {integer:slot} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
-    return @intrinsic("call pointer", provider's buffer bytes, an integer, view, shader, pass, slot)
+    return @intrinsic("call pointer", provider's buffer bytes, an integer, view, shader, a UI operation integer from pass, a UI operation integer from slot)
 
 to get [the record count of UI shader] {a pointer:shader} [pass] {integer:pass} [buffer] {integer:slot} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
-    return @intrinsic("call pointer", provider's buffer records, an integer, view, shader, pass, slot)
+    return @intrinsic("call pointer", provider's buffer records, an integer, view, shader, a UI operation integer from pass, a UI operation integer from slot)
 
 to get [the index count of UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
-    return @intrinsic("call pointer", provider's index count, an integer, view, shader, pass)
+    return @intrinsic("call pointer", provider's index count, an integer, view, shader, a UI operation integer from pass)
 
 to [close UI shader] {a pointer:shader} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view

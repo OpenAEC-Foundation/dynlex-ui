@@ -1,0 +1,1 @@
+Source features share Unicode coordinates, synchronization, cancellation and stale-result isolation.

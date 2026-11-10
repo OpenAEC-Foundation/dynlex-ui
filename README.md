@@ -86,7 +86,20 @@ cancellation and undo; read-only content does not activate the text input bridge
 Documents also support rich paragraphs, source-anchored selection, multiline
 editing and undo/redo. `ui/source_workspace.dl` supplies reusable source documents,
 project-aware language analysis, semantic colors and mapped diagnostics for both
-drivers; applications supply project metadata and a language transport. Grapheme-cluster navigation, bidirectional editing and a
+drivers; applications supply project metadata and a language transport.
+`ui/source_tools.dl` adds the shared completion popup: Ctrl+Space requests it,
+arrows or the pointer select a suggestion, Enter/Tab accepts it as one undoable
+edit, and Escape dismisses it. Completion commands continue through a pattern's
+next argument. All requests use the document's prefix and Unicode coordinates;
+edits to protected context are rejected together with their other edits.
+Enable tools with `enable UI source tools for workspace in view`, and call
+`update UI source tools in workspace` before scheduling language work each frame.
+The same workspace can contain plain editors and editors with hidden vocabulary
+imports. No application-specific completion handlers are needed.
+Window dimensions, font sizes and shader operation arguments share checked
+32-bit driver conversion. Wider public integers retain their values when they
+fit; out-of-range values fail before conversion.
+Grapheme-cluster navigation, bidirectional editing and a
 screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
 font fallback for missing glyphs. Browser font masks are clipped before rasterization,
 so long fields do not allocate textures as wide as their entire contents.

@@ -1,0 +1,36 @@
+import ../../../ui/source_completions.dl
+
+set document to a UI source document named "main.dl" at "file:///main.dl" prefixed by "# hidden\n" containing "A😀 pr" using UI CPU analysis
+set late to a JSON object containing [JSON text "label" is "Zulu", JSON text "sortText" is "2"]
+set early to a JSON object containing [JSON text "label" is "Alpha", JSON text "sortText" is "1"]
+set response to a JSON object containing [JSON child "items" is (a JSON array containing [late, early])]
+set sorted to UI source completion items from response
+free response
+require condition ((the JSON text named "label" in (the JSON value at index 0 in sorted)) = "Alpha") reporting "Completion ignored the server's sort order."
+require condition ((the JSON text named "label" in (the JSON value at index 1 in sorted)) = "Zulu") reporting "Sorting lost a completion item."
+free sorted
+
+set item to a JSON object containing [JSON text "label" is "print", JSON text "insertText" is "print "]
+set change to the UI source completion change for item at byte 8 in document
+free item
+require condition ((change's succeeded) and (change's text = "A😀 print ")) reporting "A default completion did not replace the Unicode word prefix."
+require condition (change's caret = 12) reporting "A default completion left its caret in the preceding word."
+
+set insert to an LSP range from line 1 and character 4 to line 1 and character 6
+set replace to an LSP range from line 1 and character 4 to line 1 and character 6
+set edit to a JSON object containing [JSON child "insert" is insert, JSON child "replace" is replace, JSON text "newText" is "print "]
+set additional to a JSON object containing [JSON child "range" is (an LSP range from line 1 and character 0 to line 1 and character 1), JSON text "newText" is "B"]
+set item to a JSON object containing [JSON text "label" is "print", JSON child "textEdit" is edit, JSON child "additionalTextEdits" is (a JSON array containing [additional])]
+set change to the UI source completion change for item at byte 8 in document
+free item
+require condition ((change's succeeded) and (change's text = "B😀 print ")) reporting "Completion did not apply its insert/replace range and additional edits together."
+require condition (document's source = "A😀 pr") reporting "Preparing a completion changed the document."
+
+set edit to a JSON object containing [JSON child "range" is (an LSP range from line 1 and character 4 to line 1 and character 6), JSON text "newText" is "print "]
+set additional to a JSON object containing [JSON child "range" is (an LSP range from line 0 and character 0 to line 0 and character 8), JSON text "newText" is "context"]
+set item to a JSON object containing [JSON text "label" is "print", JSON child "textEdit" is edit, JSON child "additionalTextEdits" is (a JSON array containing [additional])]
+set change to the UI source completion change for item at byte 8 in document
+free item
+require condition ((change's succeeded = false) and (change's text = document's source)) reporting "A completion with a protected edit was partially accepted."
+free UI source document document
+print line "Completion models share sorting, Unicode replacement, additional edits and protected context."
