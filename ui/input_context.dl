@@ -5,6 +5,8 @@ import lib/unicode.dl
 to position UI input for {a pointer to UI text source:source} displaying {string:content} with caret {integer:position} at {UI point:origin} using {UI font:typeface} in {a pointer to UI view:view}:
     if ((view's active = false) or (view's keyboard focus = false)) or (view's text focus != source's element):
         return nothing
+    if (the UI element (source's element) accepts edits in (view's instance)) = false:
+        return nothing
     set anchor to the UTF-16 position of UTF-8 byte offset (view's selection's anchor) in (source's text)
     set destination to the UTF-16 position of UTF-8 byte offset (view's selection's caret) in (source's text)
     require condition ((anchor succeeded) and (destination succeeded)) reporting "A text service selection splits a Unicode character"

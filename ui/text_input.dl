@@ -128,6 +128,7 @@ to get UI text accepted from {string:inserted} by {UI reference:element}:
 to commit UI text {string:updated} selecting {integer:anchor} through {integer:caret} in {a pointer to UI view:view}:
     set composing to view's selection's composing
     set source to view's selection's caret source
+    require condition (the UI element (source's element) accepts edits in (view's instance)) reporting "Only writable UI text can be committed"
     set entry to the UI value for (source's element) in (view's instance)
     set changed to updated != entry's text
     if changed:
@@ -168,6 +169,8 @@ to get the UI input source for {integer:epoch} in {a pointer to UI view:view}:
     if (the UI element (candidate's element) is enabled in (view's instance)) = false:
         return empty
     if (context's active = false) or ((epoch != context's epoch) or (candidate's element != context's element)):
+        return empty
+    if (the UI element (candidate's element) accepts edits in (view's instance)) = false:
         return empty
     if (context's byte anchor != view's selection's anchor) or (context's byte caret != view's selection's caret):
         return empty
@@ -243,6 +246,52 @@ to restore UI text history in {a pointer to UI view:view} forward {boolean:forwa
     set view's reveal caret to true
     activate (source's element) belonging to (source's element) in (view's instance)
 
+to [navigate UI text in] {a pointer to UI view:view}:
+    set source to view's selection's caret source
+    set key to view's key press
+    set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)
+    set shift to (view's modifiers bitwise and 1) != 0
+    if (((key = 262) or (key = 263)) or ((key = 268) or (key = 269))) or ((key = 264) or (key = 265)):
+        set position to view's selection's caret
+        set row to the UI caret row for source at position in view
+        if key = 268:
+            set position to row's start
+            if command:
+                set position to 0
+        if key = 269:
+            set position to row's end
+            if command:
+                set position to source's text's length
+        if (shift = false) and (view's selection's anchor != view's selection's caret):
+            if key = 263:
+                set position to the minimum of (view's selection's anchor) and (view's selection's caret)
+            if key = 262:
+                set position to the maximum of (view's selection's anchor) and (view's selection's caret)
+        else:
+            if key = 263:
+                set position to the previous UTF8 boundary before position in (source's text)
+            if (key = 262) and (position < source's text's length):
+                set position to (the UTF8 character at position in (source's text))'s next
+        if (key = 264) or (key = 265):
+            set direction to 1
+            if key = 265:
+                set direction to -1
+            set position to the UI vertical destination from (view's selection's caret) in source toward direction in view
+        else:
+            set view's selection's vertical to false
+        set view's selection's caret to position
+        set view's reveal caret to true
+        if shift = false:
+            set view's selection's anchor to position
+        set view's damaged to true
+        set view's key press to -1
+    if (key = 257) or (key = 32):
+        set view's key press to -1
+    if key = 256:
+        clear UI selection in view
+        set view's key press to -1
+        set view's damaged to true
+
 to handle UI [text] keys in {a pointer to UI view:view}:
     if view's active = false:
         set view's key press to -1
@@ -250,17 +299,19 @@ to handle UI [text] keys in {a pointer to UI view:view}:
     set source to view's selection's caret source
     if source = @intrinsic("construct", a pointer to UI text source):
         return nothing
-    if view's selection's composing:
-        set view's key press to -1
-        return nothing
-    set editable to source's element != @intrinsic("construct", UI reference)
-    if editable:
+    set control to source's element != @intrinsic("construct", UI reference)
+    set editable to false
+    if control:
         if (the UI element (source's element) is enabled in (view's instance)) = false:
             set view's key press to -1
             set view's typed text to ""
             return nothing
         synchronize editable UI text source in view
         refresh UI text geometry for source in view
+        set editable to the UI element (source's element) accepts edits in (view's instance)
+    if view's selection's composing:
+        set view's key press to -1
+        return nothing
     set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)
     set shift to (view's modifiers bitwise and 1) != 0
     if command:
@@ -270,7 +321,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
         if view's key press = 65:
             set first to source
             set last to source
-            if editable = false:
+            if control = false:
                 set first to view's texts' source
                 set last to view's last text's source
             set view's selection's anchor source to first
@@ -307,43 +358,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
                     set view's selection's anchor to (the UTF8 character at (view's selection's caret) in (source's text))'s next
             replace UI text selection with (the string form of "") in view
             set view's key press to -1
-        if (((key = 262) or (key = 263)) or ((key = 268) or (key = 269))) or ((key = 264) or (key = 265)):
-            set position to view's selection's caret
-            set row to the UI caret row for source at position in view
-            if key = 268:
-                set position to row's start
-                if command:
-                    set position to 0
-            if key = 269:
-                set position to row's end
-                if command:
-                    set position to source's text's length
-            if (shift = false) and (view's selection's anchor != view's selection's caret):
-                if key = 263:
-                    set position to the minimum of (view's selection's anchor) and (view's selection's caret)
-                if key = 262:
-                    set position to the maximum of (view's selection's anchor) and (view's selection's caret)
-            else:
-                if key = 263:
-                    set position to the previous UTF8 boundary before position in (source's text)
-                if (key = 262) and (position < source's text's length):
-                    set position to (the UTF8 character at position in (source's text))'s next
-            if (key = 264) or (key = 265):
-                set direction to 1
-                if key = 265:
-                    set direction to -1
-                set position to the UI vertical destination from (view's selection's caret) in source toward direction in view
-            else:
-                set view's selection's vertical to false
-            set view's selection's caret to position
-            set view's reveal caret to true
-            if shift = false:
-                set view's selection's anchor to position
-            set view's damaged to true
-            set view's key press to -1
-        if (key = 257) or (key = 32):
-            set view's key press to -1
-        if key = 256:
-            clear UI selection in view
-            set view's key press to -1
-            set view's damaged to true
+    if control:
+        if editable = false:
+            set view's typed text to ""
+        navigate UI text in view

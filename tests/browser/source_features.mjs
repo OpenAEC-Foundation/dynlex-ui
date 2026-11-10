@@ -8,8 +8,8 @@ import {execFileSync} from 'node:child_process';
 const checkout=path.resolve(process.argv[2]);
 const directory=await fs.mkdtemp(path.join(os.tmpdir(),'dynlex-source-features-'));
 try {
-  for(const name of ['source_queries','source_edits','source_completions','overlays','overlay_capture','viewports','source_tools']) {
-    const source=path.resolve('tests/shared',name,'main.dl');
+  for(const name of ['shared/source_queries','shared/source_edits','shared/source_completions','shared/source_theme','shared/overlays','shared/overlay_capture','shared/viewports','shared/source_tools','unit/read_only']) {
+    const source=path.resolve('tests',name,'main.dl');
     const expected=await fs.readFile(path.join(path.dirname(source),'expected.txt'),'utf8');
     for(const optimization of ['-O0','-O2']) {
       const output=path.join(directory,'main.wasm');

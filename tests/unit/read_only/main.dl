@@ -1,0 +1,61 @@
+import ../../helpers/driver.dl
+
+appearance source appearance:
+    height is 100
+
+document example:
+    read only editor "Library" containing "Aé🙂B\nC" using source appearance
+    link "Next" to "" using no UI appearance
+
+set instance to an instance of example
+set window to the address of instance
+set node to the control labeled "Library" in window
+set view to a UI view of window sized 400 by 240 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's text focus = node) and (view's input context's active = false)) reporting "A read-only editor lost keyboard focus or activated platform editing."
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 3 key 262 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 3 key 262 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set surface to view's window as a pointer to test UI surface
+require condition ((surface's copied = "Aé") and (view's selection's caret = 3)) reporting "Read-only text could not be navigated, selected and copied on Unicode boundaries."
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "typed" in (the address of view)
+queue UI input of kind 3 key 259 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 261 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 88 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 13 key 1 at 0.0 0.0 with modifiers 0 containing "platform edit" in (the address of view)
+ignore update UI view (the address of view)
+set value to the UI value for node in window
+require condition ((value's text = "Aé🙂B\nC") and (value's undo = @intrinsic("construct", a pointer to UI text edit))) reporting "Read-only input or platform events changed the source or its history."
+set UI control node read only false in window
+ignore update UI view (the address of view)
+require condition (view's input context's active) reporting "Unlocking text did not restore platform editing."
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "Z" in (the address of view)
+ignore update UI view (the address of view)
+require condition (value's text = "Z🙂B\nC") reporting "Unlocking a source discarded its original selection."
+set epoch to view's input context's epoch
+receive UI composition (the string form of "tentative") for epoch at phase 1 selecting 9 through 9 in (the address of view)
+set UI control node read only true in window
+queue UI input of kind 13 key epoch at 0.0 0.0 with modifiers 0 containing "late IME commit" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((view's input context's active = false) and (view's selection's composing = false)) and (value's text = "Z🙂B\nC")) reporting "Locking a source kept tentative composition or accepted a late platform commit."
+set the text of "Library" in window to "Updated"
+ignore update UI view (the address of view)
+require condition ((value's text = "Updated") and (view's input context's active = false)) reporting "A programmatic update was blocked or re-enabled read-only text input."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's focused's node's text = "Next") reporting "Tab could not leave a read-only editor."
+close the address of view
+close window
+
+window field example:
+    read only text field "Token" containing "public"
+set instance to an instance of field example
+set node to the control labeled "Token" in (the address of instance)
+require condition ((the UI value for node in (the address of instance))'s read only) reporting "A text field lost its declarative read-only policy."
+close the address of instance
+print line "Read-only text keeps selection, copy, navigation and programmatic updates while excluding edits and IME."

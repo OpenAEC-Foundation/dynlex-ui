@@ -77,4 +77,27 @@ export async function verifyEditor({ click, key, evaluate, command, waitFor, set
   assert.equal(await evaluate('document.activeElement.tagName'), 'CANVAS');
   assert(await evaluate('document.querySelector("textarea").readOnly'), 'A read-only selection kept text input active');
   await evaluate('document.querySelector("#outside").remove()');
+  await click(70, 330); await settled();
+  assert.equal(await evaluate('document.activeElement.tagName'), 'CANVAS');
+  assert(await evaluate('document.querySelector("textarea").readOnly'), 'A read-only source activated browser editing');
+  await copyAll('Aé🙂B\nC');
+  await key('Home', 'Home', 36, 2);
+  await key('ArrowRight', 'ArrowRight', 39, 8);
+  await key('ArrowRight', 'ArrowRight', 39, 8);
+  await key('c', 'KeyC', 67, 2);
+  await waitFor('navigator.clipboard.readText().then(text => text === "Aé")');
+  await screenshot('editor-read-only');
+  await evaluate(`(() => {
+    const input = document.querySelector('textarea');
+    input.value = 'late platform edit';
+    input.dispatchEvent(new InputEvent('input', {bubbles:true,inputType:'insertText',data:'late platform edit'}));
+  })()`);
+  await key('Backspace', 'Backspace', 8);
+  await key('Delete', 'Delete', 46);
+  await key('Enter', 'Enter', 13);
+  await copyAll('Aé🙂B\nC');
+  await click(70, 90); await settled();
+  assert.equal(await value(), 'alXpha 東京 omega\nnext line', 'Read-only input leaked into the writable source');
+  assert(!(await evaluate('document.querySelector("textarea").readOnly')), 'Returning to a writable source kept editing locked');
+  await click(40, 32); await settled();
 }

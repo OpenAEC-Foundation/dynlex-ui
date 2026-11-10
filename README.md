@@ -94,6 +94,11 @@ next argument. All requests use the document's prefix and Unicode coordinates;
 edits to protected context are rejected together with their other edits.
 Enable tools with `enable UI source tools for workspace in view`, and call
 `update UI source tools in workspace` before scheduling language work each frame.
+Changing the token theme refreshes every editor from its existing analysis; an
+unchanged theme preserves cached colors. `read only editor` and `read only text
+field` retain selection, copying and navigation while excluding editing and IME.
+The same policy can change at runtime with `set UI control node read only true in
+instance`; programmatic `set the text of` updates still work.
 The same workspace can contain plain editors and editors with hidden vocabulary
 imports. No application-specific completion handlers are needed.
 Window dimensions, font sizes and shader operation arguments share checked

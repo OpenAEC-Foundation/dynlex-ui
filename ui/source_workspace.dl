@@ -6,6 +6,7 @@ import tabs.dl
 import view.dl
 import layout_lookup.dl
 import source_tools_types.dl
+import source_palette.dl
 
 class:
     patterns:
@@ -32,6 +33,7 @@ class:
         client as a pointer to UI language client
         editors as a pointer to UI source editor
         tools as a pointer to UI source tools
+        palette as a pointer to UI source palette entry
 
 to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI source workspace:workspace}:
     if node's kind = 44:
@@ -114,6 +116,13 @@ to [fail UI source workspace] {a pointer to UI source workspace:workspace}:
 
 to [present UI source workspace] {a pointer to UI source workspace:workspace} [using] {an array:theme}:
     set instance to workspace's instance
+    if (UI source palette (workspace's palette) matches theme) = false:
+        free UI source palette (workspace's palette)
+        set workspace's palette to a UI source palette copying theme
+        set editor to workspace's editors
+        loop while editor != @intrinsic("construct", a pointer to UI source editor):
+            set editor's colors revision to 0
+            set editor to editor's next
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
         set document to entry's document
@@ -148,6 +157,7 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
 
 to [free UI source workspace] {a pointer to UI source workspace:workspace}:
     free UI source tools (workspace's tools)
+    free UI source palette (workspace's palette)
     free UI language client (workspace's client)
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):

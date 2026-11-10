@@ -187,6 +187,9 @@ to finish UI text painting in {a pointer to UI view:view}:
 
 to synchronize editable UI text {a pointer to UI text source:source} in {a pointer to UI view:view}:
     set entry to the UI value for (source's element) in (view's instance)
+    if (the UI element (source's element) accepts edits in (view's instance)) = false:
+        set view's selection's composing to false
+        set view's selection's composition to ""
     if source's text != entry's text:
         set view's selection's composing to false
         set view's selection's composition to ""

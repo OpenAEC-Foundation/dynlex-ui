@@ -1,0 +1,1 @@
+Read-only text keeps selection, copy, navigation and programmatic updates while excluding edits and IME.

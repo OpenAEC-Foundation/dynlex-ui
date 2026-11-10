@@ -57,6 +57,11 @@ loop while index < the length of labels:
     process UI input in (the address of view)
     require condition ((workspace's tools' mode = 0) and (view's closed = false)) reporting "Dismissing suggestions closed the window."
     increment index
+set node to the control labeled "River" in window
+set UI control node read only true in window
+queue UI input of kind 3 key 32 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (workspace's tools' mode = 0) reporting "A read-only source offered a modifying completion."
 free UI source workspace workspace
 require condition (view's overlays = @intrinsic("construct", a pointer to UI overlay)) reporting "A source workspace leaked its view overlay."
 close the address of view
