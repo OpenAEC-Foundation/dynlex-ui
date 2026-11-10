@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { createWebServices } from '../../platform/browser/web-services.js';
+const service=createWebServices(new URL('https://example.test/'));
+const controller=new AbortController();
+const pending=service.timer({milliseconds:1000},{signal:controller.signal});
+controller.abort();await assert.rejects(pending,{name:'AbortError'});
+const result=await service.timer({milliseconds:5},{signal:new AbortController().signal});
+assert(result.elapsed>=0);
+assert.throws(()=>service.timer({milliseconds:-1},{signal:new AbortController().signal}),/Invalid timer/);
+console.log('Platform timers complete once and cancel without recurring frame polling.');

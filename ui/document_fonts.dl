@@ -6,14 +6,17 @@ to get a document UI font for {UI appearance settings:appearance} in {a pointer 
         set path to view's regular path
         if appearance's bold:
             set path to view's bold path
+    return a cached UI font from path sized (appearance's font size) in view
+
+to get a cached UI font from {C string:path} sized {integer:size} in {a pointer to UI view:view}:
     set entry to view's fonts
     loop while entry != @intrinsic("construct", a pointer to UI font cache entry):
-        if (entry's path = path) and (entry's font's size = appearance's font size):
+        if (entry's path = path) and (entry's font's size = size):
             return entry's font
         set entry to entry's next
     set entry to storage for one slot initialized with (a new UI font cache entry)
     set entry's path to path
-    set entry's font to a UI font from path sized (appearance's font size) in view
+    set entry's font to a UI font from path sized size in view
     set entry's next to view's fonts
     set view's fonts to entry
     return entry's font

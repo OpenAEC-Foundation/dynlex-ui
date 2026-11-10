@@ -3,6 +3,7 @@ import { loadFonts, createFontServices } from "./fonts.js";
 import { connectInput } from "./input.js";
 import { createGraphicsServices } from './graphics-services.js';
 import { createPictureServices } from './pictures.js';
+import { createUiScheduling } from './scheduling.js';
 
 export async function createUiHost(root, fontPaths, base, runtime, options = {}) {
   const surfaces = new Map(), resources = new Map(), drawings = new Map();
@@ -24,9 +25,11 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
     }));
     for (const surface of surfaces.values()) {
       surface.closed = true;
-      if (surface.raf !== null) cancelAnimationFrame(surface.raf);
+      scheduling.cancel(surface);
     }
   }
+  const scheduling = createUiScheduling({ error: reportError });
+  const schedule = scheduling.schedule;
   const gpu = await createGpu(reportError);
   const faces = await loadFonts(fontPaths, base);
   const fonts = createFontServices(gpu, faces, resources, id);
@@ -34,15 +37,6 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
   const callback = number => instance.exports.__indirect_function_table.get(number);
   const pictures = createPictureServices({ graphics, surfaces, callback, text, fail: reportError });
   const requests = new Map();
-
-  function schedule(surface) {
-    if (surface.closed || surface.raf !== null || !surface.tick) return;
-    surface.raf = requestAnimationFrame(() => {
-      surface.raf = null;
-      try { if (surface.tick(surface.view) && !surface.closed) schedule(surface); }
-      catch (error) { reportError(error); }
-    });
-  }
 
   function send(surface, kind = 8, key = 0, x = 0, y = 0, modifiers = 0, value = "") {
     const bytes = encoder.encode(value);
@@ -70,7 +64,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
       Object.assign(canvas.style, { display: "block", width: "100%", height: "100%" });
       root.append(canvas);
       const surface = Object.assign(gpu.surface(canvas), {
-        title: cstring(title), id: id(), closed: false, raf: null, tick: null
+        title: cstring(title), id: id(), closed: false, raf: null, background: null, tick: null
       });
       surfaces.set(surface.id, surface); resized(surface);
       return surface.id;
@@ -79,7 +73,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
       const surface = surfaces.get(handle);
       surface.closed = true;
       for (const request of requests.values()) if (request.surface === surface) request.controller.abort();
-      if (surface.raf !== null) cancelAnimationFrame(surface.raf);
+      scheduling.cancel(surface);
       surface.disconnect(); pictures.closeSurface(surface); graphics.closeSurface(surface);
       gpu.releaseSurface(surface); surface.canvas.remove(); surfaces.delete(handle);
     },

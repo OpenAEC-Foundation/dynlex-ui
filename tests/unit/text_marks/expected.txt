@@ -1,0 +1,1 @@
+Editor marks retain Unicode source ranges, span lines, ignore stale snapshots and release replaced annotations.

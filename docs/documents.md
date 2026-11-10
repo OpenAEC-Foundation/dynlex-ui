@@ -166,3 +166,39 @@ draw UI texture texture across imageBounds sampling (UI box at 0 0 sized 1 1) ma
 The mask's bounds define an ellipse. The opaque fraction lies in `[0, 1)`; the
 remaining outer ring fades to transparent. Sampling stays relative to the full
 image bounds and supports mirrored UVs, just like other texture primitives.
+
+Editors also accept source-bound background marks independently of token colors:
+
+```dynlex
+import ui/text_marks.dl
+
+mark UI text source in editor in (the address of instance)
+add UI text mark (UI ink 104 153 178) from firstByte to lastByte with opacity 100 in editor in (the address of instance)
+```
+
+Ranges use UTF-8 byte offsets and character boundaries, like token colors.
+They may span lines and remain attached to their original source snapshot.
+Drawing a mark preserves the content, selection, caret, undo history and semantic
+colors. Composing text preserves the marks on its unchanged prefix and suffix;
+a committed edit stops matching the previous snapshot. Starting a new mark set
+releases its previous spans; closing the instance releases all remaining marks.
+
+Canvas painters can request `a cached UI font from path sized size in view`.
+The view owns this font and releases it when closed. Use the uncached font
+constructor only when the caller will manage that font's lifetime itself.
+
+Browser hosts can add `createAudioServices(base)` from `platform/browser/audio.js`
+to their generic service table. It returns `{ services, close }`. `audio` requests
+load decoded buffers, play voices, update their volume/rate, release voices and
+unload buffers. Play remains pending until its voice ends; cancelling its request
+stops the voice and reclaims its record, including cancellation before creation
+or after completion but before delivery. Keep the returned buffer order and supply a distinct integer
+voice identifier for each play. Release normally ended voices explicitly; cancelled and failed plays already
+relinquish their resources.
+`close()` stops all voices, releases buffers and closes the audio context.
+
+The `timer` web service resolves after its requested `milliseconds`, or cancels
+with its request. Applications own scheduling and audio policy in DynLex.
+The host processes queued input and service replies once when a browser tab is
+hidden, because browsers suspend animation frames there. Hidden surfaces never
+poll for animation; returning to a visible surface resumes normal scheduling.

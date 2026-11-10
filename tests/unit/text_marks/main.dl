@@ -1,0 +1,50 @@
+import ../../helpers/driver.dl
+import ../../../ui/text_marks.dl
+
+appearance editor appearance:
+    font size is 16
+    height is 120
+    lines do not wrap
+
+document marks test:
+    editor "Source" containing "a😀b\nend" using editor appearance
+
+set painted to 0
+set lowest to 0.0
+function [record marked triangles] {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    globals:
+        painted
+        lowest
+    execute:
+        if texture = (0 as a pointer):
+            set index to 0
+            loop while index < count:
+                set vertex to the item at index in vertices
+                if ((the absolute value of (vertex's red - 17.0 / 255.0)) < 0.00001) and (vertex's alpha > 0.0):
+                    increment painted
+                    set lowest to the maximum of lowest and (vertex's y)
+                increment index
+
+set driver to the value at the test UI driver
+set driver's triangles to (the function named "record marked triangles $ vertices $ counting $ with $") as a pointer
+set instance to an instance of marks test
+set view to a UI view of (the address of instance) sized 316 by 180 using font "regular" with (the address of driver)
+set node to the control labeled "Source" in (the address of instance)
+mark UI text (the string form of "a😀b\nend") in node in (the address of instance)
+add UI text mark (UI ink 17 93 117) from 1 to 10 with opacity 120 in node in (the address of instance)
+ignore update UI view the address of view
+require condition ((painted > 0) and (lowest > 30.0)) reporting "A Unicode mark did not cover its later source line"
+require condition ((view's texts' start = 0) and (view's texts' text's length = 6)) reporting "A mark changed the original source text coordinates"
+require condition ((the UI value for node in (the address of instance))'s text = "a😀b\nend") reporting "A mark changed the editor's content"
+set painted to 0
+set the text of "Source" in (the address of instance) to "new source"
+ignore update UI view the address of view
+require condition (painted = 0) reporting "A stale source mark painted an edited document"
+set the text of "Source" in (the address of instance) to "a😀b\nend"
+ignore update UI view the address of view
+require condition (painted > 0) reporting "Restoring a snapshot lost its mark"
+mark UI text (the string form of "a😀b\nend") in node in (the address of instance)
+require condition ((the UI value for node in (the address of instance))'s marks = @intrinsic("construct", a pointer to UI text mark)) reporting "Replacing marks retained the old spans"
+close the address of view
+close the address of instance
+print line "Editor marks retain Unicode source ranges, span lines, ignore stale snapshots and release replaced annotations."

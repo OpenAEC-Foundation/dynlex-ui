@@ -122,6 +122,16 @@ class:
 
 class:
     patterns:
+        UI text mark
+    members:
+        start as an integer
+        end as an integer
+        ink as UI paint
+        opacity as an integer
+        next as a pointer to UI text mark
+
+class:
+    patterns:
         UI value
     members:
         target as UI reference
@@ -135,6 +145,9 @@ class:
         colors as a pointer to UI text color span
         last color as a pointer to UI text color span
         enabled as a boolean
+        marked text as a string
+        marks as a pointer to UI text mark
+        last mark as a pointer to UI text mark
 
 class:
     patterns:
@@ -267,6 +280,7 @@ to close {a pointer to UI instance:instance}:
         release UI text edits value's undo
         release UI text edits value's redo
         release UI text colors value
+        release UI text marks value
         destroy the value at value
         deallocate value
         set value to next
@@ -281,6 +295,16 @@ to release UI text colors {a pointer to UI value:value}:
     set value's colors to @intrinsic("construct", a pointer to UI text color span)
     set value's last color to @intrinsic("construct", a pointer to UI text color span)
     set value's colored text to ""
+
+to release UI text marks {a pointer to UI value:value}:
+    set mark to value's marks
+    loop while mark != @intrinsic("construct", a pointer to UI text mark):
+        set next to mark's next
+        deallocate mark
+        set mark to next
+    set value's marks to @intrinsic("construct", a pointer to UI text mark)
+    set value's last mark to @intrinsic("construct", a pointer to UI text mark)
+    set value's marked text to ""
 
 to release UI text edits {a pointer to UI text edit:edit}:
     loop while edit != @intrinsic("construct", a pointer to UI text edit):

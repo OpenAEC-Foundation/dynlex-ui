@@ -148,7 +148,8 @@ export function connectInput(surface, send, schedule) {
     resolution.addEventListener("change", changed, { once: true }); schedule();
   };
   changed();
-  document.addEventListener("visibilitychange", () => send(document.hidden ? 7 : 8), options);
+  document.addEventListener("visibilitychange", () => send(document.hidden ? 7 : (ownsFocus() ? 14 : 8)), options);
+  if (document.hidden) send(7);
   window.addEventListener('focus', () => { if (ownsFocus()) send(14); }, options);
   window.addEventListener('blur', () => send(7), options);
   return { updateContext, close() { controller.abort(); observer.disconnect();

@@ -4,6 +4,17 @@ export function createWebServices(base) {
     hash: new URLSearchParams('value=' + location.hash.slice(1).replaceAll('+', '%2B')).get('value'),
     search: Object.fromEntries(new URLSearchParams(location.search)) });
   return {
+    timer(payload,{signal}) {
+      signal.throwIfAborted();
+      if(!Number.isFinite(payload.milliseconds) || payload.milliseconds<0 || payload.milliseconds>2147483647)
+        throw new Error('Invalid timer duration');
+      return new Promise((resolve,reject)=>{
+        const started=performance.now();
+        const abort=()=>{clearTimeout(timer);reject(signal.reason);};
+        const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve({elapsed:performance.now()-started});},payload.milliseconds);
+        signal.addEventListener('abort',abort,{once:true});
+      });
+    },
     async environment() {
       const hints = navigator.userAgentData === undefined ? null
         : await navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness', 'platform']);

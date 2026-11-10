@@ -1,0 +1,39 @@
+# Background annotations follow the same source snapshot as semantic colors.
+import text_colors.dl
+import shapes.dl
+
+to mark UI text {string:source} in {UI reference:node} in {a pointer to UI instance:instance}:
+    require condition (node's kind = 44) reporting "Text marks require an editor"
+    set value to the UI value for node in instance
+    release UI text marks value
+    set value's marked text to source
+    invalidate instance
+
+to add UI text [mark] {UI paint:ink} from {integer:start} to {integer:end} with opacity {integer:opacity} in {UI reference:node} in {a pointer to UI instance:instance}:
+    set value to the UI value for node in instance
+    require UI text range from start to end in (value's marked text)
+    require condition (0 <= opacity <= 255) reporting "Text mark opacity must be between zero and 255"
+    set mark to storage for one slot initialized with @intrinsic("construct", UI text mark, start, end, ink, opacity, @intrinsic("construct", a pointer to UI text mark))
+    if value's last mark = @intrinsic("construct", a pointer to UI text mark):
+        set value's marks to mark
+    else:
+        require condition (start >= value's last mark's end) reporting "Text marks must be ordered without overlap"
+        set value's last mark's next to mark
+    set value's last mark to mark
+    invalidate instance
+
+to draw UI text marks in {string:text} from {integer:start} through {integer:finish} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} on {UI frame:frame}:
+    set value to the UI value for (layout's node) in (frame's view's instance)
+    if value's marked text != text:
+        return nothing
+    set mark to value's marks
+    loop while mark != @intrinsic("construct", a pointer to UI text mark):
+        set first to the maximum of start and (mark's start)
+        set last to the minimum of finish and (mark's end)
+        if last > first:
+            set x to left + (the width of (the substring of text from start spanning (first - start) bytes) using (layout's typeface))
+            set width to the width of (the substring of text from first spanning (last - first) bytes) using (layout's typeface)
+            set height to layout's typeface's size * layout's appearance's line spacing
+            set box to UI box at x (baseline - layout's typeface's size) sized width height
+            draw a rounded UI surface box with radius 2.0 from (mark's ink) to (mark's ink) opacity (mark's opacity) feathered by 0.25 on frame
+        set mark to mark's next

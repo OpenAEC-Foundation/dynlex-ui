@@ -1,5 +1,6 @@
 import paragraph_rendering.dl
 import text_colors.dl
+import text_marks.dl
 
 to get draw colored UI row {a pointer to UI text line:line} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} starting with {a pointer to UI text color span:span} on {UI frame:frame}:
     set ending to true
@@ -8,6 +9,7 @@ to get draw colored UI row {a pointer to UI text line:line} in {a pointer to UI 
     return draw colored UI text (layout's content) from (line's start) through (line's end) in layout at left baseline ending ending starting with span on frame
 
 to get draw colored UI text {string:text} from {integer:start} through {integer:finish} in {a pointer to UI layout:layout} at {floating-point number:left} {floating-point number:baseline} ending {boolean:ending} starting with {a pointer to UI text color span:span} on {UI frame:frame}:
+    draw UI text marks in text from start through finish in layout at left baseline on frame
     set offset to start
     set x to left
     set more to true

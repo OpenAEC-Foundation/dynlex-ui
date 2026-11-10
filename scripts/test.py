@@ -41,12 +41,13 @@ def main():
         manifest = subprocess.check_output([sys.executable,
             str(args.dynlex.resolve() / 'scripts/find_vulkan_icd.py')], text=True).strip()
         native_environment = dict(os.environ, VK_DRIVER_FILES=manifest, VK_ICD_FILENAMES=manifest)
-        for name in ['sections', 'ribbon', 'snake', 'text', 'pictures']:
+        for name in ['sections', 'ribbon', 'snake', 'text', 'pictures', 'marks']:
             subprocess.run(['python3', f'scripts/test_{"ui_sections" if name == "sections" else name + "_ui"}.py',
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
-        subprocess.run(['node', 'tests/browser/pictures_service.mjs'], cwd=project, check=True)
+        for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling']:
+            subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
         applications.append((['--entry', 'tests/browser/pictures.dl', '--output', '.cache/browser/pictures'], '.cache/browser/pictures'))
