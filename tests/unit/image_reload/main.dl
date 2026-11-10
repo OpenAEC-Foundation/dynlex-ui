@@ -1,0 +1,23 @@
+import ../../helpers/driver.dl
+
+document reload test:
+set instance to an instance of reload test
+set view to a UI view of (the address of instance) sized 400 by 400 using font "regular" with the test UI driver
+ignore update UI view the address of view
+set surface to view's window as a pointer to test UI surface
+reload UI image from (the string form of "image.webp") in (the address of view)
+require condition (surface's image opens = 1) reporting "Reloading an uncached image started multiple requests"
+set image to UI image from "image.webp" in (the address of view)
+complete UI image image in (the address of view) with resource (7 as a pointer) sized 20 by 10 at status 1
+reload UI image from (the string form of "image.webp") in (the address of view)
+require condition ((image's status = 0) and (image's texture's resource = (0 as a pointer))) reporting "Reloading retained the previous texture"
+require condition ((surface's image opens = 2) and (surface's image releases = 1)) reporting "Reloading did not release and replace the ready resource"
+reload UI image from (the string form of "image.webp") in (the address of view)
+require condition ((surface's image opens = 3) and (surface's image closes = 2)) reporting "Reloading a pending image did not cancel its request"
+complete UI image image in (the address of view) with resource (0 as a pointer) sized 0 by 0 at status 2
+reload UI image from (the string form of "image.webp") in (the address of view)
+require condition (image's status = 0) reporting "An asset failure could not be retried"
+require condition ((surface's image opens = 4) and (surface's image closes = 3)) reporting "Retrying a failed image did not release its previous request"
+close the address of view
+close the address of instance
+print line "Image reload releases ready textures, cancels pending loads and retries failures."

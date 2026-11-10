@@ -10,6 +10,11 @@ import composition_rendering.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to layout's appearance
+    set available to the UI element (layout's node) is enabled in (view's instance)
+    if available = false:
+        set appearance's foreground to UI ink between (appearance's foreground) and (appearance's background) at 0.6
+        set appearance's background to UI ink between (appearance's background) and (view's theme's background) at 0.35
+        set layout's hover to 0.0
     if appearance's hidden:
         return nothing
     increment view's paint serial
@@ -31,7 +36,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
     if (((kind = 42) or (kind = 43)) or (kind = 44)) or (kind = 46):
         if (kind = 43) or (kind = 44):
             set target to 0.0
-            if (view's hot = layout) or ((view's focused = layout) and (view's keyboard focus)):
+            if available and ((view's hot = layout) or ((view's focused = layout) and (view's keyboard focus))):
                 set target to 1.0
             set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
             if (layout's hover > 0.01) and (kind = 43):

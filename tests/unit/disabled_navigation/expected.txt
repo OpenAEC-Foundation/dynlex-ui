@@ -1,0 +1,1 @@
+Disabled tabs and popup items are skipped, and an open disabled field cannot change.

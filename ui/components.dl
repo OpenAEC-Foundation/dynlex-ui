@@ -90,6 +90,7 @@ to get the UI value for {UI reference:node} in {a pointer to UI instance:instanc
         set entry to entry's next
     set {new entry} to a new UI value
     set new entry's target to node
+    set new entry's enabled to true
     set new entry's text to node's content
     if (node's kind = 43) or (node's kind = 45):
         set new entry's destination to node's destination
@@ -173,13 +174,28 @@ to get the action for {UI reference:target} in {a pointer to UI instance:instanc
         set handler to handler's next
     return no UI action
 
-to get the UI element {UI reference:node} is interactive in {a pointer to UI instance:instance}:
+to get the UI element {UI reference:node} has input in {a pointer to UI instance:instance}:
     set kind to node's kind
     if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or ((kind = 35) or (kind = 38))) or (((kind = 39) or (kind = 43)) or (kind = 44)):
         return true
     return (the action for node in instance for event 0) != no UI action
 
+to get the UI element {UI reference:node} is interactive in {a pointer to UI instance:instance}:
+    return (the UI element node has input in instance) and (the UI element node is enabled in instance)
+
+to set UI control {UI reference:node} enabled {boolean:enabled} in {a pointer to UI instance:instance}:
+    require condition (the UI element node has input in instance) reporting "Only input controls can be enabled or disabled"
+    set entry to the UI value for node in instance
+    if entry's enabled != enabled:
+        set entry's enabled to enabled
+        invalidate instance
+
+to set the {C string:label} control in {a pointer to UI instance:instance} enabled {boolean:enabled}:
+    set UI control (the control labeled label in instance) enabled enabled in instance
+
 to activate {UI reference:node} belonging to {UI reference:parent} in {a pointer to UI instance:instance}:
+    if (the UI element node is enabled in instance) = false:
+        return nothing
     set target to node
     if node's kind = 17:
         set entry to the UI value for node in instance

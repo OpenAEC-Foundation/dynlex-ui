@@ -1,0 +1,1 @@
+Surface and picture aspect ratios respond to the viewport and respect explicit height.

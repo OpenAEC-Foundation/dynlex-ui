@@ -14,12 +14,17 @@ to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with curs
     set layout's hit bounds to the UI intersection of box and (view's hit bounds)
     set layout's paint generation to view's paint count
     set focused to view's focused = layout
+    set available to the UI element node is enabled in (view's instance)
     set inside to ((cursor's x >= box's x) and (cursor's x < (box's x + box's width))) and ((cursor's y >= box's y) and (cursor's y < (box's y + box's height)))
     set clip to view's hit bounds
     set inside to inside and (((cursor's x >= clip's x) and (cursor's x < (clip's x + clip's width))) and ((cursor's y >= clip's y) and (cursor's y < (clip's y + clip's height))))
     if view's popup != @intrinsic("construct", a pointer to UI layout):
         set inside to false
         set focused to false
+    if available = false:
+        set inside to false
+        set focused to false
+        set layout's hover to 0.0
     set ink to view's theme's button ink
     set text to view's theme's text
     set lit to false
@@ -127,4 +132,6 @@ to draw UI control {a pointer to UI layout:layout} in {UI bounds:box} with curso
     set selectable to view's selectable
     set view's selectable to false
     paint UI control layout in box with cursor cursor in view on frame
+    if (the UI element (layout's node) is enabled in (view's instance)) = false:
+        draw a rounded UI surface box with radius 8.0 from (view's theme's background) to (view's theme's background) opacity 140 feathered by 0.75 on frame
     set view's selectable to selectable

@@ -13,6 +13,8 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
         set visible to true
         if covering != @intrinsic("construct", a pointer to UI layout):
             set visible to run's paint serial >= covering's paint serial
+        if run's source's element != @intrinsic("construct", UI reference):
+            set visible to visible and (the UI element (run's source's element) is enabled in (view's instance))
         if visible and ((run's generation = view's paint count) and (point is inside (run's clip))):
             set local to UI text position of point in run
             set width to the maximum of 8.0 and (the width of (run's text) using (run's typeface))
@@ -46,6 +48,8 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
                 set allowed to run's source = source
             else:
                 set allowed to run's source's element = @intrinsic("construct", UI reference)
+        if run's source's element != @intrinsic("construct", UI reference):
+            set allowed to allowed and (the UI element (run's source's element) is enabled in (view's instance))
         if (run's generation = view's paint count) and allowed:
             set local to UI text position of point in run
             set top to run's origin's y - run's typeface's size
@@ -161,6 +165,8 @@ to get the UI input source for {integer:epoch} in {a pointer to UI view:view}:
     set empty to @intrinsic("construct", a pointer to UI text source)
     if ((candidate = empty) or (view's keyboard focus = false)) or (view's active = false):
         return empty
+    if (the UI element (candidate's element) is enabled in (view's instance)) = false:
+        return empty
     if (context's active = false) or ((epoch != context's epoch) or (candidate's element != context's element)):
         return empty
     if (context's byte anchor != view's selection's anchor) or (context's byte caret != view's selection's caret):
@@ -249,6 +255,10 @@ to handle UI [text] keys in {a pointer to UI view:view}:
         return nothing
     set editable to source's element != @intrinsic("construct", UI reference)
     if editable:
+        if (the UI element (source's element) is enabled in (view's instance)) = false:
+            set view's key press to -1
+            set view's typed text to ""
+            return nothing
         synchronize editable UI text source in view
         refresh UI text geometry for source in view
     set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)

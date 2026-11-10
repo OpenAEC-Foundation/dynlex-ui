@@ -67,6 +67,7 @@ flow is overlay means: UI appearance rule 23 valued 1
 image fit is contain means: UI appearance rule 24 valued 0
 image fit is cover means: UI appearance rule 24 valued 1
 image fit is stretch means: UI appearance rule 24 valued 2
+aspect ratio is {a value:width} by {a value:height} means: UI appearance rule 25 valued ((width as a floating-point number) / (height as a floating-point number))
 
 class:
     patterns:
@@ -97,6 +98,7 @@ class:
         unwrapped as a boolean
         overlay as a boolean
         image fit as an integer
+        aspect ratio as a floating-point number
 
 to get default UI appearance settings:
     set result to a new UI appearance settings
@@ -163,6 +165,9 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
             set settings's overlay to rule's number != 0.0
         if kind = 24:
             set settings's image fit to rule's number as an integer
+        if kind = 25:
+            require condition ((rule's number > 0.0) and (rule's number is finite)) reporting "A UI aspect ratio must be positive and finite"
+            set settings's aspect ratio to rule's number
         increment index
 
 to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport}:

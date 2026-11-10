@@ -137,6 +137,8 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set layout's bounds' height to row top + row height + appearance's padding
         if ((column = 0) and (row top > appearance's padding)) and (appearance's overlay = false):
             set layout's bounds' height to layout's bounds' height - appearance's gap
+    if appearance's aspect ratio > 0.0:
+        set layout's bounds' height to (inner / appearance's aspect ratio) + (appearance's padding * 2.0)
     set layout's bounds' height to the maximum of (layout's bounds' height) and (appearance's minimum height)
     if appearance's height > 0.0:
         set layout's bounds' height to appearance's height

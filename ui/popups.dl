@@ -6,6 +6,9 @@ to draw the UI popup with cursor {UI point:cursor} in {a pointer to UI view:view
     set owner to view's popup
     if owner = @intrinsic("construct", a pointer to UI layout):
         return nothing
+    if (the UI element (owner's node) is enabled in (view's instance)) = false:
+        dismiss the UI popup in view
+        return nothing
     set anchor to owner's painted bounds
     set width to the maximum of 196.0 and (anchor's width)
     set child to owner's first
@@ -34,11 +37,12 @@ to draw the UI popup with cursor {UI point:cursor} in {a pointer to UI view:view
         set row to UI box at (left + 5.0) ((top + 6.0) + (index * 32)) sized (width - 10.0) 32
         set child's painted bounds to row
         set inside to ((cursor's x >= row's x) and (cursor's x < (row's x + row's width))) and ((cursor's y >= row's y) and (cursor's y < (row's y + row's height)))
+        set available to the UI element (child's node) is enabled in (view's instance)
         if inside:
             set view's hot to child
-            if view's keyboard focus = false:
+            if (view's keyboard focus = false) and available:
                 set view's popup index to index
-        if index = view's popup index:
+        if available and (index = view's popup index):
             draw a rounded UI box row with radius 4.0 in (UI ink 235 239 246) on frame
         set icon to child's node's variant
         if owner's node's kind = 34:
@@ -46,6 +50,9 @@ to draw the UI popup with cursor {UI point:cursor} in {a pointer to UI view:view
                 set icon to "check"
         if icon != "":
             draw UI icon icon in (UI box at (row's x + 8.0) (row's y + 8.0) sized 16 16) in (view's theme's accent) using (the address of (view's icons)) on frame
-        draw UI text ((the UI value for (child's node) in (view's instance))'s text) at (row's x + 33.0) (row's y + 21.0) with (view's small) in (view's theme's text) on frame
+        set ink to view's theme's text
+        if available = false:
+            set ink to view's theme's muted
+        draw UI text ((the UI value for (child's node) in (view's instance))'s text) at (row's x + 33.0) (row's y + 21.0) with (view's small) in ink on frame
         set child to child's next
         increment index

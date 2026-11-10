@@ -1,6 +1,7 @@
 import view.dl
 import text.dl
 import tabs.dl
+import layout_lookup.dl
 
 to navigate UI tabs in {a pointer to UI view:view}:
     if (view's keyboard focus = false) or (view's focused = @intrinsic("construct", a pointer to UI layout)):
@@ -23,8 +24,19 @@ to navigate UI tabs in {a pointer to UI view:view}:
         set index to 0
     if view's key press = 269:
         set index to group's count - 1
+    set step to direction
+    if step = 0:
+        set step to 1 if (view's key press = 268), else -1
+    set attempts to 0
+    loop while ((the UI element (the UI child at index in group) is enabled in (view's instance)) = false) and (attempts < group's count):
+        set index to ((index + step) + group's count) mod group's count
+        increment attempts
+    if attempts = group's count:
+        set view's key press to -1
+        return nothing
     if group's kind = 28:
-        set view's focus order to view's focus order + (index - current)
+        set target to the UI layout for element (the UI child at index in group) in (view's layout)
+        set view's focus order to target's order
     else:
         clear UI selection in view
     activate (the UI child at index in group) belonging to group in (view's instance)

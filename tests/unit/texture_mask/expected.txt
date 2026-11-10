@@ -1,0 +1,1 @@
+Ellipse masks retain image coordinates, mirrored sampling, opacity and a transparent feather.

@@ -134,6 +134,7 @@ class:
         colored text as a string
         colors as a pointer to UI text color span
         last color as a pointer to UI text color span
+        enabled as a boolean
 
 class:
     patterns:
@@ -227,10 +228,20 @@ to get an instance of {UI reference:description} with state {a pointer to a valu
 to get an instance of {UI reference:description}:
     return an instance of description with state (0 as a pointer to a byte)
 
+to get the UI element {UI reference:node} is enabled in {a pointer to UI instance:instance}:
+    set value to instance's values
+    loop while value != @intrinsic("construct", a pointer to UI value):
+        if value's target = node:
+            return value's enabled
+        set value to value's next
+    return true
+
 to click {UI reference:button} in {a pointer to UI instance:instance}:
+    if (the UI element button is enabled in instance) = false:
+        return nothing
     set handler to instance's handlers
     loop while handler != @intrinsic("construct", a pointer to UI handler):
-        if handler's target = button:
+        if (handler's target = button) and (handler's event = 0):
             set previous to instance's event target
             set instance's event target to button
             @intrinsic("call pointer", handler's action, nothing, instance)

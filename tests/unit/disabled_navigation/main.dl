@@ -1,0 +1,46 @@
+import ../../helpers/driver.dl
+
+document navigation test:
+    tab group "Tabs" using no UI appearance:
+        tab "First":
+            paragraph "First panel" using no UI appearance
+        tab "Second":
+            paragraph "Second panel" using no UI appearance
+        tab "Third":
+            paragraph "Third panel" using no UI appearance
+    tool field "One" sized 100:
+        menu item "One"
+        menu item "Two"
+        menu item "Three"
+
+set instance to an instance of navigation test
+set view to a UI view of (the address of instance) sized 400 by 260 using font "regular" with the test UI driver
+ignore update UI view the address of view
+set the "Second" control in (the address of instance) enabled false
+ignore update UI view the address of view
+set view's focus order to 1
+set view's keyboard focus to true
+refresh UI focus in (the address of view)
+set view's key press to 262
+navigate UI tabs in (the address of view)
+require condition ((the value of "Tabs" in (the address of instance)) = 2) reporting "Arrow navigation selected a disabled tab"
+set the "First" control in (the address of instance) enabled false
+set the "Third" control in (the address of instance) enabled false
+ignore update UI view the address of view
+set group to view's layout's first
+require condition (group's order = 0) reporting "A disabled tab group retained a stale focus order"
+set field to group's next
+activate UI layout field in (the address of view)
+set two to the UI child at 1 in (field's node)
+set UI control two enabled false in (the address of instance)
+set view's key press to 264
+handle UI popup keys in (the address of view)
+require condition (view's popup index = 2) reporting "Arrow navigation selected a disabled popup item"
+set UI control (field's node) enabled false in (the address of instance)
+set view's key press to 257
+handle UI popup keys in (the address of view)
+require condition ((the UI value for (field's node) in (the address of instance))'s number = 0) reporting "An open disabled field accepted a menu item"
+require condition (view's popup = @intrinsic("construct", a pointer to UI layout)) reporting "A disabled popup owner remained open"
+close the address of view
+close the address of instance
+print line "Disabled tabs and popup items are skipped, and an open disabled field cannot change."

@@ -4,6 +4,8 @@ import ribbon_scroll.dl
 import text.dl
 
 to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view}:
+    if (the UI element (layout's node) is enabled in (view's instance)) = false:
+        return nothing
     increment view's control count
     set layout's order to view's control count
     set layout's focus next to @intrinsic("construct", a pointer to UI layout)
@@ -47,12 +49,24 @@ to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI vie
         collect UI focus from child in view
         return nothing
     if kind = 48:
+        set layout's order to 0
         set active to the selected tab of (layout's node) in (view's instance)
         set child to layout's first
         loop while child's node != active:
             set child to child's next
-        append UI focus child in view
-        set layout's order to child's order
+        set header to child
+        if (the UI element (header's node) is enabled in (view's instance)) = false:
+            set header to layout's first
+            loop while header != @intrinsic("construct", a pointer to UI layout):
+                if the UI element (header's node) is enabled in (view's instance):
+                    append UI focus header in view
+                    set layout's order to header's order
+                    set header to @intrinsic("construct", a pointer to UI layout)
+                else:
+                    set header to header's next
+        else:
+            append UI focus header in view
+            set layout's order to header's order
         set child to child's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
             collect UI focus from child in view

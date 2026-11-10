@@ -1,0 +1,1 @@
+Programmatic clicks select click handlers without invoking paint callbacks.

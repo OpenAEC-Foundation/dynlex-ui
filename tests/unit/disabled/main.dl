@@ -1,0 +1,46 @@
+import ../../helpers/driver.dl
+
+appearance control appearance:
+    padding is 10
+    height is 44
+    background is UI ink 220 230 240
+
+document disabled test:
+    link "Run" to "#" using control appearance
+    link "Other" to "#" using control appearance
+    editor "Source" containing "original" using control appearance
+    code:
+        when the "Run" link is followed:
+            set counter to this window's state as a pointer to an integer
+            store ((the value at counter) + 1) at counter
+
+set count to 0
+set instance to an instance of disabled test with state (the address of count)
+set view to a UI view of (the address of instance) sized 400 by 300 using font "regular" with the test UI driver
+ignore update UI view the address of view
+set the "Run" control in (the address of instance) enabled false
+ignore update UI view the address of view
+require condition (view's control count = 2) reporting "A disabled command stayed in keyboard traversal"
+set layout to view's layout's first
+queue UI input of kind 1 key 0 at (layout's painted bounds' x + 10.0) (layout's painted bounds' y + 10.0) with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view the address of view
+require condition ((count = 0) and (layout's hover = 0.0)) reporting "A disabled command activated or responded to hover"
+activate (layout's node) belonging to (layout's parent) in (the address of instance)
+click (layout's node) in (the address of instance)
+require condition (count = 0) reporting "A disabled command activated programmatically"
+set the "Run" control in (the address of instance) enabled true
+activate (layout's node) belonging to (layout's parent) in (the address of instance)
+require condition (count = 1) reporting "A disabled command could not be re-enabled"
+set the "Source" control in (the address of instance) enabled false
+set source to view's layout's first's next's next
+queue UI input of kind 1 key 0 at (source's painted bounds' x + 10.0) (source's painted bounds' y + 10.0) with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "changed" in (the address of view)
+ignore update UI view the address of view
+require condition ((the UI value for (source's node) in (the address of instance))'s text = "original") reporting "A disabled editor accepted input"
+close the address of view
+close the address of instance
+print line "Disabled controls skip focus, ignore pointer and programmatic activation, and reject text input."

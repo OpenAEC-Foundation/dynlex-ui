@@ -1,0 +1,1 @@
+Disabled controls skip focus, ignore pointer and programmatic activation, and reject text input.

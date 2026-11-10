@@ -16,8 +16,13 @@ to draw document UI tabs {a pointer to UI layout:layout} in {UI bounds:box} in {
         set child's paint generation to view's paint count
         set active to child's node = selected
         set target to 1.0 if (view's hot = child), else 0.0
+        set available to the UI element (child's node) is enabled in (view's instance)
+        if available = false:
+            set target and child's hover to 0.0
         set child's hover to UI value (child's hover) approaching target at speed 14.0 in view
         set ink to layout's appearance's foreground
+        if available = false:
+            set ink to UI ink between ink and (layout's appearance's background) at 0.6
         draw a rounded UI surface header with radius (layout's appearance's radius) from ink to ink opacity ((child's hover * 20.0) as an integer) feathered by 0.75 on frame
         if active:
             draw a rounded UI box (UI box at (header's x) ((header's y + header's height) - 2.0) sized (header's width) 2.0) with radius 1.0 in ink on frame

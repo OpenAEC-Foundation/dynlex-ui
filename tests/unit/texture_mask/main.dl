@@ -1,0 +1,27 @@
+import ../../helpers/driver.dl
+
+document mask test:
+    paragraph "Mask" using no UI appearance
+
+set instance to an instance of mask test
+set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver
+ignore update UI view the address of view
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+set texture to @intrinsic("construct", UI texture, 7 as a pointer, 100, 100)
+draw UI texture texture across (UI box at 20 30 sized 100 100) sampling (UI box at 1 0 sized -1 1) masked by (UI box at 50 60 sized 20 10) opaque through 0.8 with opacity 128 on frame
+require condition (view's vertex count > 0) reporting "A visible ellipse mask produced no geometry"
+set faded and opaque to false
+set index to 0
+loop while index < view's vertex count:
+    set vertex to the item at index in (view's vertices)
+    require condition (((vertex's x >= 50.0) and (vertex's x <= 70.0)) and ((vertex's y >= 60.0) and (vertex's y <= 70.0))) reporting "A detail mask painted outside its ellipse bounds"
+    require condition ((the absolute value of (vertex's u - (1.0 - (vertex's x - 20.0) / 100.0))) < 0.00001) reporting "A flipped mask lost the full-image texture coordinates"
+    if vertex's alpha = 0.0:
+        set faded to true
+    if vertex's alpha > 0.5:
+        set opaque to true
+    increment index
+require condition (faded and opaque) reporting "A masked image lost its transparent feather or opaque center"
+close the address of view
+close the address of instance
+print line "Ellipse masks retain image coordinates, mirrored sampling, opacity and a transparent feather."

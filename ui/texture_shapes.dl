@@ -44,3 +44,35 @@ to draw UI texture {UI texture:texture} in {UI bounds:box} rounded by {floating-
         add textured UI vertex outside first across box sampling sample in paint with alpha 0.0 to frame
         increment index
     submit UI triangles with texture (texture's resource) on frame
+
+# Feathered ellipse masks composite a detail from the original image without
+# replacing its surrounding pixels. UVs remain tied to the full image bounds.
+to draw UI texture {UI texture:texture} across {UI bounds:box} sampling {UI bounds:sample} masked by {UI bounds:mask} opaque through {floating-point number:solid} with opacity {integer:opacity} on {UI frame:frame}:
+    require condition ((solid >= 0.0) and (solid < 1.0)) reporting "An ellipse mask requires an opaque fraction below one"
+    if (frame's drawable = false) or ((mask's width <= 0.0) or (mask's height <= 0.0)):
+        return nothing
+    set center to a UI point at (mask's x + mask's width / 2.0) and (mask's y + mask's height / 2.0)
+    set ink to the linear UI ink of (UI ink 255 255 255) on frame
+    set alpha to (opacity / 255.0) * (frame's view's current alpha / 255.0)
+    set radiusX to mask's width / 2.0
+    set radiusY to mask's height / 2.0
+    set index to 0
+    start triangles in frame
+    loop while index < 48:
+        set angle to index * 0.1308996938995747
+        set next to (index + 1) * 0.1308996938995747
+        set first to a UI point at (center's x + (the cosine of angle) * radiusX) and (center's y + (the sine of angle) * radiusY)
+        set second to a UI point at (center's x + (the cosine of next) * radiusX) and (center's y + (the sine of next) * radiusY)
+        set {inside first} to a UI point at (center's x + (first's x - center's x) * solid) and (center's y + (first's y - center's y) * solid)
+        set {inside second} to a UI point at (center's x + (second's x - center's x) * solid) and (center's y + (second's y - center's y) * solid)
+        add textured UI vertex center across box sampling sample in ink with alpha alpha to frame
+        add textured UI vertex {inside first} across box sampling sample in ink with alpha alpha to frame
+        add textured UI vertex {inside second} across box sampling sample in ink with alpha alpha to frame
+        add textured UI vertex {inside first} across box sampling sample in ink with alpha alpha to frame
+        add textured UI vertex first across box sampling sample in ink with alpha 0.0 to frame
+        add textured UI vertex second across box sampling sample in ink with alpha 0.0 to frame
+        add textured UI vertex {inside first} across box sampling sample in ink with alpha alpha to frame
+        add textured UI vertex second across box sampling sample in ink with alpha 0.0 to frame
+        add textured UI vertex {inside second} across box sampling sample in ink with alpha alpha to frame
+        increment index
+    submit UI triangles with texture (texture's resource) on frame

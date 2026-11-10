@@ -1,0 +1,29 @@
+import ../../../ui/document_declarations.dl
+
+set paints and clicks to 0
+
+function [record paint] {a pointer:frame}:
+    globals:
+        paints
+    execute:
+        increment paints
+
+function [record click] {a pointer to UI instance:instance}:
+    globals:
+        clicks
+    execute:
+        increment clicks
+
+document event test:
+    surface "Scene" using no UI appearance
+
+set instance to an instance of event test
+set scene to the control labeled "Scene" in (the address of instance)
+bind scene in (the address of instance) to (the function named "record paint $") for event 1
+click scene in (the address of instance)
+require condition ((paints = 0) and (clicks = 0)) reporting "A click invoked a paint callback"
+bind scene in (the address of instance) to (the function named "record click $") for event 0
+click scene in (the address of instance)
+require condition ((paints = 0) and (clicks = 1)) reporting "A click did not select its own event callback"
+close the address of instance
+print line "Programmatic clicks select click handlers without invoking paint callbacks."

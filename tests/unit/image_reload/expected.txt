@@ -1,0 +1,1 @@
+Image reload releases ready textures, cancels pending loads and retries failures.

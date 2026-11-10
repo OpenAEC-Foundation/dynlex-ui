@@ -134,3 +134,35 @@ own separate graphics resources. Completion schedules a redraw and reflows
 intrinsic picture height. Static images do not schedule further frames. Closing
 a view cancels its pending loads and releases its textures. Browser image errors
 log their details and display the generic application error message.
+
+An appearance can reserve responsive artwork or a canvas before it loads:
+
+```dynlex
+appearance scene appearance:
+    aspect ratio is 16 by 9
+    maximum width is 800
+
+set the "Run" control in (the address of instance) enabled false
+```
+
+The ratio applies to the content width and adds padding outside it. Explicit
+height takes precedence; minimum height still applies. Disabled input controls
+keep their place in layout, paint in muted colors, and reject pointer, keyboard,
+text and programmatic activation. Keyboard traversal and tab/menu navigation
+skip them. Disabling an open menu owner prevents a queued selection from changing
+it. Enable individual controls; containers do not inherit a disabled state.
+
+`reload UI image from path in view` cancels a pending decode or releases the
+current texture, then starts a fresh request. Use it for an explicit retry after
+a failed asset load. It keeps the cached image's address and schedules a redraw.
+
+Canvas code can composite a feathered detail from an image without replacing its
+surrounding pixels:
+
+```dynlex
+draw UI texture texture across imageBounds sampling (UI box at 0 0 sized 1 1) masked by ellipseBounds opaque through 0.8 with opacity 255 on frame
+```
+
+The mask's bounds define an ellipse. The opaque fraction lies in `[0, 1)`; the
+remaining outer ring fades to transparent. Sampling stays relative to the full
+image bounds and supports mirrored UVs, just like other texture primitives.

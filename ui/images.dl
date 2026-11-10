@@ -56,6 +56,19 @@ to release UI images in {a pointer to UI view:view}:
         set image to next
     set view's images to @intrinsic("construct", a pointer to UI image)
 
+to [reload UI image from] {string:path} in {a pointer to UI view:view}:
+    set image to the cached UI image from path in view
+    if image != @intrinsic("construct", a pointer to UI image):
+        if image's requested:
+            @intrinsic("call pointer", view's driver's close image, nothing, image, view)
+        set image's requested to false
+        set image's status to 0
+        set image's texture to @intrinsic("construct", UI texture)
+    ignore UI image from path in view
+    set view's images changed to true
+    set view's damaged to true
+    @intrinsic("call pointer", view's driver's wake, nothing, view)
+
 to draw UI image {a pointer to UI image:image} in {UI bounds:box} rounded by {floating-point number:radius} fitting {integer:fit} on {UI frame:frame}:
     require condition ((fit >= 0) and (fit <= 2)) reporting "Unknown image fit"
     if (image's status != 1) or ((box's width <= 0.0) or (box's height <= 0.0)):
