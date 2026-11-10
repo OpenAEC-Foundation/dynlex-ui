@@ -5,6 +5,15 @@ export function createWebServices(base) {
     search: Object.fromEntries(new URLSearchParams(location.search)) });
   return {
     clock() { return {milliseconds:Date.now()}; },
+    connectivity(payload,{signal,emit}) {
+      signal.throwIfAborted();
+      return new Promise(resolve=>{
+        const changed=()=>emit({type:'connectivity',online:navigator.onLine});
+        const stop=()=>{removeEventListener('online',changed);removeEventListener('offline',changed);resolve(null);};
+        addEventListener('online',changed);addEventListener('offline',changed);
+        signal.addEventListener('abort',stop,{once:true});changed();
+      });
+    },
     timer(payload,{signal}) {
       signal.throwIfAborted();
       if(!Number.isFinite(payload.milliseconds) || payload.milliseconds<0 || payload.milliseconds>2147483647)

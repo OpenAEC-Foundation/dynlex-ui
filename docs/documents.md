@@ -206,6 +206,11 @@ Storage and the epoch-millisecond `clock` capability from `createWebServices`
 can be registered here so local saves finish within an edit event. Synchronous
 providers must return JSON immediately; promises use the request API instead.
 
+The `connectivity` web service watches platform connectivity. It emits an initial
+`{type: "connectivity", online: boolean}` notification and subsequent online or
+offline changes. Cancelling its request releases both event subscriptions; retry
+decisions belong to the application's DynLex controller.
+
 The `timer` web service resolves after its requested `milliseconds`, or cancels
 with its request. Applications own scheduling and audio policy in DynLex.
 The host processes queued input and service replies once when a browser tab is

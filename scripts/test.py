@@ -46,7 +46,7 @@ def main():
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
-        for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls']:
+        for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
