@@ -4,6 +4,7 @@ export function createWebServices(base) {
     hash: new URLSearchParams('value=' + location.hash.slice(1).replaceAll('+', '%2B')).get('value'),
     search: Object.fromEntries(new URLSearchParams(location.search)) });
   return {
+    clock() { return {milliseconds:Date.now()}; },
     timer(payload,{signal}) {
       signal.throwIfAborted();
       if(!Number.isFinite(payload.milliseconds) || payload.milliseconds<0 || payload.milliseconds>2147483647)

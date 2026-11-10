@@ -1,6 +1,24 @@
 # Generic asynchronous platform services. Responses enter the shared input queue.
 import services.dl
 
+class:
+    patterns:
+        browser UI call result
+    members:
+        success as a boolean
+        contents as a string
+
+# The host transfers an allocation; the returned string owns its copied bytes.
+to get a browser UI call named {C string:name} containing {string:payload} in {a pointer to UI view:view}:
+    set data to 0 as a pointer to byte
+    set count to 0
+    set status to @intrinsic("call", "dynlex_ui", "ui_call", an integer, view's window, name, the data of payload, payload's length, the address of data, the address of count)
+    set contents to the string form of ""
+    if status = 0:
+        set contents to the substring of (a new string from data containing count bytes) from 0 spanning count bytes
+        deallocate data
+    return @intrinsic("construct", browser UI call result, status = 0, contents)
+
 to get a browser UI request named {C string:name} containing {string:payload} in {a pointer to UI view:view}:
     return @intrinsic("call", "dynlex_ui", "ui_request", an integer, view's window, name, the data of payload, payload's length)
 

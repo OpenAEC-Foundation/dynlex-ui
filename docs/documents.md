@@ -197,6 +197,15 @@ voice identifier for each play. Release normally ended voices explicitly; cancel
 relinquish their resources.
 `close()` stops all voices, releases buffers and closes the audio context.
 
+For immediate capabilities, pass an explicit `synchronousServices` table to the
+browser application host. `a browser UI call named name containing json in view`
+returns a `browser UI call result` with `success` and `contents`. Successful
+contents contain owned UTF-8 JSON. A failed provider is logged by the host and
+returns `success = false`; provider error details never enter the application.
+Storage and the epoch-millisecond `clock` capability from `createWebServices`
+can be registered here so local saves finish within an edit event. Synchronous
+providers must return JSON immediately; promises use the request API instead.
+
 The `timer` web service resolves after its requested `milliseconds`, or cancels
 with its request. Applications own scheduling and audio policy in DynLex.
 The host processes queued input and service replies once when a browser tab is

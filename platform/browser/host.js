@@ -4,6 +4,7 @@ import { connectInput } from "./input.js";
 import { createGraphicsServices } from './graphics-services.js';
 import { createPictureServices } from './pictures.js';
 import { createUiScheduling } from './scheduling.js';
+import { createServiceCalls } from './service-calls.js';
 
 export async function createUiHost(root, fontPaths, base, runtime, options = {}) {
   const surfaces = new Map(), resources = new Map(), drawings = new Map();
@@ -37,6 +38,8 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
   const callback = number => instance.exports.__indirect_function_table.get(number);
   const pictures = createPictureServices({ graphics, surfaces, callback, text, fail: reportError });
   const requests = new Map();
+  const callService=createServiceCalls({memory,allocate:runtime.env.malloc,services:options.synchronousServices??{},
+    report:(name,error)=>console.error(`DynLex synchronous platform service ${name}:`,error)});
 
   function send(surface, kind = 8, key = 0, x = 0, y = 0, modifiers = 0, value = "") {
     const bytes = encoder.encode(value);
@@ -133,6 +136,11 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
       else { const resource = resources.get(handle); resources.delete(handle); gpu.retire(resource.texture); }
     },
     ui_copy(pointer, count) { navigator.clipboard.writeText(text(pointer, count)).catch(reportError); },
+    ui_call(handle,name,pointer,count,address,length) {
+      const surface=surfaces.get(handle);
+      if(surface.closed) throw new Error('A closed surface requested a synchronous service');
+      return callService(cstring(name),JSON.parse(text(pointer,count)),address,length);
+    },
     ui_request(handle, name, pointer, count) {
       const surface = surfaces.get(handle), request = id(), controller = new AbortController();
       const service = cstring(name), payload = JSON.parse(text(pointer, count));
