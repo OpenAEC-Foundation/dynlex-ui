@@ -8,7 +8,9 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, t
   }
   function own(surface, handle, close) { assets.set(handle, { surface, close }); }
   function release(handle) {
-    const asset = assets.get(handle); assets.delete(handle); asset.close();
+    const asset = assets.get(handle);
+    if (!asset) throw new Error('Unknown graphics resource');
+    assets.delete(handle); asset.close();
   }
   function upload(surface, pixels, width, height) {
     const handle = id(), resource = gpu.image(surface, pixels, width, height);
@@ -40,33 +42,42 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, t
       } finally { URL.revokeObjectURL(url); }
     }
     if (payload.operation === 'shader') {
-      const geometry = new Map();
-      const passes = await Promise.all(payload.passes.map(async (pass, index) => {
-        const vertex = pass.vertex === null ? null : stage(pass.vertex, signal);
-        const fragment = stage(pass.fragment, signal);
-        const data = pass.geometry === null ? null : Promise.all([
-            read(pass.geometry.vertices, signal).then(response => response.arrayBuffer()),
-            pass.geometry.indices === null ? Promise.resolve(new ArrayBuffer(0))
-              : read(pass.geometry.indices, signal).then(response => response.arrayBuffer())
-          ]);
-        const [vertexCode, fragmentCode, buffers] = await Promise.all([vertex, fragment, data]);
-        if (buffers !== null) geometry.set(index, {
-          vertices: new Float32Array(buffers[0]), indices: new Uint32Array(buffers[1])
-        });
-        return { ...pass, vertex: vertexCode, fragment: fragmentCode };
+      const prepared = await Promise.all(payload.passes.map(async pass => {
+        const [vertex,fragment,vertices,indices] = await Promise.all([
+          pass.vertex === null ? null : stage(pass.vertex,signal), stage(pass.fragment,signal),
+          Promise.all(pass.vertexBuffers.map(buffer => buffer.source === null ? null
+            : read(buffer.source,signal).then(response => response.arrayBuffer()))),
+          pass.indices === null ? null : read(pass.indices,signal).then(response => response.arrayBuffer())
+        ]);
+        return { description:{...pass,vertex,fragment},vertices,indices };
       }));
-      const renderer = await gpu.shader(surface, { passes });
+      const renderer = await gpu.shader(surface,{passes:prepared.map(pass => pass.description)});
       try {
         signal.throwIfAborted();
-        for (const [index, data] of geometry) renderer.geometry(index, data.vertices, data.indices);
+        for (const [index,pass] of prepared.entries()) {
+          for (const [slot,data] of pass.vertices.entries()) if (data !== null)
+            renderer.vertexBuffer(index,slot,new Uint8Array(data));
+          if (pass.indices !== null) renderer.indexBuffer(index,new Uint32Array(pass.indices));
+        }
       } catch (error) { renderer.close(); throw error; }
       const handle = id(), output = id();
-      programs.set(handle, { renderer, output });
+      programs.set(handle, { renderer, output, surface });
       own(surface, handle, () => { programs.delete(handle); resources.delete(output); renderer.close(); });
-      return { resource: handle, passes: passes.length };
+      return { resource: handle, passes: prepared.length };
     }
-    if (payload.operation === 'release') { release(payload.resource); return null; }
+    if (payload.operation === 'release') {
+      const asset=assets.get(payload.resource);
+      if (!asset) throw new Error('Unknown graphics resource');
+      if (asset.surface !== surface) throw new Error('The graphics resource belongs to a different surface');
+      release(payload.resource); return null;
+    }
     throw new Error(`Unknown graphics operation: ${payload.operation}`);
+  }
+  function programFor(surface,handle) {
+    const program=programs.get(handle);
+    if (!program) throw new Error('Unknown shader resource');
+    if (program.surface !== surfaces.get(surface)) throw new Error('The shader belongs to a different surface');
+    return program;
   }
   return { request, owns: handle => assets.has(handle), release,
     closeSurface(surface) {
@@ -76,16 +87,25 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, t
       ui_image_upload(handle, pointer, width, height) {
         return upload(surfaces.get(handle), new Uint8Array(memory.buffer, pointer, width * height * 4), width, height).resource;
       },
-      ui_shader_frame(handle, width, height, pointer, count) {
-        const program = programs.get(handle);
-        const texture = program.renderer.render(width, height, JSON.parse(text(pointer, count)));
-        resources.set(program.output, texture);
+      ui_shader_frame(surface,handle,width,height,pointer,count) {
+        const program=programFor(surface,handle);
+        const texture=program.renderer.render(width,height,JSON.parse(text(pointer,count)));
+        resources.set(program.output,texture);
         return program.output;
       },
-      ui_shader_geometry(handle, pass, vertices, count, indices, indexCount) {
-        programs.get(handle).renderer.geometry(pass, new Float32Array(memory.buffer, vertices, count * 4),
-          new Uint32Array(memory.buffer, indices, indexCount));
-      }
+      ui_shader_vertex_buffer(surface,handle,pass,slot,pointer,bytes) {
+        programFor(surface,handle).renderer.vertexBuffer(pass,slot,new Uint8Array(memory.buffer,pointer,bytes));
+      },
+      ui_shader_index_buffer(surface,handle,pass,pointer,count) {
+        programFor(surface,handle).renderer.indexBuffer(pass,new Uint32Array(memory.buffer,pointer,count));
+      },
+      ui_shader_draws(surface,handle,pass,pointer,count) {
+        programFor(surface,handle).renderer.draws(pass,new Uint32Array(memory.buffer,pointer,count*6));
+      },
+      ui_shader_buffer_bytes(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferBytes(pass,slot); },
+      ui_shader_buffer_records(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferRecords(pass,slot); },
+      ui_shader_index_count(surface,handle,pass) { return programFor(surface,handle).renderer.indexCount(pass); },
+      ui_shader_close(surface,handle) { programFor(surface,handle); release(handle); }
     }
   };
 }

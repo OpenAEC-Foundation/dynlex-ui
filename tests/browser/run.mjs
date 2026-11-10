@@ -291,7 +291,7 @@ try {
   assert.equal(await evaluate('document.querySelectorAll("canvas, textarea").length'), 0);
   await pause(100);
   assert.equal(errors.length, 0, JSON.stringify(errors));
-  await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyFailureBoundaries(); })');
+  await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyShaderBuffers(); await module.verifyFailureBoundaries(); })');
   assert.equal(errors.length, 0, JSON.stringify(errors));
   console.log(JSON.stringify({ example, graphicsMode, before, after, errors }));
 } catch (error) {

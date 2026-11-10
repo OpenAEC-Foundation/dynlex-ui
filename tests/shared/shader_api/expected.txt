@@ -1,0 +1,1 @@
+Shared shader operations transfer raw buffers, draw records and texture ownership through a platform driver.

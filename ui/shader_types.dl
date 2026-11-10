@@ -1,0 +1,25 @@
+# Portable shader submissions are ordinary data, independent of host APIs.
+import lib/sections.dl
+import lib/json_builders.dl
+
+class:
+    patterns:
+        UI shader draw
+    members:
+        count as a 32 bit unsigned integer
+        instances as a 32 bit unsigned integer
+        first as a 32 bit unsigned integer
+        vertex offset as a 32 bit unsigned integer
+        instance offset as a 32 bit unsigned integer
+        indexed as a 32 bit unsigned integer
+
+to get [a UI shader draw counting] {integer:count} [instanced] {integer:instances} [starting at] {integer:first} [with vertex offset] {integer:vertex offset} [and instance offset] {integer:instance offset} [indexed] {boolean:indexed}:
+    require condition (((count >= 0) and (instances >= 0)) and (((first >= 0) and (vertex offset >= 0)) and (instance offset >= 0))) reporting "Shader draw ranges must be nonnegative"
+    return @intrinsic("construct", UI shader draw, count as a 32 bit unsigned integer, instances as a 32 bit unsigned integer, first as a 32 bit unsigned integer, vertex offset as a 32 bit unsigned integer, instance offset as a 32 bit unsigned integer, (1 if indexed, else 0) as a 32 bit unsigned integer)
+
+to get [the JSON form of UI shader draw] {UI shader draw:draw}:
+    return a JSON object containing [
+        JSON number "count" is (draw's count), JSON number "instances" is (draw's instances),
+        JSON number "first" is (draw's first), JSON number "vertexOffset" is (draw's vertex offset),
+        JSON number "instanceOffset" is (draw's instance offset), JSON flag "indexed" is (draw's indexed = 1)
+    ]

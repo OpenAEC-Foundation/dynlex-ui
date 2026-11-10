@@ -3,6 +3,19 @@ import geometry.dl
 
 class:
     patterns:
+        UI shader operations
+    members:
+        frame as a pointer
+        vertices as a pointer
+        indices as a pointer
+        draws as a pointer
+        buffer bytes as a pointer
+        buffer records as a pointer
+        index count as a pointer
+        close as a pointer
+
+class:
+    patterns:
         UI driver
     members:
         open as a pointer
@@ -23,6 +36,7 @@ class:
         cursor as a pointer
         open image as a pointer
         close image as a pointer
+        shader operations as a pointer to UI shader operations
 
 class:
     patterns:

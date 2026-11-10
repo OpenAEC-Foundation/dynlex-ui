@@ -1,0 +1,90 @@
+import ../../../ui/shaders.dl
+
+class:
+    patterns:
+        shader API recorder
+    members:
+        frames as an integer
+        vertices as an integer
+        indices as an integer
+        draws as an integer
+        closed as an integer
+
+to get [the shader recorder in] {a pointer to UI view:view}:
+    return view's instance's state as a pointer to shader API recorder
+
+to get [render recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [using] {C string:data} [counting] {integer:count}:
+    require condition ((shader = (777 as a pointer)) and ((width = 40) and (height = 20))) reporting "Shader frame arguments changed across the driver boundary."
+    require condition ((count = 4) and ((the character at 0 in data) = 91)) reporting "Shader values were not transferred as source bytes."
+    increment (the shader recorder in view)'s frames
+    return 910 as a pointer
+
+to [upload recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot} [from] {a pointer:data} [counting] {integer:count}:
+    require condition ((shader = (777 as a pointer)) and ((pass = 2) and (slot = 3))) reporting "Vertex upload lost its shader/pass/slot."
+    require condition ((count = 8) and ((the item at 1 in (data as a pointer to a 32 bit floating-point number)) = 2.0)) reporting "Vertex uploads assumed a fixed four-float record."
+    increment (the shader recorder in view)'s vertices
+
+to [index recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [from] {a pointer to a 32 bit unsigned integer:data} [counting] {integer:count}:
+    require condition ((pass = 2) and ((count = 3) and ((the item at 2 in data) = 2))) reporting "Index upload changed its count or data."
+    increment (the shader recorder in view)'s indices
+
+to [draw recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [from] {a pointer to UI shader draw:data} [counting] {integer:count}:
+    require condition ((pass = 2) and (count = 2)) reporting "Draw submission changed its record count."
+    set first to the item at 0 in data
+    set last to the item at 1 in data
+    require condition (((first's count = 3) and (first's vertex offset = 4)) and (first's indexed = 1)) reporting "Indexed draw data did not cross the driver intact."
+    require condition (((last's instances = 2) and (last's instance offset = 7)) and (last's indexed = 0)) reporting "Instanced draw data did not cross the driver intact."
+    increment (the shader recorder in view)'s draws
+
+to get [recorded shader bytes in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot}:
+    return 48
+
+to get [recorded shader records in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot}:
+    return 3
+
+to get [recorded shader indices in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass}:
+    return 6
+
+to [close recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader}:
+    increment (the shader recorder in view)'s closed
+
+set operations to @intrinsic("construct", UI shader operations,
+    (the function named "render recorded shader in $ holding $ sized $ by $ using $ counting $") as a pointer,
+    (the function named "upload recorded shader in $ holding $ pass $ slot $ from $ counting $") as a pointer,
+    (the function named "index recorded shader in $ holding $ pass $ from $ counting $") as a pointer,
+    (the function named "draw recorded shader in $ holding $ pass $ from $ counting $") as a pointer,
+    (the function named "recorded shader bytes in $ holding $ pass $ slot $") as a pointer,
+    (the function named "recorded shader records in $ holding $ pass $ slot $") as a pointer,
+    (the function named "recorded shader indices in $ holding $ pass $") as a pointer,
+    (the function named "close recorded shader in $ holding $") as a pointer)
+set driver to a new UI driver
+set driver's shader operations to the address of operations
+set recorder to a new shader API recorder
+set instance to a new UI instance
+set instance's state to (the address of recorder) as a pointer
+set view to a new UI view
+set view's instance to the address of instance
+set view's driver to the address of driver
+set context to the address of view
+set shader to 777 as a pointer
+require condition ((the size of UI shader draw) = 24) reporting "Draw records do not have a portable six-word layout."
+set vertices to [1.0,2.0] as a 32 bit floating-point number array of 2 items
+set indices to [0,1,2] as a 32 bit unsigned integer array of 3 items
+set draws to [
+    a UI shader draw counting 3 instanced 1 starting at 0 with vertex offset 4 and instance offset 0 indexed true,
+    a UI shader draw counting 3 instanced 2 starting at 1 with vertex offset 0 and instance offset 7 indexed false
+]
+set UI shader shader pass 2 in context vertex buffer 3 from ((vertices + 0) as a pointer) spanning 8 bytes
+set UI shader shader pass 2 in context to indices (indices + 0) counting 3
+set UI shader shader pass 2 in context to draws (draws + 0) counting 2
+require condition ((the byte count of UI shader shader pass 2 buffer 3 in context) = 48) reporting "Shader buffer size queries did not use the driver."
+require condition ((the record count of UI shader shader pass 2 buffer 3 in context) = 3) reporting "Shader buffer record queries did not use the driver."
+require condition ((the index count of UI shader shader pass 2 in context) = 6) reporting "Shader index count queries did not use the driver."
+set image to a UI texture from shader shader sized 40 by 20 using (the string form of "[{}]") in context
+require condition ((image's resource = (910 as a pointer)) and ((image's width = 40) and (image's height = 20))) reporting "Shader texture data changed across drivers."
+set encoded to the JSON form of UI shader draw (the item at 0 in draws)
+require condition (((the JSON number named "vertexOffset" in encoded) = 4.0) and (the JSON boolean named "indexed" in encoded)) reporting "Draw descriptors and binary submissions disagree."
+free encoded
+close UI shader shader in context
+require condition (((recorder's frames = 1) and (recorder's vertices = 1)) and (((recorder's indices = 1) and (recorder's draws = 1)) and (recorder's closed = 1))) reporting "Shader driver callbacks were omitted or repeated."
+print line "Shared shader operations transfer raw buffers, draw records and texture ownership through a platform driver."

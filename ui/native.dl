@@ -19,7 +19,7 @@ the native UI driver means: a static reference to @intrinsic("construct", UI dri
     (the function named "copy native UI text in $ containing $ counting $") as a pointer,
     (the function named "launch native UI $") as a pointer,
     (the function named "wake native UI $") as a pointer, (the function named "set native UI cursor in $ to $") as a pointer,
-    (the function named "open native UI image $ in $") as a pointer, (the function named "close native UI image $ in $") as a pointer)
+    (the function named "open native UI image $ in $") as a pointer, (the function named "close native UI image $ in $") as a pointer, @intrinsic("construct", a pointer to UI shader operations))
 
 to get a desktop view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold}:
     return a UI view of instance sized width by height using fonts regular and bold with the native UI driver

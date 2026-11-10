@@ -69,7 +69,8 @@ without using this checkout as its working directory. Font paths are supplied by
 the application. See
 [the ribbon interface](examples/ribbon/interface.dl), [the text example](examples/text),
 and [section authoring](docs/sections.md). [Responsive documents](docs/documents.md)
-cover appearances, rich paragraphs, editors and tab groups. Each demo keeps its description, application
+cover appearances, rich paragraphs, editors and tab groups. [Shader surfaces](docs/shaders.md)
+cover typed vertex streams, instanced draw records and the shared driver API. Each demo keeps its description, application
 behavior and platform entry points separate.
 
 A view paints on first use, changes, resize or an active transition. Native windows
