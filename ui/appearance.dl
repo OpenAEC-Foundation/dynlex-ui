@@ -64,6 +64,9 @@ height is {a value:number} means: UI appearance rule 20 valued number
 font is bold means: UI appearance rule 21 valued 1
 lines do not wrap means: UI appearance rule 22 valued 1
 flow is overlay means: UI appearance rule 23 valued 1
+image fit is contain means: UI appearance rule 24 valued 0
+image fit is cover means: UI appearance rule 24 valued 1
+image fit is stretch means: UI appearance rule 24 valued 2
 
 class:
     patterns:
@@ -93,6 +96,7 @@ class:
         bold as a boolean
         unwrapped as a boolean
         overlay as a boolean
+        image fit as an integer
 
 to get default UI appearance settings:
     set result to a new UI appearance settings
@@ -157,6 +161,8 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
             set settings's unwrapped to rule's number != 0.0
         if kind = 23:
             set settings's overlay to rule's number != 0.0
+        if kind = 24:
+            set settings's image fit to rule's number as an integer
         increment index
 
 to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport}:

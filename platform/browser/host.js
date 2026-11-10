@@ -2,6 +2,7 @@ import { createGpu } from "./gpu.js";
 import { loadFonts, createFontServices } from "./fonts.js";
 import { connectInput } from "./input.js";
 import { createGraphicsServices } from './graphics-services.js';
+import { createPictureServices } from './pictures.js';
 
 export async function createUiHost(root, fontPaths, base, runtime, options = {}) {
   const surfaces = new Map(), resources = new Map(), drawings = new Map();
@@ -31,6 +32,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
   const fonts = createFontServices(gpu, faces, resources, id);
   const graphics = createGraphicsServices({ gpu, surfaces, resources, id, memory, text, base });
   const callback = number => instance.exports.__indirect_function_table.get(number);
+  const pictures = createPictureServices({ graphics, surfaces, callback, text, fail: reportError });
   const requests = new Map();
 
   function schedule(surface) {
@@ -78,7 +80,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
       surface.closed = true;
       for (const request of requests.values()) if (request.surface === surface) request.controller.abort();
       if (surface.raf !== null) cancelAnimationFrame(surface.raf);
-      surface.disconnect(); graphics.closeSurface(surface);
+      surface.disconnect(); pictures.closeSurface(surface); graphics.closeSurface(surface);
       gpu.releaseSurface(surface); surface.canvas.remove(); surfaces.delete(handle);
     },
     ui_poll(handle, width, height, scale, seconds) {
@@ -174,6 +176,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
     }
   };
   Object.assign(imports, graphics.imports);
+  Object.assign(imports, pictures.imports);
   return { imports, attach(value) { instance = value; },
     close() {
       for (const surface of [...surfaces.values()]) surface.dispose(surface.view);

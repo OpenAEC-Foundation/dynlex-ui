@@ -6,6 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { inflateSync } from 'node:zlib';
 import { setTimeout as pause } from 'node:timers/promises';
+import { readPng } from './png.mjs';
 
 const directory = path.resolve(process.argv[2] || 'dist/ribbon');
 const example = path.basename(directory);
@@ -13,7 +14,8 @@ const graphicsMode = process.argv[3] || 'system';
 assert(['system', 'webgpu', 'webgl-no-adapter', 'webgl-no-api'].includes(graphicsMode));
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'dynlex-ui-chrome-'));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
-  '.wasm': 'application/wasm', '.ttf': 'font/ttf' };
+  '.wasm': 'application/wasm', '.ttf': 'font/ttf', '.svg': 'image/svg+xml',
+  '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg' };
 const server = http.createServer(async (request, response) => {
   try {
     if (request.url === '/__tests__/rendering.mjs') {
@@ -81,15 +83,21 @@ try {
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `
     // Test-side instrumentation: the application has no paint counters or test API.
     const frames = new Set();
-    let drawn = [];
+    let drawn = []; const images = new Set(), masks = new Set();
     const instantiate = WebAssembly.instantiate.bind(WebAssembly);
     WebAssembly.instantiate = function(bytes, imports, ...args) {
       const env = imports?.env;
       if (env?.ui_text_mask) {
+        const triangles = env.ui_triangles;
+        env.ui_triangles = (surface,pointer,count,texture,...args) => {
+          if (texture && !masks.has(texture)) images.add(texture);
+          return triangles(surface,pointer,count,texture,...args);
+        };
         const begin = env.ui_begin, mask = env.ui_text_mask, decoder = new TextDecoder();
         env.ui_begin = (...args) => { drawn = []; return begin(...args); };
         env.ui_text_mask = (font, pointer, count, ...args) => {
           const result = mask(font, pointer, count, ...args);
+          if (result) masks.add(result);
           if (result) drawn.push(decoder.decode(new Uint8Array(env.__linear_memory.buffer, pointer, count)));
           return result;
         };
@@ -139,7 +147,7 @@ try {
       return adapter;
     };
     }
-    window.uiTest = { drawn: () => drawn, stats() {
+    window.uiTest = { drawn: () => drawn, images: () => images.size, stats() {
       const canvas = document.querySelector('canvas');
       return canvas ? [{ paints, api, scheduled: frames.size > 0,
         width: canvas.clientWidth, height: canvas.clientHeight }] : [];
@@ -149,6 +157,7 @@ try {
   await command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
   await command('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   await waitFor('window.uiTest?.stats()[0]?.paints > 0 && !window.uiTest.stats()[0].scheduled');
+  if (example === 'pictures') await waitFor('window.uiTest.images() >= 2 && !window.uiTest.stats()[0].scheduled');
   const before = await evaluate('window.uiTest.stats()[0]');
   assert.equal(before.api, graphicsMode === 'webgpu' ? 'webgpu' :
     graphicsMode.startsWith('webgl-') ? 'webgl2' : before.api);
@@ -261,6 +270,14 @@ try {
   } else if (example === 'editor') {
     const { verifyEditor } = await import('./editor.mjs');
     await verifyEditor({ click, key, evaluate, command, waitFor, settled, screenshot });
+  } else if (example === 'pictures') {
+    let image=readPng(await screenshot('pictures-decoded'));
+    assert.deepEqual(image.pixel(580,80),[255,0,0]);
+    assert.deepEqual(image.pixel(700,80),[0,200,100]);
+    await click(640,180); await waitFor('window.uiTest.images() >= 3'); await settled();
+    image=readPng(await screenshot('pictures-replaced'));
+    assert.deepEqual(image.pixel(580,80),[36,90,207]);
+    assert.deepEqual(image.pixel(700,80),[239,179,40]);
   } else throw new Error(`Unknown example: ${example}`);
   const after = await evaluate('window.uiTest.stats()[0]');
   assert(after.paints > before.paints, 'Interaction must repaint');

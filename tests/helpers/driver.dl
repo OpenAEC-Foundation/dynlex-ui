@@ -10,6 +10,10 @@ class:
         copied as a string
         drawn as a string
         cursor as an integer
+        image opens as an integer
+        image closes as an integer
+        image releases as an integer
+        textured as an integer
 
 to open test UI {a pointer to UI view:view} sized {integer:width} by {integer:height} titled {C string:title}:
     set surface to a new test UI surface
@@ -32,6 +36,8 @@ to present test UI {a pointer to UI view:view}:
     increment surface's paints
 
 to submit test UI {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    if texture != (0 as a pointer):
+        increment (view's window as a pointer to test UI surface)'s textured
     require condition ((count > 0) and ((count mod 3) = 0)) reporting "The renderer emitted incomplete triangles"
     set index to 0
     loop while index < count:
@@ -78,7 +84,16 @@ to wake test UI {a pointer to UI view:view}:
     set surface to view's window as a pointer to test UI surface
     increment surface's wakes
 
-the test UI driver means: a static reference to @intrinsic("construct", UI driver, (the function named "open test UI $ sized $ by $ titled $") as a pointer, (the function named "close test UI $") as a pointer, (the function named "poll test UI $") as a pointer, (the function named "begin test UI $") as a pointer, (the function named "present test UI $") as a pointer, (the function named "submit test UI $ vertices $ counting $ with $") as a pointer, (the function named "a test UI font in $ from $ sized $") as a pointer, (the function named "release test UI font $") as a pointer, (the function named "the test UI width of $ containing $ counting $") as a pointer, (the function named "draw test UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer, (the function named "the test UI icon in $ from $ sized $") as a pointer, (the function named "release test UI texture in $ holding $") as a pointer, (the function named "copy test UI text in $ containing $ counting $") as a pointer, (the function named "launch test UI $") as a pointer, (the function named "wake test UI $") as a pointer, (the function named "set test UI cursor in $ to $") as a pointer)
+to open test UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    increment (view's window as a pointer to test UI surface)'s image opens
+
+to close test UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    set surface to view's window as a pointer to test UI surface
+    increment surface's image closes
+    if image's status = 1:
+        increment surface's image releases
+
+the test UI driver means: a static reference to @intrinsic("construct", UI driver, (the function named "open test UI $ sized $ by $ titled $") as a pointer, (the function named "close test UI $") as a pointer, (the function named "poll test UI $") as a pointer, (the function named "begin test UI $") as a pointer, (the function named "present test UI $") as a pointer, (the function named "submit test UI $ vertices $ counting $ with $") as a pointer, (the function named "a test UI font in $ from $ sized $") as a pointer, (the function named "release test UI font $") as a pointer, (the function named "the test UI width of $ containing $ counting $") as a pointer, (the function named "draw test UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer, (the function named "the test UI icon in $ from $ sized $") as a pointer, (the function named "release test UI texture in $ holding $") as a pointer, (the function named "copy test UI text in $ containing $ counting $") as a pointer, (the function named "launch test UI $") as a pointer, (the function named "wake test UI $") as a pointer, (the function named "set test UI cursor in $ to $") as a pointer, (the function named "open test UI image $ in $") as a pointer, (the function named "close test UI image $ in $") as a pointer)
 
 to set test UI cursor in {a pointer to UI view:view} to {integer:shape}:
     set surface to view's window as a pointer to test UI surface

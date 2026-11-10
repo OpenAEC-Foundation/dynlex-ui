@@ -1,0 +1,84 @@
+# Codec ABI and packed RGBA conversion; no layout or UI behavior.
+# https://docs.gtk.org/gdk-pixbuf/ctor.Pixbuf.new_from_file.html
+import libraries.dl
+
+class:
+    patterns:
+        native UI image decoder
+    members:
+        library as a pointer
+        support as a pointer
+
+class:
+    patterns:
+        native UI image error
+    members:
+        domain as a 32 bit unsigned integer
+        code as a 32 bit integer
+        message as a C string
+
+class:
+    patterns:
+        native UI image pixels
+    members:
+        bytes as a string
+        width as an integer
+        height as an integer
+        error as a string
+
+to get a native UI [image decoder]:
+    set image to "libgdk_pixbuf-2.0.so.0"
+    set support to "libglib-2.0.so.0"
+    if the build target is Windows:
+        set image to "libgdk_pixbuf-2.0-0.dll"
+        set support to "libglib-2.0-0.dll"
+    if the build target is macOS:
+        set image to "libgdk_pixbuf-2.0.0.dylib"
+        set support to "libglib-2.0.0.dylib"
+    # GdkPixbuf interns static strings/types in GLib. Their module must remain
+    # resident after the last image closes: https://docs.gtk.org/gmodule/modules.html
+    return @intrinsic("construct", native UI image decoder, a native UI library named image resident true, a native UI library named support)
+
+to close native UI image decoder {a pointer to native UI image decoder:decoder}:
+    release native UI library decoder's library
+    release native UI library decoder's support
+
+to get native UI [pixels] from {C string:path} using {a pointer to native UI image decoder:decoder}:
+    set result to a new native UI image pixels
+    set error to @intrinsic("construct", a pointer to native UI image error)
+    set image to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_new_from_file" in (decoder's library), a pointer, path, the address of error)
+    if image = (0 as a pointer):
+        set result's error to ("Cannot decode image " + path + ": ") + error's message
+        @intrinsic("call pointer", the native UI symbol "g_error_free" in (decoder's support), nothing, error)
+        return result
+    set oriented to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_apply_embedded_orientation" in (decoder's library), a pointer, image)
+    @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_unref" in (decoder's library), nothing, image)
+    require condition (oriented != (0 as a pointer)) reporting "Orienting decoded pixels failed"
+    set result's width to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_width" in (decoder's library), an integer, oriented)
+    set result's height to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_height" in (decoder's library), an integer, oriented)
+    set channels to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_n_channels" in (decoder's library), an integer, oriented)
+    set bits to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_bits_per_sample" in (decoder's library), an integer, oriented)
+    require condition ((bits = 8) and ((channels = 3) or (channels = 4))) reporting "A codec returned an unsupported pixel layout"
+    set stride to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_rowstride" in (decoder's library), an integer, oriented)
+    set pixels to @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_get_pixels" in (decoder's library), a pointer to a byte, oriented)
+    set count to ((result's width as a word sized integer) * (result's height as a word sized integer)) * 4
+    require condition (count <= 2147483646) reporting "The decoded image exceeds the UI pixel buffer size"
+    set result's bytes to a new string buffer containing (count as an integer) bytes
+    set row to 0
+    loop while row < result's height:
+        set column to 0
+        loop while column < result's width:
+            set source to row * stride + column * channels
+            set destination to (row * result's width + column) * 4
+            set channel to 0
+            loop while channel < 3:
+                store (the item at (source + channel) in pixels) into (the data of (result's bytes)) at (destination + channel)
+                increment channel
+            set alpha to 255 as a byte
+            if channels = 4:
+                set alpha to the item at (source + 3) in pixels
+            store alpha into (the data of (result's bytes)) at (destination + 3)
+            increment column
+        increment row
+    @intrinsic("call pointer", the native UI symbol "gdk_pixbuf_unref" in (decoder's library), nothing, oriented)
+    return result

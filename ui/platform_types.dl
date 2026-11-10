@@ -21,6 +21,8 @@ class:
         launch as a pointer
         wake as a pointer
         cursor as a pointer
+        open image as a pointer
+        close image as a pointer
 
 class:
     patterns:

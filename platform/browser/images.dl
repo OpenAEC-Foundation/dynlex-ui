@@ -1,0 +1,7 @@
+import ../../ui/images.dl
+
+to open browser UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_open_picture", nothing, view's window, view, image, (the function named "complete UI image $ in $ with resource $ sized $ by $ at status $") as a pointer, the data of (image's path), image's path's length)
+
+to close browser UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    @intrinsic("call", "dynlex_ui", "ui_close_picture", nothing, view's window, image)

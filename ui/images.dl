@@ -1,0 +1,78 @@
+import texture_shapes.dl
+
+to complete UI image {a pointer to UI image:image} in {a pointer to UI view:view} with resource {a pointer:resource} sized {integer:width} by {integer:height} at status {integer:status}:
+    require condition (image's status = 0) reporting "An image completed more than once"
+    require condition ((status = 1) or (status = 2)) reporting "An image returned an invalid completion status"
+    if status = 1:
+        require condition (((resource != (0 as a pointer)) and (width > 0)) and (height > 0)) reporting "A decoded image has no texture"
+    else:
+        require condition (((resource = (0 as a pointer)) and (width = 0)) and (height = 0)) reporting "A failed image retained a texture"
+    set image's texture to @intrinsic("construct", UI texture, resource, width, height)
+    set image's status to status
+    set view's images changed to true
+    set view's damaged to true
+    @intrinsic("call pointer", view's driver's wake, nothing, view)
+
+to get the cached UI [image] from {string:path} in {a pointer to UI view:view}:
+    set image to view's images
+    loop while image != @intrinsic("construct", a pointer to UI image):
+        if image's path = path:
+            return image
+        set image to image's next
+    return image
+
+to get UI [image] from {string:path} in {a pointer to UI view:view}:
+    require condition (path's length > 0) reporting "A UI image requires an asset path"
+    set image to the cached UI image from path in view
+    if image = @intrinsic("construct", a pointer to UI image):
+        set record to a new UI image
+        set record's path to path
+        set record's next to view's images
+        set image to storage for one slot initialized with record
+        set view's images to image
+    # Construction can return a view by value. Start callbacks only after its
+    # observer binds its final address, just like the shared input/lifetime path.
+    if (image's requested = false) and (view's observer != @intrinsic("construct", a pointer to UI observer)):
+        set image's requested to true
+        @intrinsic("call pointer", view's driver's open image, nothing, image, view)
+    return image
+
+to start UI [image] loads in {a pointer to UI view:view}:
+    set image to view's images
+    loop while image != @intrinsic("construct", a pointer to UI image):
+        if image's requested = false:
+            set image's requested to true
+            @intrinsic("call pointer", view's driver's open image, nothing, image, view)
+        set image to image's next
+
+to release UI images in {a pointer to UI view:view}:
+    set image to view's images
+    loop while image != @intrinsic("construct", a pointer to UI image):
+        set next to image's next
+        if image's requested:
+            @intrinsic("call pointer", view's driver's close image, nothing, image, view)
+        destroy the value at image
+        deallocate image
+        set image to next
+    set view's images to @intrinsic("construct", a pointer to UI image)
+
+to draw UI image {a pointer to UI image:image} in {UI bounds:box} rounded by {floating-point number:radius} fitting {integer:fit} on {UI frame:frame}:
+    require condition ((fit >= 0) and (fit <= 2)) reporting "Unknown image fit"
+    if (image's status != 1) or ((box's width <= 0.0) or (box's height <= 0.0)):
+        return nothing
+    set texture to image's texture
+    set sample to UI box at 0 0 sized 1 1
+    set target to box
+    if fit = 0:
+        set scale to the minimum of (box's width / texture's width) and (box's height / texture's height)
+        set target's width to texture's width * scale
+        set target's height to texture's height * scale
+        set target's x to box's x + (box's width - target's width) / 2.0
+        set target's y to box's y + (box's height - target's height) / 2.0
+    if fit = 1:
+        set scale to the maximum of (box's width / texture's width) and (box's height / texture's height)
+        set sample's width to box's width / (texture's width * scale)
+        set sample's height to box's height / (texture's height * scale)
+        set sample's x to (1.0 - sample's width) / 2.0
+        set sample's y to (1.0 - sample's height) / 2.0
+    draw UI texture texture in target rounded by radius sampling sample in (UI ink 255 255 255) with opacity 255 on frame

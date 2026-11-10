@@ -91,7 +91,7 @@ to get the UI value for {UI reference:node} in {a pointer to UI instance:instanc
     set {new entry} to a new UI value
     set new entry's target to node
     set new entry's text to node's content
-    if node's kind = 43:
+    if (node's kind = 43) or (node's kind = 45):
         set new entry's destination to node's destination
     if node's kind = 34:
         set index to the position of UI option (the string form of (node's text)) in node
@@ -135,6 +135,15 @@ to set the destination of {C string:label} in {a pointer to UI instance:instance
 
 to get the value of {C string:label} in {a pointer to UI instance:instance}:
     return (the UI value for (the control labeled label in instance) in instance)'s number
+
+to set the source of picture {C string:label} in {a pointer to UI instance:instance} to {string:path}:
+    set node to the control labeled label in instance
+    require condition (node's kind = 45) reporting "Only a picture has an image source"
+    require condition (path's length > 0) reporting "A picture requires an image source"
+    set entry to the UI value for node in instance
+    if entry's destination != path:
+        set entry's destination to path
+        invalidate instance
 
 to get the {C string:label} switch is on in {a pointer to UI instance:instance}:
     return (the value of label in instance) != 0

@@ -1,6 +1,7 @@
 import ../../ui/application.dl
 import lib/graphics.dl
 import lib/font.dl
+import image_decode.dl
 
 class:
     patterns:
@@ -12,6 +13,7 @@ class:
         library as a pointer
         hand cursor as a pointer
         text cursor as a pointer
+        decoder as native UI image decoder
 
 class:
     patterns:

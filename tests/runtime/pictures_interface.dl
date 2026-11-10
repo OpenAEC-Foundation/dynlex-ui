@@ -1,0 +1,28 @@
+import ../../ui/document_declarations.dl
+
+appearance picture sheet appearance:
+    maximum width is 400
+    padding is 24
+    gap is 16
+
+appearance artwork appearance:
+    maximum width is 240
+    height is 120
+    corner radius is 12
+    image fit is cover
+
+appearance picture action appearance:
+    padding is 12
+    text is centered
+    background is UI ink 235 240 250
+
+appearance small picture appearance:
+    maximum width is 240
+
+document picture workspace using picture sheet appearance:
+    picture "Artwork" from "tests/assets/pictures/colors.webp" using artwork appearance
+    link "Change artwork" to "#" using picture action appearance
+    picture "PNG sample" from "tests/assets/pictures/stride.png" using small picture appearance
+    code:
+        when the "Change artwork" link is followed:
+            set the source of picture "Artwork" in this window to (the string form of "tests/assets/pictures/colors.svg")

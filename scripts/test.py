@@ -41,15 +41,19 @@ def main():
         manifest = subprocess.check_output([sys.executable,
             str(args.dynlex.resolve() / 'scripts/find_vulkan_icd.py')], text=True).strip()
         native_environment = dict(os.environ, VK_DRIVER_FILES=manifest, VK_ICD_FILENAMES=manifest)
-        for name in ['sections', 'ribbon', 'snake', 'text']:
+        for name in ['sections', 'ribbon', 'snake', 'text', 'pictures']:
             subprocess.run(['python3', f'scripts/test_{"ui_sections" if name == "sections" else name + "_ui"}.py',
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
+        subprocess.run(['node', 'tests/browser/pictures_service.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
+        applications.append((['--entry', 'tests/browser/pictures.dl', '--output', '.cache/browser/pictures'], '.cache/browser/pictures'))
         for arguments, directory in applications:
             subprocess.run(['python3', 'scripts/build.py', *arguments, '--dynlex', str(args.dynlex.resolve())], cwd=project, check=True)
+            if directory == '.cache/browser/pictures':
+                shutil.copytree(project / 'tests/assets/pictures', project / directory / 'tests/assets/pictures', dirs_exist_ok=True)
             xvfb = shutil.which('xvfb-run')
             if not xvfb:
                 parser.error('Browser visual tests require xvfb-run')

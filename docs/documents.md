@@ -101,3 +101,36 @@ loaded document.
 
 See [sections](sections.md) for defining additional declarative shapes and
 [the examples](../examples) for application and platform setup.
+
+Pictures use the same description, fitting and texture geometry on both platforms:
+
+```dynlex
+appearance cover appearance:
+    maximum width is 480
+    height is 240
+    corner radius is 16
+    image fit is cover
+
+document gallery:
+    picture "Cover artwork" from "assets/cover.webp" using cover appearance
+
+set the source of picture "Cover artwork" in (the address of instance) to (the string form of "assets/next.webp")
+```
+
+Without an explicit height, a decoded picture determines its height from its
+source aspect ratio. `image fit is contain` fits the whole image; `cover` crops
+it to fill the available box; `stretch` fills both dimensions. Padding and rounded
+corners apply to the image geometry. The picture's name remains available as its
+text description.
+
+`UI image from path in view` also exposes a cached image for canvas callbacks.
+Its status is 0 while loading, 1 when its texture is ready and 2 on a reported
+decode failure. Use `draw UI image image in bounds rounded by radius fitting fit
+on frame`, where fit is 0 for contain, 1 for cover or 2 for stretch.
+
+Loading starts when the view receives its first update, after its final address
+is established. Repeated paths share one decode within a view; separate views
+own separate graphics resources. Completion schedules a redraw and reflows
+intrinsic picture height. Static images do not schedule further frames. Closing
+a view cancels its pending loads and releases its textures. Browser image errors
+log their details and display the generic application error message.

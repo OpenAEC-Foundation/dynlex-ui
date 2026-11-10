@@ -1,0 +1,22 @@
+import ../../ui/browser.dl
+import ../runtime/pictures_interface.dl
+
+to close picture workspace {a pointer to UI view:view}:
+    set instance to view's instance
+    close view
+    close instance
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open picture workspace:
+    globals:
+        picture workspace
+    execute:
+        set instance to storage for one slot initialized with (an instance of picture workspace)
+        set view to storage for one slot initialized with (a UI view of instance sized 800 by 600 using font "assets/fonts/NotoSans-Regular.ttf" with the browser UI driver)
+        set view's close action to (the function named "close picture workspace $") as a pointer
+        run view
+
+open picture workspace

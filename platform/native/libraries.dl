@@ -1,0 +1,46 @@
+# Runtime codec modules use the platform's ordinary dynamic-library loader.
+import lib/std.dl
+import lib/check.dl
+import lib/platform.dl
+
+to get a native UI [library] named {C string:name} resident {boolean:resident}:
+    set library to 0 as a pointer
+    if the build target is Windows:
+        set library to @intrinsic("call", "kernel32", "LoadLibraryA", a pointer, name)
+        if resident and (library != (0 as a pointer)):
+            set pinned to 0 as a pointer
+            require condition (@intrinsic("call", "kernel32", "GetModuleHandleExA", an integer, 1, name, the address of pinned) != 0) reporting "Pinning a native UI module failed"
+    else if the build target is macOS:
+        set flags to 129 if resident, else 1
+        set library to @intrinsic("call", "libc", "dlopen", a pointer, name, flags)
+    else:
+        set flags to 4097 if resident, else 1
+        set library to @intrinsic("call", "dl", "dlopen", a pointer, name, flags)
+    if library = (0 as a pointer):
+        print line name
+        require condition false reporting "Cannot open native UI library"
+    return library
+
+to get a native UI [library] named {C string:name}:
+    return a native UI library named name resident false
+
+to get the native UI [symbol] {C string:name} in {a pointer:library}:
+    set symbol to 0 as a pointer
+    if the build target is Windows:
+        set symbol to @intrinsic("call", "kernel32", "GetProcAddress", a pointer, library, name)
+    else if the build target is macOS:
+        set symbol to @intrinsic("call", "libc", "dlsym", a pointer, library, name)
+    else:
+        set symbol to @intrinsic("call", "dl", "dlsym", a pointer, library, name)
+    if symbol = (0 as a pointer):
+        print line name
+        require condition false reporting "Cannot find native UI symbol"
+    return symbol
+
+to release native UI library {a pointer:library}:
+    if the build target is Windows:
+        require condition (@intrinsic("call", "kernel32", "FreeLibrary", an integer, library) != 0) reporting "Releasing a native UI library failed"
+    else if the build target is macOS:
+        require condition (@intrinsic("call", "libc", "dlclose", an integer, library) = 0) reporting "Releasing a native UI library failed"
+    else:
+        require condition (@intrinsic("call", "dl", "dlclose", an integer, library) = 0) reporting "Releasing a native UI library failed"

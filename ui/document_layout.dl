@@ -1,6 +1,7 @@
 import document_declarations.dl
 import text_layout.dl
 import text.dl
+import images.dl
 
 to get a document UI layout for {UI reference:node} inside {UI reference:parent}:
     if (node's kind = 48) or (node's kind = 49):
@@ -78,6 +79,13 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             set layout's text width to the maximum of (layout's text width) and (line's width)
             set line to line's next
         set layout's bounds' height to layout's text height + appearance's padding * 2.0
+    else if node's kind = 45:
+        set path to (the UI value for node in (view's instance))'s destination
+        set image to UI image from path in view
+        if image's status = 1:
+            set layout's bounds' height to ((inner * image's texture's height) / image's texture's width) + (appearance's padding * 2.0)
+        else if image's status = 2:
+            set layout's bounds' height to 24.0 + appearance's padding * 2.0
     else if node's kind = 49:
         set selected to the selected UI child of node in (view's instance)
         set child to layout's first

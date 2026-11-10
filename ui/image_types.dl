@@ -1,0 +1,12 @@
+import platform_types.dl
+
+# Images belong to a view's graphics device. Status: 0 loading, 1 ready, 2 failed.
+class:
+    patterns:
+        UI image
+    members:
+        path as a string
+        status as an integer
+        requested as a boolean
+        texture as UI texture
+        next as a pointer to UI image

@@ -66,6 +66,7 @@ to get update UI view {a pointer to UI view:view}:
         set observer's next to view's instance's observers
         set view's observer to storage for one slot initialized with observer
         set view's instance's observers to view's observer
+        start UI image loads in view
     @intrinsic("call pointer", view's driver's poll, nothing, view)
     set view's frame seconds to 0.0
     if continuing:
@@ -112,6 +113,7 @@ to close {a pointer to UI view:view}:
     set view's last text to @intrinsic("construct", a pointer to UI text run)
     clear UI selection in view
     finish UI text painting in view
+    release UI images in view
     release UI icons (the address of (view's icons)) in view
     release UI font the address of (view's typeface)
     release UI font the address of (view's heading)

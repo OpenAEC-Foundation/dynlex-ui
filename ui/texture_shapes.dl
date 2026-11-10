@@ -1,19 +1,22 @@
 # Textured surfaces use the same rounded boundary and coverage as solid shapes.
 import shapes.dl
 
-to add textured UI vertex {UI point:point} across {UI bounds:box} in {linear UI paint:ink} with alpha {floating-point number:alpha} to {UI frame:frame}:
+to add textured UI [vertex] {UI point:point} across {UI bounds:box} sampling {UI bounds:sample} in {linear UI paint:ink} with alpha {floating-point number:alpha} to {UI frame:frame}:
     set horizontal to the minimum of 1.0 and (the maximum of 0.0 and ((point's x - box's x) / box's width))
     set vertical to the minimum of 1.0 and (the maximum of 0.0 and ((point's y - box's y) / box's height))
-    set sample to @intrinsic("construct", UI vertex,
+    set vertex to @intrinsic("construct", UI vertex,
         point's x as a 32 bit floating-point number, point's y as a 32 bit floating-point number,
-        horizontal as a 32 bit floating-point number, vertical as a 32 bit floating-point number,
+        (sample's x + horizontal * sample's width) as a 32 bit floating-point number, (sample's y + vertical * sample's height) as a 32 bit floating-point number,
         ink's red, ink's green, ink's blue, alpha as a 32 bit floating-point number)
-    append UI vertex sample to frame
+    append UI vertex vertex to frame
 
 to draw UI texture {UI texture:texture} in {UI bounds:box} rounded by {floating-point number:radius} in {UI paint:ink} on {UI frame:frame}:
     draw UI texture texture in box rounded by radius in ink with opacity 255 on frame
 
 to draw UI texture {UI texture:texture} in {UI bounds:box} rounded by {floating-point number:radius} in {UI paint:ink} with opacity {integer:opacity} on {UI frame:frame}:
+    draw UI texture texture in box rounded by radius sampling (UI box at 0 0 sized 1 1) in ink with opacity opacity on frame
+
+to draw UI texture {UI texture:texture} in {UI bounds:box} rounded by {floating-point number:radius} sampling {UI bounds:sample} in {UI paint:ink} with opacity {integer:opacity} on {UI frame:frame}:
     if frame's drawable = false:
         return nothing
     set rounding to the minimum of ((the minimum of (box's width) and (box's height)) / 2.0) and (the maximum of 0.5 and radius)
@@ -30,14 +33,14 @@ to draw UI texture {UI texture:texture} in {UI bounds:box} rounded by {floating-
         set second to the UI corner point next of steps on box rounded by rounding expanded by -0.5
         set {outside first} to the UI corner point index of steps on box rounded by rounding expanded by 0.75
         set {outside second} to the UI corner point next of steps on box rounded by rounding expanded by 0.75
-        add textured UI vertex center across box in paint with alpha alpha to frame
-        add textured UI vertex first across box in paint with alpha alpha to frame
-        add textured UI vertex second across box in paint with alpha alpha to frame
-        add textured UI vertex first across box in paint with alpha alpha to frame
-        add textured UI vertex second across box in paint with alpha alpha to frame
-        add textured UI vertex outside second across box in paint with alpha 0.0 to frame
-        add textured UI vertex first across box in paint with alpha alpha to frame
-        add textured UI vertex outside second across box in paint with alpha 0.0 to frame
-        add textured UI vertex outside first across box in paint with alpha 0.0 to frame
+        add textured UI vertex center across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex first across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex second across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex first across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex second across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex outside second across box sampling sample in paint with alpha 0.0 to frame
+        add textured UI vertex first across box sampling sample in paint with alpha alpha to frame
+        add textured UI vertex outside second across box sampling sample in paint with alpha 0.0 to frame
+        add textured UI vertex outside first across box sampling sample in paint with alpha 0.0 to frame
         increment index
     submit UI triangles with texture (texture's resource) on frame

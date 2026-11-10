@@ -1,0 +1,33 @@
+import ../../platform/native/image_decode.dl
+
+set decoder to a native UI image decoder
+set pixels to native UI pixels from "tests/assets/pictures/stride.png" using (the address of decoder)
+require condition (pixels' error's length = 0) reporting "PNG failed to decode"
+require condition ((pixels' width = 3) and (pixels' height = 2)) reporting "PNG dimensions changed"
+require condition (pixels' bytes' length = 24) reporting "PNG row padding was copied into RGBA pixels"
+set expected to [255,0,0,255,0,255,0,255,0,0,255,255,255,255,0,255,0,255,255,255,255,0,255,255]
+set index to 0
+loop while index < 24:
+    require condition (((the character at index in (pixels' bytes)) bitwise and 255) = (the item at index in expected)) reporting "PNG row stride or RGB alpha conversion is wrong"
+    increment index
+set pixels to native UI pixels from "tests/assets/pictures/colors.webp" using (the address of decoder)
+require condition ((pixels' width = 96) and (pixels' height = 48)) reporting "WebP failed to decode"
+require condition ((the character at 3 in (pixels' bytes)) = 0) reporting "WebP transparency was lost"
+require condition (((the character at 7 in (pixels' bytes)) bitwise and 255) = 255) reporting "WebP alpha changed"
+set pixels to native UI pixels from "tests/assets/pictures/colors.svg" using (the address of decoder)
+require condition ((pixels' width = 96) and (pixels' height = 48)) reporting "SVG failed to decode"
+set pixels to native UI pixels from "tests/assets/pictures/oriented.jpg" using (the address of decoder)
+require condition ((pixels' width = 6) and (pixels' height = 4)) reporting "JPEG orientation was not applied"
+set pixels to native UI pixels from "tests/assets/pictures/invalid.webp" using (the address of decoder)
+require condition (pixels' error's length > 0) reporting "Invalid image data was accepted"
+set pixels to native UI pixels from "tests/assets/pictures/missing.webp" using (the address of decoder)
+require condition (pixels' error's length > 0) reporting "A missing image was accepted"
+close native UI image decoder the address of decoder
+set index to 0
+loop while index < 5:
+    set decoder to a native UI image decoder
+    set pixels to native UI pixels from "tests/assets/pictures/stride.png" using (the address of decoder)
+    require condition ((pixels' error's length = 0) and (pixels' width = 3)) reporting "Reopening a codec invalidated registered static data"
+    close native UI image decoder the address of decoder
+    increment index
+print line "Native codecs: PNG stride, RGBA alpha, WebP, SVG, JPEG orientation and decode errors passed."

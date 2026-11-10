@@ -1,0 +1,66 @@
+import ../../helpers/driver.dl
+
+appearance image appearance:
+    maximum width is 200
+    padding is 10
+    corner radius is 8
+
+appearance cropped appearance:
+    height is 100
+    image fit is cover
+
+document image test:
+    picture "Landscape" from "landscape.webp" using image appearance
+    picture "Duplicate" from "landscape.webp" using cropped appearance
+
+set instance to an instance of image test
+set view to a UI view of (the address of instance) sized 400 by 400 using font "regular" with the test UI driver
+set second to a UI view of (the address of instance) sized 300 by 300 using font "regular" with the test UI driver
+set surface to view's window as a pointer to test UI surface
+set view's cursor to a UI point at -10.0 and -10.0
+require condition (surface's image opens = 0) reporting "Image callbacks captured a temporary view during construction"
+ignore update UI view the address of view
+ignore update UI view the address of second
+require condition (surface's image opens = 1) reporting "Repeated pictures decoded the same asset twice"
+set image to UI image from "landscape.webp" in (the address of view)
+require condition (image != (UI image from "landscape.webp" in (the address of second))) reporting "Two drivers shared an image resource"
+require condition (image's status = 0) reporting "An asynchronous image was marked ready before decoding"
+complete UI image image in (the address of view) with resource (7 as a pointer) sized 400 by 200 at status 1
+ignore update UI view the address of view
+require condition (view's layout's first's bounds' height = 110.0) reporting "Decoded dimensions did not determine picture height"
+require condition (surface's textured > 0) reporting "The picture was not painted"
+require condition ((the UI hit at (a UI point at 150.0 and 50.0) in (view's layout) during (view's paint count) for (the address of instance)) = view's layout's first) reporting "A picture did not cover hit testing behind its bounds"
+set paints to surface's paints
+ignore update UI view the address of view
+require condition (surface's paints = paints) reporting "An idle image kept repainting"
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+draw UI image image in (UI box at 0 0 sized 100 100) rounded by 4.0 fitting 1 on frame
+set index to 0
+loop while index < view's vertex count:
+    set vertex to the item at index in (view's vertices)
+    require condition ((0.249 <= vertex's u <= 0.751) and (0.0 <= vertex's v <= 1.0)) reporting "Cover fit stretched instead of cropping the image"
+    increment index
+draw UI image image in (UI box at 0 0 sized 100 100) rounded by 0.0 fitting 0 on frame
+set index to 0
+loop while index < view's vertex count:
+    set vertex to the item at index in (view's vertices)
+    require condition (24.0 <= vertex's y <= 76.0) reporting "Contain fit changed the source aspect ratio"
+    increment index
+set the source of picture "Landscape" in (the address of instance) to (the string form of "portrait.webp")
+ignore update UI view the address of view
+set portrait to UI image from "portrait.webp" in (the address of view)
+complete UI image portrait in (the address of view) with resource (8 as a pointer) sized 200 by 400 at status 1
+ignore update UI view the address of view
+require condition (view's layout's first's bounds' height = 380.0) reporting "Changing a picture retained the previous source's aspect ratio"
+set other to UI image from "broken.webp" in (the address of view)
+complete UI image other in (the address of view) with resource (0 as a pointer) sized 0 by 0 at status 2
+require condition (other's status = 2) reporting "An image failure was hidden"
+ignore UI image from "pending.webp" in (the address of view)
+release UI images in (the address of view)
+require condition ((surface's image closes = 4) and (surface's image releases = 2)) reporting "Closing image resources lost a pending request or ready texture"
+require condition (view's images = @intrinsic("construct", a pointer to UI image)) reporting "Released image records stayed attached to the view"
+require condition (second's images' status = 0) reporting "Releasing one view changed another view's image"
+close the address of view
+close the address of second
+close the address of instance
+print line "Pictures cache per view, reflow on decode, fit without distortion and release pending resources."

@@ -44,6 +44,9 @@ python3 scripts/build.py ribbon --dynlex ../dynlex --target native
 
 Run native executables with this checkout as their working directory so font assets
 resolve. Native dependencies are DynLex's Vulkan, GLFW and FreeType dependencies.
+Native pictures additionally use the GdkPixbuf 2 image codecs and GLib runtime.
+Install loaders for the formats your application uses; the image tests exercise
+PNG, WebP, SVG and JPEG. The decoder modules load when a picture is first used.
 
 ## Authoring
 

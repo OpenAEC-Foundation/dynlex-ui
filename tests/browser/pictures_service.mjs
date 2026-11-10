@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import { createPictureServices } from '../../platform/browser/pictures.js';
+
+const completions = [], released = [], errors = [], requests = [], failures = [];
+const first = {}, second = {}, surfaces = new Map([[1, first], [2, second]]);
+const graphics = { request(payload, {signal}, surface) {
+  return new Promise((resolve, reject) => requests.push({payload,signal,surface,resolve,reject}));
+}, release(resource) { released.push(resource); } };
+const pictures = createPictureServices({graphics,surfaces,callback:()=>(...args)=>completions.push(args),
+  text:()=> 'image.webp', report:(label,error)=>errors.push(error), fail:error=>failures.push(error)});
+const open = (surface,image) => pictures.imports.ui_open_picture(surface,99,image,1,0,10);
+const close = (surface,image) => pictures.imports.ui_close_picture(surface,image);
+const flush = async () => { for (let n=0;n<6;n++) await Promise.resolve(); };
+open(1,5); await flush();
+assert.equal(requests.length,1);
+requests[0].resolve({resource:7,width:80,height:40}); await flush();
+assert.deepEqual(completions,[[5,99,7,80,40,1]]);
+close(1,5); assert.deepEqual(released,[7]);
+open(1,6); await flush(); close(1,6);
+assert(requests[1].signal.aborted);
+requests[1].resolve({resource:8,width:80,height:40}); await flush();
+assert.deepEqual(released,[7,8]);
+assert.equal(completions.length,1,'A cancelled decode called freed DynLex storage');
+open(2,7); await flush();
+requests[2].reject(new Error('private codec details')); await flush();
+assert.equal(errors.length,1);
+assert.deepEqual(completions[1],[7,99,0,0,0,2]);
+open(1,8); await flush();
+pictures.closeSurface(first);
+requests[3].reject(new Error('cancelled')); await flush();
+assert.equal(errors.length,1,'An intentional close was reported as an asset error');
+assert.equal(completions.length,2);
+close(2,7);
+open(1,9); await flush(); close(1,9); open(1,9); await flush();
+requests[4].resolve({resource:10,width:10,height:10}); await flush();
+assert.deepEqual(released,[7,8,10]);
+requests[5].resolve({resource:11,width:10,height:10}); await flush();
+assert.deepEqual(completions.at(-1),[9,99,11,10,10,1]);
+close(1,9); assert.deepEqual(released,[7,8,10,11]);
+assert.deepEqual(failures,[]);
+console.log('Picture service: completion, failure, cancellation, late resource disposal and surface lifetime passed.');

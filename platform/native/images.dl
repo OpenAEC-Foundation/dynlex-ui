@@ -1,0 +1,18 @@
+import graphics.dl
+import ../../ui/images.dl
+
+to open native UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    set surface to the native UI surface in view
+    if surface's decoder's library = (0 as a pointer):
+        set surface's decoder to a native UI image decoder
+    set pixels to native UI pixels from (the data of (image's path)) using (the address of (surface's decoder))
+    if pixels' error's length > 0:
+        print line pixels' error
+        complete UI image image in view with resource (0 as a pointer) sized 0 by 0 at status 2
+    else:
+        set texture to a UI texture from RGBA bytes (the data of (pixels' bytes)) sized (pixels' width) by (pixels' height) in view
+        complete UI image image in view with resource (texture's resource) sized (texture's width) by (texture's height) at status 1
+
+to close native UI image {a pointer to UI image:image} in {a pointer to UI view:view}:
+    if image's status = 1:
+        release native UI texture in view holding (image's texture's resource)

@@ -6,6 +6,7 @@ import icon_types.dl
 import transform_types.dl
 import input_types.dl
 import input_context_types.dl
+import image_types.dl
 
 class:
     patterns:
@@ -58,6 +59,8 @@ class:
         reveal caret as a boolean
         selection as UI text selection
         input context as UI input context
+        images as a pointer to UI image
+        images changed as a boolean
         instance as a pointer to UI instance
         typeface as a UI font
         heading as a UI font

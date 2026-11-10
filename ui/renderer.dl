@@ -56,7 +56,8 @@ to update the UI viewport in {a pointer to UI view:view}:
     if view's instance's description's kind = 40:
         set view's logical width to view's width
         set view's logical height to view's height
-        if ((view's last width != view's width) or (view's last height != view's height)) or (view's revision != view's instance's revision):
+        if (((view's last width != view's width) or (view's last height != view's height)) or (view's revision != view's instance's revision)) or (view's images changed):
+            set view's images changed to false
             if view's last width != view's width:
                 set view's reveal caret to true
             reflow the UI document in view

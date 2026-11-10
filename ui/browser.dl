@@ -1,4 +1,5 @@
 import ../platform/browser/services.dl
+import ../platform/browser/images.dl
 
 the browser UI driver means: a static reference to @intrinsic("construct", UI driver,
     (the function named "open browser UI $ sized $ by $ titled $") as a pointer,
@@ -15,4 +16,5 @@ the browser UI driver means: a static reference to @intrinsic("construct", UI dr
     (the function named "release browser UI texture in $ holding $") as a pointer,
     (the function named "copy browser UI text in $ containing $ counting $") as a pointer,
     (the function named "launch browser UI $") as a pointer,
-    (the function named "wake browser UI $") as a pointer, (the function named "set browser UI cursor in $ to $") as a pointer)
+    (the function named "wake browser UI $") as a pointer, (the function named "set browser UI cursor in $ to $") as a pointer,
+    (the function named "open browser UI image $ in $") as a pointer, (the function named "close browser UI image $ in $") as a pointer)

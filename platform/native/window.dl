@@ -19,6 +19,8 @@ to open native UI {a pointer to UI view:view} sized {integer:width} by {integer:
 
 to close native UI {a pointer to UI view:view}:
     set surface to the native UI surface in view
+    if surface's decoder's library != (0 as a pointer):
+        close native UI image decoder the address of (surface's decoder)
     set error to @intrinsic("call", "freetype", "FT_Done_FreeType", an integer, surface's library)
     require condition (error = 0) reporting "Releasing UI vector rasterization failed"
     @intrinsic("call", "glfw", "glfwDestroyCursor", nothing, surface's hand cursor)
