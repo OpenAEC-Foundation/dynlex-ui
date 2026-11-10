@@ -17,6 +17,7 @@ class:
         diagnostics revision as an integer
         shown as a boolean
         complete as a boolean
+        failed as a boolean
         diagnostics as UI reference
         status as UI reference
         clean text as a string
@@ -104,6 +105,9 @@ to get [UI source workspace] {a pointer to UI source workspace:workspace} [await
         set editor to editor's next
     return false
 
+to [fail UI source workspace] {a pointer to UI source workspace:workspace}:
+    set workspace's client's phase to 8
+
 to [present UI source workspace] {a pointer to UI source workspace:workspace} [using] {an array:theme}:
     set instance to workspace's instance
     set entry to workspace's editors
@@ -114,8 +118,9 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
             set entry's colors revision to document's token revision
         set active to UI source element (entry's node) is active within (instance's description) in instance
         set complete to document's diagnostic revision = document's revision
+        set failed to workspace's client's phase = 8
         if active:
-            if ((entry's shown = false) or (entry's diagnostics revision != document's revision)) or (entry's complete != complete):
+            if ((entry's shown = false) or (entry's diagnostics revision != document's revision)) or ((entry's complete != complete) or (entry's failed != failed)):
                 if entry's diagnostics != @intrinsic("construct", UI reference):
                     set text to the UI source diagnostic text of document
                     if complete and (text's length = 0):
@@ -128,9 +133,12 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
                         set text to entry's ready text
                         if count > 0:
                             set text to formatted "{count} problems"
+                    if failed:
+                        set text to "An error occurred. Check the log."
                     set the text of (entry's status' text) in instance to text
                 set entry's diagnostics revision to document's revision
                 set entry's complete to complete
+                set entry's failed to failed
         set entry's shown to active
         set entry to entry's next
 

@@ -64,6 +64,13 @@ set game's ready text to "Plan checked"
 set game's document's diagnostic revision to game's document's revision
 present UI source workspace workspace using (the default UI source token theme)
 require condition (((the UI value for (game's diagnostics) in window)'s text = "") and ((the UI value for (game's status) in window)'s text = "Plan checked")) reporting "Embedded editors could not configure shared diagnostic presentation."
+fail UI source workspace workspace
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((the UI value for (game's status) in window)'s text = "An error occurred. Check the log.") reporting "A language transport failure was not visible in the embedded editor."
+set the text of "Game source" in window to "edited after failure"
+synchronize UI source workspace workspace at 4.0 seconds
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((the UI value for (game's status) in window)'s text = "An error occurred. Check the log.") reporting "An edit concealed the failed transport behind an analyzing caption."
 release UI layout (view's layout)
 free UI source workspace workspace
 close window

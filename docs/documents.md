@@ -248,8 +248,11 @@ A zero step has no payload. Free each sent payload after serializing it.
 
 `present UI source workspace workspace using (the default UI source token theme)`
 applies results to their source controls. Each binding may point `diagnostics`
-and `status` at optional text controls. Source colors and diagnostics share UTF-16
+and `status` at optional text controls. `clean text` and `ready text` configure
+empty diagnostic and successful-analysis captions without changing editor policy. Source colors and diagnostics share UTF-16
 to UTF-8 mapping through hidden imports, including same-line prefixes and astral
 characters. Execution background marks remain independent. Theme entries are
 ordinary `UI source token style` data. Call `free UI source workspace workspace`
-before closing its UI instance.
+before closing its UI instance. Transport failures should call `fail UI source
+workspace workspace`; shared presentation then reports the failure in each active
+source editor.
