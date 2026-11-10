@@ -83,7 +83,9 @@ The shared renderer positions native text input at the active caret. Browser IME
 composition works in single-line fields and multiline editors, with commit,
 cancellation and undo; read-only content does not activate the text input bridge.
 Documents also support rich paragraphs, source-anchored selection, multiline
-editing and undo/redo. Grapheme-cluster navigation, bidirectional editing and a
+editing and undo/redo. `ui/source_workspace.dl` supplies reusable source documents,
+project-aware language analysis, semantic colors and mapped diagnostics for both
+drivers; applications supply project metadata and a language transport. Grapheme-cluster navigation, bidirectional editing and a
 screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
 font fallback for missing glyphs. Browser font masks are clipped before rasterization,
 so long fields do not allocate textures as wide as their entire contents.

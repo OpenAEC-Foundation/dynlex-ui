@@ -1,0 +1,80 @@
+import ../../../ui/source_language.dl
+
+set source to the string form of "print line \"😀\""
+set document to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "import lib/std.dl\n" containing source using UI CPU analysis
+set other to a UI source document named "river.dl" at "file:///workspace/river.dl" prefixed by "import lib/river_challenge.dl\n\n" containing "get the hay in the boat" using UI CPU analysis
+set client to a UI language client rooted at "file:///workspace"
+set work to the next UI language work for client analyzing document at 0.0 seconds
+require condition (work's step = 1) reporting "An editor did not prepare its project."
+set files to the JSON member named "sources" in (work's payload)
+require condition ((the JSON text named "main.dl" in files) = (document's prefix + source)) reporting "The source wrapper was not included in the analysis project."
+free work's payload
+set response to a new JSON-RPC null
+set work to the UI language reply response at step 1 in client
+free response
+require condition (work's step = 2) reporting "The language service was not initialized."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is (a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a JSON array containing [a new JSON-RPC text for "string"])])])])])]]
+set work to the UI language reply response at step 2 in client
+free response
+free work's payload
+set response to a new JSON-RPC array
+set work to the UI language reply response at step 3 in client
+free response
+require condition (work's step = 4) reporting "The editor document was not opened."
+set opened to the JSON member named "textDocument" in (the JSON member named "params" in (the JSON member named "message" in (work's payload)))
+require condition ((the JSON text named "text" in opened) = (document's prefix + source)) reporting "Opening a document discarded its prefix."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON text "method" is "textDocument/publishDiagnostics", JSON child "params" is (a JSON object containing [JSON text "uri" is (document's uri), JSON child "diagnostics" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 4 in client
+free response
+require condition (work's step = 6) reporting "The editor did not request semantic tokens."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 6 in client
+free response
+require condition ((work's step = 0) and (document's analyzed revision = document's revision)) reporting "The completed analysis did not belong to its document."
+edit UI source document document to (the string form of "newer text") at 1.0 seconds
+set work to the next UI language work for client analyzing document at 1.1 seconds
+require condition (work's step = 0) reporting "The editor ignored its edit debounce."
+set work to the next UI language work for client analyzing document at 1.3 seconds
+require condition (work's step = 5) reporting "The changed source was not synchronized."
+free work's payload
+edit UI source document document to (the string form of "newest text") at 1.4 seconds
+set revision to document's diagnostic revision
+set response to a JSON array containing [a JSON object containing [JSON text "method" is "textDocument/publishDiagnostics", JSON child "params" is (a JSON object containing [JSON text "uri" is (document's uri), JSON child "diagnostics" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 5 in client
+free response
+require condition (document's diagnostic revision = revision) reporting "Stale diagnostics replaced the document's current state."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 6 in client
+free response
+require condition (document's analyzed revision != document's revision) reporting "Stale tokens marked newer source as analyzed."
+set work to the next UI language work for client analyzing other at 2.0 seconds
+require condition (work's step = 9) reporting "Switching editors did not close the preceding language document."
+free work's payload
+set response to a new JSON-RPC array
+set work to the UI language reply response at step 9 in client
+free response
+require condition (work's step = 10) reporting "Switching editors did not prepare the new project."
+set files to the JSON member named "sources" in (work's payload)
+require condition ((files's length = 1) and ((the JSON text named "river.dl" in files) = (other's prefix + other's source))) reporting "One editor's files contaminated another editor's project."
+free work's payload
+set response to a new JSON-RPC null
+set work to the UI language reply response at step 10 in client
+free response
+require condition ((work's step = 4) and (client's uri = other's uri)) reporting "The second editor retained the preceding URI."
+free work's payload
+set response to a new JSON-RPC array
+set work to the UI language reply response at step 4 in client
+free response
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 6 in client
+free response
+require condition (other's analyzed revision = other's revision) reporting "The River source did not use the shared analysis lifecycle."
+free UI language client client
+free UI source document document
+free UI source document other
+print line "Source editors share project lifecycle, prefixes, debouncing and stale-result isolation."

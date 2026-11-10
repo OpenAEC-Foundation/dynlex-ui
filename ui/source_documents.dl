@@ -1,0 +1,93 @@
+# Source ownership is independent of UI controls and language-server transports.
+import lib/sections.dl
+import lib/json_builders.dl
+import lib/lsp_json.dl
+
+class:
+    patterns:
+        UI source document
+    members:
+        filename as a string
+        uri as a string
+        prefix as a string
+        source as a string
+        profiles as a pointer to JSON value
+        files as a pointer to JSON value
+        context as a string
+        revision as an integer
+        edited at as a floating-point number
+        analyzed revision as an integer
+        diagnostic revision as an integer
+        token revision as an integer
+        diagnostics as a pointer to JSON value
+        tokens as a pointer to JSON value
+        token types as a pointer to JSON value
+
+# Analysis profiles are ordinary protocol data; clients may supply any supported set.
+to get [UI CPU analysis]:
+    return a JSON array containing [a JSON object containing [JSON text "target" is "cpu"]]
+
+to get [UI fragment analysis]:
+    return a JSON array containing [a JSON object containing [JSON text "target" is "spirv", JSON text "shaderStage" is "fragment"]]
+
+to get [UI vertex and fragment analysis]:
+    set profiles to UI fragment analysis
+    add (a JSON object containing [JSON text "target" is "spirv", JSON text "shaderStage" is "vertex"]) to the JSON array profiles
+    return profiles
+
+to [refresh the context of UI source document] {a pointer to UI source document:document}:
+    set context to a JSON object containing [
+        JSON text "filename" is (document's filename),
+        JSON text "uri" is (document's uri),
+        JSON text "prefix" is (document's prefix),
+        JSON child "profiles" is (a copy of JSON-RPC node (document's profiles)),
+        JSON child "files" is (a copy of JSON-RPC node (document's files))
+    ]
+    set document's context to the compact JSON form of context
+    free context
+
+to get [a UI source document named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [containing] {string:source} [using] {a pointer to JSON value:profiles}:
+    set document to storage for one slot initialized with (a new UI source document)
+    set document's filename to filename
+    set document's uri to uri
+    set document's prefix to prefix
+    set document's source to source
+    set document's profiles to profiles
+    set document's files to a new JSON-RPC object
+    set document's revision to 1
+    set document's edited at to -1.0
+    set document's diagnostics to a new JSON-RPC array
+    set document's tokens to a JSON object containing [JSON child "data" is (a new JSON-RPC array)]
+    set document's token types to a new JSON-RPC array
+    refresh the context of UI source document document
+    return document
+
+to [edit UI source document] {a pointer to UI source document:document} [to] {string:source} [at] {floating-point number:seconds} [seconds]:
+    if source != document's source:
+        set document's source to source
+        increment document's revision
+        set document's edited at to seconds
+
+# Reconfiguration consumes profiles; files are borrowed and copied.
+to [configure UI source document] {a pointer to UI source document:document} [named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [using] {a pointer to JSON value:profiles} [with files] {a pointer to JSON value:files}:
+    set previous to document's context
+    set document's filename to filename
+    set document's uri to uri
+    set document's prefix to prefix
+    free document's profiles
+    set document's profiles to profiles
+    set copied to a copy of JSON-RPC node files
+    free document's files
+    set document's files to copied
+    refresh the context of UI source document document
+    if document's context != previous:
+        increment document's revision
+
+to [free UI source document] {a pointer to UI source document:document}:
+    free document's profiles
+    free document's files
+    free document's diagnostics
+    free document's tokens
+    free document's token types
+    destroy the value at document
+    deallocate document

@@ -1,0 +1,70 @@
+import ../../../ui/source_workspace.dl
+import ../../../ui/document_declarations.dl
+import ../../../ui/document_layout.dl
+import ../../../ui/layout.dl
+
+document example:
+    page "First":
+        tab group "Modes" using no UI appearance:
+            tab "Program":
+                editor "Plain source" containing "print line 7" using no UI appearance
+            tab "Game":
+                editor "Game source" containing "move right" using no UI appearance
+                paragraph "Game problems" containing "" using no UI appearance
+                paragraph "Game analysis" containing "" using no UI appearance
+    page "Other":
+        editor "Other source" containing "print line 8" using no UI appearance
+
+set instance to an instance of example
+set window to the address of instance
+show page "First" in window
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+set plain to the UI source editor labeled "Plain source" in workspace
+set game to the UI source editor labeled "Game source" in workspace
+set other to the UI source editor labeled "Other source" in workspace
+set files to a new JSON-RPC object
+configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files files
+free files
+set work to the next UI source workspace work in workspace focused on (other's node) at 0.0 seconds
+require condition ((work's step = 1) and (workspace's client's document = plain's document)) reporting "Hidden editors were analyzed before the active source."
+free work's payload
+set workspace's client's phase to 7
+set plain's document's analyzed revision to plain's document's revision
+set work to the next UI source workspace work in workspace focused on (plain's node) at 1.0 seconds
+require condition (work's step = 0) reporting "Unchanged or inactive sources were reanalyzed."
+set the value of "Modes" in window to 1
+set work to the next UI source workspace work in workspace focused on (plain's node) at 2.0 seconds
+require condition ((work's step = 9) and (workspace's client's desired = game's document)) reporting "A selected game editor did not share the workspace."
+free work's payload
+set the text of "Game source" in window to "move left"
+synchronize UI source workspace workspace at 3.0 seconds
+require condition ((game's document's source = "move left") and (game's document's revision = 3)) reporting "Programmatic edits did not invalidate shared language state."
+require condition (game's document's prefix = "import game.dl\n\n") reporting "Synchronizing an editor discarded its project context."
+set view to a new UI view
+set view's instance to window
+set view's layout to a document UI layout for (window's description) inside (window's description)
+set view's paint count to 1
+set view's text focus to other's node
+set layout to the UI layout for element (game's node) in (view's layout)
+set layout's paint generation to 1
+set layout's hit bounds to UI box at 0 0 sized 200 100
+require condition ((the UI source focus in (the address of view) for workspace) = game's node) reporting "Viewport priority followed a focused editor in an inactive page."
+set view's text focus to game's node
+set layout's hit bounds to UI box at 0 0 sized 0 0
+require condition ((the UI source focus in (the address of view) for workspace) = game's node) reporting "A focused source lost priority while scrolled."
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 1"]
+configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files files
+free files
+configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files (game's document's files)
+require condition ((the JSON text named "helper.dl" in (game's document's files)) = "helper means: 1") reporting "Reconfiguring a project freed borrowed files before copying them."
+set game's diagnostics to the control labeled "Game problems" in window
+set game's status to the control labeled "Game analysis" in window
+set game's clean text to ""
+set game's ready text to "Plan checked"
+set game's document's diagnostic revision to game's document's revision
+present UI source workspace workspace using (the default UI source token theme)
+require condition (((the UI value for (game's diagnostics) in window)'s text = "") and ((the UI value for (game's status) in window)'s text = "Plan checked")) reporting "Embedded editors could not configure shared diagnostic presentation."
+release UI layout (view's layout)
+free UI source workspace workspace
+close window
+print line "Source workspaces discover editors, follow selected views and synchronize programmatic edits."

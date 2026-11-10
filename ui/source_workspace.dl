@@ -1,0 +1,164 @@
+# A workspace binds reusable document models to source controls. Applications only
+# configure project metadata and supply the language transport.
+import source_language.dl
+import source_annotations.dl
+import tabs.dl
+import view.dl
+import layout_lookup.dl
+
+class:
+    patterns:
+        UI source editor
+    members:
+        node as UI reference
+        document as a pointer to UI source document
+        next as a pointer to UI source editor
+        colors revision as an integer
+        diagnostics revision as an integer
+        shown as a boolean
+        complete as a boolean
+        diagnostics as UI reference
+        status as UI reference
+        clean text as a string
+        ready text as a string
+
+class:
+    patterns:
+        UI source workspace
+    members:
+        instance as a pointer to UI instance
+        client as a pointer to UI language client
+        editors as a pointer to UI source editor
+
+to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI source workspace:workspace}:
+    if node's kind = 44:
+        set entry to a new UI source editor
+        set entry's node to node
+        set entry's clean text to "No problems found."
+        set entry's ready text to "0 problems"
+        set entry's document to a UI source document named "main.dl" at (workspace's client's root + "/main.dl") prefixed by "" containing ((the UI value for node in (workspace's instance))'s text) using UI CPU analysis
+        set entry's next to workspace's editors
+        set workspace's editors to storage for one slot initialized with entry
+    set index to node's count
+    loop while index > 0:
+        decrement index
+        discover UI source editors within (the UI child at index in node) in workspace
+
+to get [a UI source workspace in] {a pointer to UI instance:instance} [rooted at] {string:root}:
+    set workspace to storage for one slot initialized with (a new UI source workspace)
+    set workspace's instance to instance
+    set workspace's client to a UI language client rooted at root
+    discover UI source editors within (instance's description) in workspace
+    return workspace
+
+to get [the UI source editor labeled] {C string:label} [in] {a pointer to UI source workspace:workspace}:
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        if entry's node's text = label:
+            return entry
+        set entry to entry's next
+    require condition false reporting "A source editor is not registered in its workspace"
+    return entry
+
+to get [UI source element] {UI reference:target} [is active within] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    if (node's kind = 22) and (node != instance's page):
+        return false
+    if target = node:
+        return true
+    if ((node's kind = 28) or (node's kind = 48)) or (node's kind = 49):
+        return UI source element target is active within (the selected UI child of node in instance) in instance
+    set index to 0
+    loop while index < node's count:
+        if UI source element target is active within (the UI child at index in node) in instance:
+            return true
+        increment index
+    return false
+
+to [synchronize UI source workspace] {a pointer to UI source workspace:workspace} [at] {floating-point number:seconds} [seconds]:
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        set source to (the UI value for (entry's node) in (workspace's instance))'s text
+        edit UI source document (entry's document) to source at seconds seconds
+        set entry to entry's next
+
+to get [the next UI source workspace work in] {a pointer to UI source workspace:workspace} [focused on] {UI reference:focused} [at] {floating-point number:seconds} [seconds]:
+    synchronize UI source workspace workspace at seconds seconds
+    set chosen to @intrinsic("construct", a pointer to UI source editor)
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        if entry's document's revision != entry's document's analyzed revision:
+            if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
+                if (chosen = @intrinsic("construct", a pointer to UI source editor)) or (entry's node = focused):
+                    set chosen to entry
+        set entry to entry's next
+    if chosen = @intrinsic("construct", a pointer to UI source editor):
+        return a new UI language work
+    return the next UI language work for (workspace's client) analyzing (chosen's document) at seconds seconds
+
+to get [UI source workspace] {a pointer to UI source workspace:workspace} [awaits an edit deadline at] {floating-point number:seconds} [seconds]:
+    set editor to workspace's editors
+    loop while editor != @intrinsic("construct", a pointer to UI source editor):
+        if (editor's document's revision != editor's document's analyzed revision) and (seconds < (editor's document's edited at + (the UI source analysis delay))):
+            if UI source element (editor's node) is active within (workspace's instance's description) in (workspace's instance):
+                return true
+        set editor to editor's next
+    return false
+
+to [present UI source workspace] {a pointer to UI source workspace:workspace} [using] {an array:theme}:
+    set instance to workspace's instance
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        set document to entry's document
+        if (document's token revision = document's revision) and (entry's colors revision != document's token revision):
+            apply UI source colors from document to (entry's node) in instance using theme
+            set entry's colors revision to document's token revision
+        set active to UI source element (entry's node) is active within (instance's description) in instance
+        set complete to document's diagnostic revision = document's revision
+        if active:
+            if ((entry's shown = false) or (entry's diagnostics revision != document's revision)) or (entry's complete != complete):
+                if entry's diagnostics != @intrinsic("construct", UI reference):
+                    set text to the UI source diagnostic text of document
+                    if complete and (text's length = 0):
+                        set text to entry's clean text
+                    set the text of (entry's diagnostics' text) in instance to text
+                if entry's status != @intrinsic("construct", UI reference):
+                    set text to the string form of "Analyzing…"
+                    if complete:
+                        set count to document's diagnostics' length
+                        set text to entry's ready text
+                        if count > 0:
+                            set text to formatted "{count} problems"
+                    set the text of (entry's status' text) in instance to text
+                set entry's diagnostics revision to document's revision
+                set entry's complete to complete
+        set entry's shown to active
+        set entry to entry's next
+
+to [free UI source workspace] {a pointer to UI source workspace:workspace}:
+    free UI language client (workspace's client)
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        set next to entry's next
+        free UI source document (entry's document)
+        destroy the value at entry
+        deallocate entry
+        set entry to next
+    destroy the value at workspace
+    deallocate workspace
+
+# Priority follows the focused control, then a source visible in the latest paint.
+# This uses retained geometry and works with either native or browser drivers.
+to get [the UI source focus in] {a pointer to UI view:view} [for] {a pointer to UI source workspace:workspace}:
+    set chosen to @intrinsic("construct", UI reference)
+    set entry to workspace's editors
+    loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
+            if entry's node = view's text focus:
+                return entry's node
+            set layout to the UI layout for element (entry's node) in (view's layout)
+            require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source editor is missing from its view layout"
+            if (chosen = @intrinsic("construct", UI reference)) and (layout's paint generation = view's paint count):
+                if (layout's hit bounds' width > 0.0) and (layout's hit bounds' height > 0.0):
+                    set chosen to entry's node
+        set entry to entry's next
+    return chosen

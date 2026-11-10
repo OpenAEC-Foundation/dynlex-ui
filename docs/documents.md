@@ -216,3 +216,40 @@ with its request. Applications own scheduling and audio policy in DynLex.
 The host processes queued input and service replies once when a browser tab is
 hidden, because browsers suspend animation frames there. Hidden surfaces never
 poll for animation; returning to a visible surface resumes normal scheduling.
+
+## Shared source editors
+
+Import `ui/source_workspace.dl` to add language analysis to source controls.
+A workspace discovers every `editor` in an instance and owns its document models.
+It follows page and tab selection, prioritizes focused/visible sources, debounces
+edits, and rejects results from older source revisions or project contexts.
+
+```dynlex
+set workspace to a UI source workspace in instance rooted at "file:///workspace"
+set editor to the UI source editor labeled "Plan" in workspace
+set files to a new JSON-RPC object
+configure UI source document (editor's document) named "plan.dl" at "file:///workspace/plan.dl" prefixed by "import project/vocabulary.dl\n\n" using UI CPU analysis with files files
+free files
+```
+
+Each document is its own project, so examples that share `main.dl` do not leak
+names or import suggestions into each other. Additional project files are copied;
+analysis profiles are consumed. Profiles are JSON data, including CPU, fragment,
+and combined vertex/fragment helpers; the client accepts arbitrary profile sets.
+
+During an update, call `the next UI source workspace work in workspace focused on
+(the UI source focus in view for workspace) at (view's seconds) seconds`. A nonzero
+`step` owns a JSON `payload` to send through the language transport. Deliver its
+reply to `the UI language reply response at step step in (workspace's client)`;
+that returns the next work item. Synchronize the workspace before delivering
+replies so programmatic edits also invalidate outstanding results. The platform
+implements `project`, `exchange`, and `reset`; document policy stays in DynLex.
+A zero step has no payload. Free each sent payload after serializing it.
+
+`present UI source workspace workspace using (the default UI source token theme)`
+applies results to their source controls. Each binding may point `diagnostics`
+and `status` at optional text controls. Source colors and diagnostics share UTF-16
+to UTF-8 mapping through hidden imports, including same-line prefixes and astral
+characters. Execution background marks remain independent. Theme entries are
+ordinary `UI source token style` data. Call `free UI source workspace workspace`
+before closing its UI instance.
