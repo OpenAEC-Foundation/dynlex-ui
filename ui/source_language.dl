@@ -22,7 +22,6 @@ class:
         uri as a string
         context as a string
         profiles as a string
-        source as a string
         snapshot as a string
         revision as an integer
         version as an integer
@@ -57,7 +56,6 @@ to get [the UI language project at step] {integer:step} [in] {a pointer to UI la
 
 to get [the UI language opening in] {a pointer to UI language client:client}:
     set document to client's document
-    set client's source to document's source
     set client's snapshot to document's prefix + document's source
     set client's revision to document's revision
     set client's version to 1
@@ -78,7 +76,6 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
         return UI language work (a JSON object containing [JSON text "operation" is "reset"]) at step 11 in client
     if (client's document != document) or (client's context != document's context):
         return UI language message "textDocument/didClose" with (the LSP document closing parameters for URI (client's uri)) requesting false at step 9 in client
-    set client's source to document's source
     set client's snapshot to document's prefix + document's source
     set client's revision to document's revision
     increment client's version
