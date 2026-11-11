@@ -27,6 +27,7 @@ to get [the UI language project at step] {integer:step} [in] {a pointer to UI la
 
 to get [the UI language opening in] {a pointer to UI language client:client}:
     set document to client's document
+    set client's opened to true
     set client's snapshot to document's prefix + document's source
     set client's revision to document's revision
     set client's version to 1
@@ -51,8 +52,10 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
     if client's phase = 0:
         return the UI language project at step 1 in client
     if client's profiles != (the compact JSON form of (document's profiles)):
+        set client's opened to false
         return UI language work (a JSON object containing [JSON text "operation" is "reset"]) at step 11 in client
     if (client's document != document) or (client's context != document's context):
+        set client's opened to false
         return UI language message "textDocument/didClose" with (the LSP document closing parameters for URI (client's uri)) requesting false at step 9 in client
     if (document's analyzed revision = document's revision) and (client has current UI language source):
         if document's analyzed token epoch != document's token epoch:
@@ -71,7 +74,7 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
 
 to get {a pointer to UI language client:client} [has current UI language source]:
     set document to client's document
-    return (document's revision = client's revision) and (document's context = client's context)
+    return (client's opened) and ((document's revision = client's revision) and (document's context = client's context))
 
 to [receive UI language diagnostics] {a pointer to JSON value:response} [in] {a pointer to UI language client:client}:
     if (client has current UI language source) = false:

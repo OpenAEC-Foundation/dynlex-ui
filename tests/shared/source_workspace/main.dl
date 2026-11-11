@@ -29,6 +29,7 @@ set work to the next UI source workspace work in workspace focused on (other's n
 require condition ((work's step = 1) and (workspace's client's document = plain's document)) reporting "Hidden editors were analyzed before the active source."
 free work's payload
 set workspace's client's phase to 7
+set workspace's client's opened to true
 set plain's document's analyzed revision to plain's document's revision
 set work to the next UI source workspace work in workspace focused on (plain's node) at 1.0 seconds
 require condition (work's step = 0) reporting "Unchanged or inactive sources were reanalyzed."

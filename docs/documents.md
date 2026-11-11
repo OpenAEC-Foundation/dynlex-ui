@@ -276,3 +276,7 @@ before pending editor work resumes. A refresh requests tokens again without
 resending unchanged source. Changed token data advances a separate presentation
 generation, so inferred-instance choices can change colors without an edit.
 Identical data retains cached colors.
+Refreshes received after closing a document are acknowledged without invalidating
+its retained results. A closed project stays idle until it needs analysis again.
+The server's diagnostic clearing on close likewise leaves the editor's cached
+results intact.

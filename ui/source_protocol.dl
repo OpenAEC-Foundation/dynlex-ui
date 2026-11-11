@@ -35,7 +35,7 @@ to [receive UI language server messages] {a pointer to JSON value:response} [in]
         if message has JSON member named "method":
             set method to the JSON text named "method" in message
             set refresh to method = "workspace/semanticTokens/refresh"
-            if refresh:
+            if refresh and (client's opened):
                 increment client's document's token epoch
             if message has JSON member named "id":
                 set reply to a JSON object containing [

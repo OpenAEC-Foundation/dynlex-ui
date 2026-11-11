@@ -1,0 +1,48 @@
+import ../../../ui/source_language.dl
+
+set first to a UI source document named "first.dl" at "file:///workspace/first.dl" prefixed by "" containing "first means: 1" using UI CPU analysis
+set second to a UI source document named "second.dl" at "file:///workspace/second.dl" prefixed by "" containing "second means: 2" using UI CPU analysis
+set client to a UI language client rooted at "file:///workspace"
+set client's document to first
+set client's uri to first's uri
+set client's context to first's context
+set client's profiles to the compact JSON form of (first's profiles)
+set work to the UI language opening in client
+free work's payload
+set response to a new JSON-RPC array
+set work to the UI language reply response at step 4 in client
+free response
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is (a new JSON-RPC array)])]]
+set work to the UI language reply response at step 6 in client
+free response
+require condition ((first needs UI source analysis) = false) reporting "The first source did not finish analysis."
+free first's diagnostics
+set first's diagnostics to a JSON array containing [a JSON object containing [JSON text "message" is "Retained warning", JSON number "severity" is 2, JSON child "range" is (an LSP range from line 0 and character 0 to line 0 and character 5)]]
+set first's diagnostic revision to first's revision
+
+set work to the next UI language work for client analyzing second at 0.0 seconds
+require condition (work's step = 9) reporting "Switching projects did not close the first source."
+free work's payload
+# DynLex publishes this workspace refresh after processing didClose. It still
+# needs a protocol reply, but the closed source has no tokens to refresh.
+set response to a JSON array containing [
+    a JSON object containing [JSON text "method" is "textDocument/publishDiagnostics", JSON child "params" is (a JSON object containing [JSON text "uri" is (first's uri), JSON child "diagnostics" is (a new JSON-RPC array)])],
+    a JSON object containing [JSON text "jsonrpc" is "2.0", JSON number "id" is 99, JSON text "method" is "workspace/semanticTokens/refresh", JSON child "params" is (a new JSON-RPC object)]
+]
+set work to the UI language reply response at step 9 in client
+free response
+require condition ((first needs UI source analysis) = false) reporting "A refresh after didClose requeued the closed source and caused endless project switching."
+require condition (first's diagnostics' length = 1) reporting "Closing a source discarded its retained diagnostics even though its cached analysis stayed current."
+require condition (work's step = 13) reporting "A refresh from didClose was not acknowledged."
+free work's payload
+set response to a new JSON-RPC array
+set work to the UI language reply response at step 13 in client
+free response
+require condition ((work's step = 10) and (client's document = second)) reporting "Replying to a closing refresh lost the next project."
+free work's payload
+
+free UI language client client
+free UI source document first
+free UI source document second
+print line "Closing refreshes receive replies without requeuing closed source projects."

@@ -13,6 +13,7 @@ class:
     members:
         root as a string
         phase as an integer
+        opened as a boolean
         document as a pointer to UI source document
         desired as a pointer to UI source document
         uri as a string

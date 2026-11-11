@@ -7,6 +7,7 @@ set document to a UI source document named "main.dl" at "file:///workspace/main.
 set client to a UI language client rooted at "file:///workspace"
 # A completed analysis is the starting point; source_language covers initialization.
 set client's phase to 7
+set client's opened to true
 set client's document to document
 set client's uri to document's uri
 set client's context to document's context
