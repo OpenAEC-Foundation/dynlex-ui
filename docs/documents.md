@@ -244,10 +244,40 @@ configure UI source document (editor's document) named "plan.dl" at "file:///wor
 free files
 ```
 
-Each document is its own project, so examples that share `main.dl` do not leak
-names or import suggestions into each other. Additional project files are copied;
-analysis profiles are consumed. Profiles are JSON data, including CPU, fragment,
-and combined vertex/fragment helpers; the client accepts arbitrary profile sets.
+Each source control starts with its own project, so examples that share `main.dl`
+do not leak names or import suggestions into each other. The main document is
+`editor's document's project's entry`. A project owns its `profiles`, `files`,
+main document and imported document models. Additional files are copied; analysis
+profiles are consumed. Profiles are JSON data, including CPU, fragment, and
+combined vertex/fragment helpers; the client accepts arbitrary profile sets.
+
+To retain imported source in the same project, use `a UI source document named
+filename at uri containing source in project`. These models have no hidden prefix
+and start read-only. `the UI source document at uri in project` returns an existing
+model or a null pointer when the URI has not been loaded. Project changes
+invalidate dependent analysis and queries without changing another file's source
+revision when its contents stay the same. Replacing a provided file updates its
+loaded snapshot and revision. Removing it marks that model unavailable; restoring
+the file revives the retained model with current content. Imported libraries
+outside the provided file map keep their snapshots. Read-only views follow the
+document model, so their preceding control text cannot overwrite a replaced file.
+Free standalone projects with `free UI source project project`; workspace
+cleanup releases the projects belonging to its controls.
+
+The language client keeps one open model and version per file while retaining
+its main file's inference context. Moving between files in a project does not
+close them. Before answering an imported-file query, it synchronizes the main
+source and refreshes dependent semantics without sending a text change for an
+unchanged import. Leaving the project closes every open model before replacing
+the source set.
+
+Diagnostics belong to the project analysis snapshot. Reports are retained by URI,
+including sources whose views have not been created. The main semantic-token
+response is the ordered completion barrier for its analysis; committing that
+snapshot clears old reports for clean imports as well. Opening a view applies
+the retained report. Closed and superseded project replies do not overwrite it.
+Changed reports advance a presentation generation independently of source edits;
+identical reports preserve it.
 
 During an update, call `the next UI source workspace work in workspace focused on
 (the UI source focus in view for workspace) at (view's seconds) seconds`. A nonzero

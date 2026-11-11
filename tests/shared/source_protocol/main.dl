@@ -5,15 +5,20 @@ to get [a source server request] {a pointer to JSON value:id} [named] {string:me
 
 set document to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "" containing "value means: 7" using UI CPU analysis
 set client to a UI language client rooted at "file:///workspace"
+set client's project to document's project
+set client's model to the UI language model for document in client
 set client's phase to 7
 set client's opened to true
 set client's document to document
 set client's uri to document's uri
 set client's context to document's context
-set client's profiles to the compact JSON form of (document's profiles)
+set client's project context to document's project's context
+set client's project revision to document's project's revision
+set client's profiles to the compact JSON form of (document's project's profiles)
 set client's snapshot to document's source
 set client's revision to document's revision
 set client's version to 1
+begin UI source reports for (document's project)
 set document's analyzed revision to document's revision
 
 # JSON-RPC request identifiers belong to independent directions. The server's
@@ -92,5 +97,5 @@ set work to the UI language reply response at step 4 in client
 free response
 free work's payload
 free UI language client client
-free UI source document document
+free UI source project (document's project)
 print line "Source language requests are bidirectional, preserve continuations and refresh unchanged semantic colors."

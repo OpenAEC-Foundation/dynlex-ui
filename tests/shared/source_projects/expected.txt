@@ -1,0 +1,1 @@
+Source projects retain shared metadata and imported models while invalidating queries without forging file edits.

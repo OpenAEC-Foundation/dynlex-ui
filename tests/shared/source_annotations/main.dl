@@ -33,6 +33,7 @@ require condition ((range's start = 5) and (range's end = 7)) reporting "Diagnos
 free document's diagnostics
 set document's diagnostics to a JSON array containing [diagnostic]
 set document's diagnostic revision to document's revision
+set document's diagnostic project revision to document's project's revision
 require condition ((the UI source diagnostic text of document) = "test.dl:1:4: Unknown name\n") reporting "Diagnostics exposed the hidden source wrapper or counted an emoji as one UTF-16 unit."
 set hidden to a JSON object containing [JSON text "message" is "Missing vocabulary", JSON child "range" is (an LSP range from line 0 and character 0 to line 0 and character 8)]
 set span to the UI source range of hidden in document
@@ -44,6 +45,6 @@ edit UI source document document to (the string form of "changed") at 2.0 second
 set the text of "Source" in instance to "changed"
 apply UI source colors from document to node in instance using (the default UI source token theme)
 require condition (value's colored text = "😀 go\nnext") reporting "Stale analysis was painted on an edited document."
-free UI source document document
+free UI source project (document's project)
 close instance
 print line "Shared source colors and diagnostics map hidden prefixes and Unicode without touching execution marks."

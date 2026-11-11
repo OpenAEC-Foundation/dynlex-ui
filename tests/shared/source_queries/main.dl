@@ -5,13 +5,18 @@ to get [an editor reply containing] {string:text}:
 
 set document to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "import base.dl\n\n" containing "print \"😀\"" using UI CPU analysis
 set client to a UI language client rooted at "file:///workspace"
+set client's project to document's project
+begin UI source reports for (document's project)
+set client's model to the UI language model for document in client
 # A completed analysis is the starting point; source_language covers initialization.
 set client's phase to 7
 set client's opened to true
 set client's document to document
 set client's uri to document's uri
 set client's context to document's context
-set client's profiles to the compact JSON form of (document's profiles)
+set client's project context to document's project's context
+set client's project revision to document's project's revision
+set client's profiles to the compact JSON form of (document's project's profiles)
 set client's snapshot to document's prefix + document's source
 set client's revision to document's revision
 set client's version to 1
@@ -106,5 +111,5 @@ require condition (document's queries = {saved queries}) reporting "Reconfigurin
 require condition ((document has pending UI source queries) = false) reporting "A query retained an obsolete project context."
 require condition (query's queued = false) reporting "An obsolete query stayed in the work queue."
 free UI language client client
-free UI source document document
+free UI source project (document's project)
 print line "Source features share Unicode coordinates, synchronization, cancellation and stale-result isolation."

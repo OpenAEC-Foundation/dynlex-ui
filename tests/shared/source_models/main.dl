@@ -1,0 +1,111 @@
+import ../../../ui/source_language.dl
+
+to get [deliver source reply] {a pointer to JSON value:response} [at step] {integer:step} [in] {a pointer to UI language client:client}:
+    set work to the UI language reply response at step step in client
+    free response
+    return work
+
+to get [an empty source token reply]:
+    return a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is (a new JSON-RPC array)])]]
+
+to get [the source message in] {UI language work:work}:
+    return the JSON member named "message" in (work's payload)
+
+to get [the source URI in] {UI language work:work}:
+    return the JSON text named "uri" in (the JSON member named "textDocument" in (the JSON member named "params" in (the source message in work)))
+
+set main to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "" containing "import helper.dl\nprint line helper" using UI CPU analysis
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 7"]
+configure UI source document main named "main.dl" at "file:///workspace/main.dl" prefixed by "" using UI CPU analysis with files files
+free files
+set helper to a UI source document named "helper.dl" at "file:///workspace/helper.dl" containing "helper means: 7" in (main's project)
+set client to a UI language client rooted at "file:///workspace"
+
+# Requesting an imported file still prepares and opens its main source first.
+set work to the next UI language work for client analyzing helper at 0.0 seconds
+require condition (work's step = 1) reporting "The imported view did not prepare its root project."
+set files to the JSON member named "sources" in (work's payload)
+require condition (((the JSON text named "main.dl" in files) = main's source) and ((the JSON text named "helper.dl" in files) = helper's source)) reporting "Imported navigation replaced the project entry with its viewed file."
+free work's payload
+set work to deliver source reply (a new JSON-RPC null) at step 1 in client
+free work's payload
+set capabilities to a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a new JSON-RPC array)])])]
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is capabilities])]]
+set work to deliver source reply response at step 2 in client
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 3 in client
+require condition ((work's step = 4) and ((the source URI in work) = main's uri)) reporting "The main source was not opened before its imported view."
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 4 in client
+free work's payload
+set work to deliver source reply (an empty source token reply) at step 6 in client
+require condition ((work's step = 0) and ((main needs UI source analysis) = false)) reporting "The main source did not finish its own analysis."
+
+set work to the next UI language work for client analyzing helper at 0.0 seconds
+require condition ((work's step = 4) and ((the source URI in work) = helper's uri)) reporting "Opening an imported view closed or replaced its main project."
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 4 in client
+free work's payload
+set work to deliver source reply (an empty source token reply) at step 6 in client
+require condition ((helper needs UI source analysis) = false) reporting "The imported file did not retain its semantic snapshot."
+
+set query to request UI source feature "textDocument/hover" at byte 0 in helper
+set work to the next UI language work for client analyzing helper at 0.0 seconds
+require condition ((work's step = 12) and ((the source URI in work) = helper's uri)) reporting "An imported hover changed the root project or its request URI."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 12, JSON child "result" is (a new JSON-RPC text for "helper type")]]
+set work to deliver source reply response at step 12 in client
+require condition ((query's ready) and (query's result's text = "helper type")) reporting "The imported result did not belong to its document."
+
+set query to request UI source feature "textDocument/hover" at byte 0 in main
+set work to the next UI language work for client analyzing main at 0.0 seconds
+require condition ((work's step = 12) and ((the source URI in work) = main's uri)) reporting "Returning to the open main model reloaded or closed another source."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 12, JSON child "result" is (a new JSON-RPC text for "main type")]]
+set work to deliver source reply response at step 12 in client
+
+# A child query must wait for the edited main source to reach the server. The
+# imported source itself is unchanged and must not receive a synthetic edit.
+edit UI source document main to (the string form of "import helper.dl\nprint line helper + 1") at 1.0 seconds
+set query to request UI source feature "textDocument/hover" at byte 0 in helper
+set work to the next UI language work for client analyzing helper at 1.0 seconds
+require condition ((work's step = 5) and ((the source URI in work) = main's uri)) reporting "An imported query ran against the preceding main source."
+require condition ((the JSON number named "version" in (the JSON member named "textDocument" in (the JSON member named "params" in (the source message in work)))) = 2.0) reporting "The main model lost its independent document version."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON text "method" is "workspace/semanticTokens/refresh", JSON number "id" is 40, JSON child "params" is (a new JSON-RPC object)]]
+set work to deliver source reply response at step 5 in client
+require condition (work's step = 13) reporting "The main edit's workspace refresh was not acknowledged."
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 13 in client
+require condition ((work's step = 6) and ((the source URI in work) = main's uri)) reporting "The main edit did not finish root analysis first."
+free work's payload
+set work to deliver source reply (an empty source token reply) at step 6 in client
+set work to the next UI language work for client analyzing helper at 1.0 seconds
+require condition ((work's step = 6) and ((the source URI in work) = helper's uri)) reporting "Refreshing imported semantics resent unchanged source or reopened the project."
+free work's payload
+set work to deliver source reply (an empty source token reply) at step 6 in client
+set work to the next UI language work for client analyzing helper at 1.0 seconds
+require condition ((work's step = 12) and ((the source URI in work) = helper's uri)) reporting "The imported query was lost after main synchronization."
+free work's payload
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 12, JSON child "result" is (a new JSON-RPC text for "updated helper type")]]
+set work to deliver source reply response at step 12 in client
+require condition ((query's ready) and (helper's revision = 1)) reporting "Root synchronization changed imported source history or lost its query."
+
+# Leaving the project closes every open model, then prepares the next entry.
+set other to a UI source document named "other.dl" at "file:///workspace/other.dl" prefixed by "" containing "other means: 3" using UI CPU analysis
+set work to the next UI language work for client analyzing other at 2.0 seconds
+require condition (work's step = 9) reporting "Changing projects did not close its open models."
+set {first address} to the source URI in work
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 9 in client
+require condition (work's step = 9) reporting "A project replacement left an imported document open."
+set {second address} to the source URI in work
+require condition (({first address} != {second address}) and ((({first address} = main's uri) and ({second address} = helper's uri)) or (({first address} = helper's uri) and ({second address} = main's uri)))) reporting "Closing the project lost or repeated one of its model identities."
+free work's payload
+set work to deliver source reply (a new JSON-RPC array) at step 9 in client
+require condition ((work's step = 10) and (client's document = other)) reporting "The next project did not use its main source."
+free work's payload
+free UI language client client
+free UI source project (main's project)
+free UI source project (other's project)
+print line "Language models keep the main file open, retain independent versions and synchronize root edits before imported queries."

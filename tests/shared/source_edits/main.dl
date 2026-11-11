@@ -38,5 +38,5 @@ require condition (inserted's caret = 7) reporting "The caret did not follow con
 
 edit UI source document document to (the string form of "changed") at 1.0 seconds
 require condition ((change is current for UI source document document) = false) reporting "A prepared edit remained valid after another change."
-free UI source document document
+free UI source project (document's project)
 print line "Source edits are atomic, Unicode-aware, ordered and protect hidden project context."

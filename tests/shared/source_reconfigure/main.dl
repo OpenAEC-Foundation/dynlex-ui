@@ -1,0 +1,38 @@
+import ../../../ui/source_language.dl
+
+set main to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "" containing "import helper.dl" using UI CPU analysis
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 7"]
+configure UI source document main named "main.dl" at (main's uri) prefixed by "" using UI CPU analysis with files files
+free files
+set helper to a UI source document named "helper.dl" at "file:///workspace/helper.dl" containing "helper means: 7" in (main's project)
+set library to a UI source document named "std.dl" at "file:///lib/std.dl" containing "external library" in (main's project)
+set query to request UI source feature "textDocument/hover" at byte 0 in helper
+set revision to helper's revision
+
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 9"]
+configure UI source document main named "main.dl" at (main's uri) prefixed by "" using UI CPU analysis with files files
+free files
+require condition ((helper's source = "helper means: 9") and (helper's revision = revision + 1)) reporting "Project reconfiguration retained the preceding imported source snapshot."
+require condition ((query's queued = false) and ((query is current for UI source document helper) = false)) reporting "Replaced imported source retained a query for its preceding coordinates."
+require condition ((library's source = "external library") and (library's revision = 1)) reporting "Reconfiguration changed a library outside the provided source map."
+
+set query to request UI source feature "textDocument/hover" at byte 0 in helper
+set files to a new JSON-RPC object
+configure UI source document main named "main.dl" at (main's uri) prefixed by "" using UI CPU analysis with files files
+free files
+require condition ((helper's available = false) and ((helper needs UI source analysis) = false)) reporting "A removed provided import remained available for reopening."
+require condition ((query's queued = false) and (library's available)) reporting "Removing one provided source retained its queries or removed an external library."
+set client to a UI language client rooted at "file:///workspace"
+set work to the next UI language work for client analyzing helper at 0.0 seconds
+require condition ((work's step = 1) and (client's document = main)) reporting "An unavailable imported view prevented its main project from synchronizing."
+require condition (((the JSON member named "sources" in (work's payload)) has JSON member named "helper.dl") = false) reporting "Viewing a removed import restored its old source into the project."
+free work's payload
+free UI language client client
+
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 11"]
+configure UI source document main named "main.dl" at (main's uri) prefixed by "" using UI CPU analysis with files files
+free files
+require condition ((helper's available) and (helper's source = "helper means: 11")) reporting "Restoring a provided source did not revive its retained model with current content."
+
+free UI source project (main's project)
+print line "Project reconfiguration replaces, removes and restores imports without changing external libraries or resurrecting deleted sources."

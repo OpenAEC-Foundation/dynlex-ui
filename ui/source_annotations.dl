@@ -128,7 +128,7 @@ to [apply UI source colors from] {a pointer to UI source document:document} [to]
     free lines
 
 to get [the UI source diagnostic text of] {a pointer to UI source document:document}:
-    if document's diagnostic revision != document's revision:
+    if (document's diagnostic revision != document's revision) or (document's diagnostic project revision != document's project's revision):
         return the string form of ""
     set text to the string form of ""
     set analysis to document's prefix + document's source

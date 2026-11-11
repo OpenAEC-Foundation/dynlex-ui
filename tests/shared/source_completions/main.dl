@@ -32,5 +32,5 @@ set item to a JSON object containing [JSON text "label" is "print", JSON child "
 set change to the UI source completion change for item at byte 8 in document
 free item
 require condition ((change's succeeded = false) and (change's text = document's source)) reporting "A completion with a protected edit was partially accepted."
-free UI source document document
+free UI source project (document's project)
 print line "Completion models share sorting, Unicode replacement, additional edits and protected context."

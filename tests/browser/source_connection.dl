@@ -1,0 +1,65 @@
+# The driver supplies only transport. All project/document policy is the shared
+# DynLex client, exercised against the actual shipped language server.
+import ../../ui/source_language.dl
+
+to get [exchange source test work] {UI language work:work}:
+    set payload to the compact JSON form of (work's payload)
+    free work's payload
+    set data to @intrinsic("construct", a pointer to byte)
+    set count to 0
+    @intrinsic("call", "tests", "source_language_exchange", nothing, the data of payload, payload's length, the address of data, the address of count)
+    set text to the substring of (a new string from data containing count bytes) from 0 spanning count bytes
+    deallocate data
+    parse text as JSON and set parsed to it
+    require condition (parsed succeeded) reporting "The test transport supplied invalid language JSON"
+    return the value of parsed
+
+to [finish source test work] {UI language work:work} [in] {a pointer to UI language client:client}:
+    set current to work
+    set count to 0
+    loop while current's step != 0:
+        increment count
+        require condition (count < 100) reporting "The shared language client did not finish its protocol work"
+        set step to current's step
+        set response to exchange source test work current
+        set current to the UI language reply response at step step in client
+        free response
+
+to [analyze source test document] {a pointer to UI source document:document} [in] {a pointer to UI language client:client}:
+    set count to 0
+    loop while (document needs UI source analysis) or (document has pending UI source queries):
+        increment count
+        require condition (count < 100) reporting "A shared source model kept requeuing analysis"
+        set work to the next UI language work for client analyzing document at 1000.0 seconds
+        require condition (work's step != 0) reporting "A dirty source model produced no language work"
+        finish source test work work in client
+
+set lead to the string form of "import helper.dl\n@intrinsic(\"discard\", "
+set source to lead + "echo 7)"
+set imported to the string form of "function echo {value}:\n    execute:\n        @intrinsic(\"return\", value)\n"
+set main to a UI source document named "main.dl" at "file:///workspace/main.dl" prefixed by "" containing source using UI CPU analysis
+set files to a JSON object containing [JSON text "helper.dl" is imported]
+configure UI source document main named "main.dl" at "file:///workspace/main.dl" prefixed by "" using UI CPU analysis with files files
+free files
+set helper to a UI source document named "helper.dl" at "file:///workspace/helper.dl" containing imported in (main's project)
+set client to a UI language client rooted at "file:///workspace"
+analyze source test document helper in client
+require condition ((main's diagnostics' length = 0) and (helper's diagnostics' length = 0)) reporting "The real language server rejected the shared project's sources"
+require condition ((the JSON member named "data" in (helper's tokens))'s length > 0) reporting "The real language server did not color the imported model"
+
+set query to request UI source feature "textDocument/definition" at byte (lead's length) in main
+analyze source test document main in client
+require condition ((query's ready) and ((the JSON text named "uri" in (query's result)) = helper's uri)) reporting "The real definition request did not reach the imported file"
+set query to request UI source feature "textDocument/hover" at byte (imported's length - 7) in helper
+analyze source test document helper in client
+require condition ((query's ready) and (query's result's kind != the JSON null kind)) reporting "The imported model lost its main-file inference context"
+
+edit UI source document main to (lead + "echo \"updated\")") at 1.0 seconds
+set query to request UI source feature "textDocument/hover" at byte (imported's length - 7) in helper
+analyze source test document helper in client
+require condition ((query's ready) and (query's result's kind != the JSON null kind)) reporting "The imported hover was lost after editing its main source"
+require condition ((helper's revision = 1) and (helper's analyzed project revision = main's project's revision)) reporting "The imported view was edited instead of refreshing its project context"
+
+free UI language client client
+free UI source project (main's project)
+print line "Shared source models preserve imported inference through the real language-server connection."

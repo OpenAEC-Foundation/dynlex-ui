@@ -56,15 +56,26 @@ require condition ((the UI source focus in (the address of view) for workspace) 
 set files to a JSON object containing [JSON text "helper.dl" is "helper means: 1"]
 configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files files
 free files
-configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files (game's document's files)
-require condition ((the JSON text named "helper.dl" in (game's document's files)) = "helper means: 1") reporting "Reconfiguring a project freed borrowed files before copying them."
+configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files (game's document's project's files)
+require condition ((the JSON text named "helper.dl" in (game's document's project's files)) = "helper means: 1") reporting "Reconfiguring a project freed borrowed files before copying them."
 set game's diagnostics to the control labeled "Game problems" in window
 set game's status to the control labeled "Game analysis" in window
 set game's clean text to ""
 set game's ready text to "Plan checked"
-set game's document's diagnostic revision to game's document's revision
+begin UI source reports for (game's document's project)
+finish UI source reports for (game's document's project)
 present UI source workspace workspace using (the default UI source token theme)
 require condition (((the UI value for (game's diagnostics) in window)'s text = "") and ((the UI value for (game's status) in window)'s text = "Plan checked")) reporting "Embedded editors could not configure shared diagnostic presentation."
+set reports to a JSON array containing [a JSON object containing [JSON text "message" is "Same source warning", JSON child "range" is (an LSP range from line 2 and character 0 to line 2 and character 4)]]
+retain UI source diagnostics reports at (game's document's uri) in (game's document's project)
+free reports
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((the UI value for (game's status) in window)'s text = "1 problem") reporting "A new report for unchanged source did not refresh its diagnostic presentation."
+set reports to a new JSON-RPC array
+retain UI source diagnostics reports at (game's document's uri) in (game's document's project)
+free reports
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((the UI value for (game's status) in window)'s text = "Plan checked") reporting "Clearing a report for unchanged source left its preceding problem count visible."
 set the text of "Game source" in window to "move upward"
 synchronize UI source workspace workspace at 3.5 seconds
 set diagnostic to a JSON object containing [
@@ -74,9 +85,11 @@ set diagnostic to a JSON object containing [
         JSON child "end" is (an LSP position at line 2 and character 11)
     ])
 ]
-free game's document's diagnostics
-set game's document's diagnostics to a JSON array containing [diagnostic]
-set game's document's diagnostic revision to game's document's revision
+begin UI source reports for (game's document's project)
+set reports to a JSON array containing [diagnostic]
+retain UI source diagnostics reports at (game's document's uri) in (game's document's project)
+free reports
+finish UI source reports for (game's document's project)
 present UI source workspace workspace using (the default UI source token theme)
 require condition ((the UI value for (game's status) in window)'s text = "1 problem") reporting "A single editor diagnostic used a plural problem count."
 fail UI source workspace workspace
@@ -87,6 +100,20 @@ synchronize UI source workspace workspace at 4.0 seconds
 present UI source workspace workspace using (the default UI source token theme)
 require condition ((the UI value for (game's status) in window)'s text = "An error occurred. Check the log.") reporting "An edit concealed the failed transport behind an analyzing caption."
 release UI layout (view's layout)
+set main to game's document
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 7"]
+configure UI source document main named "game.dl" at (main's uri) prefixed by (main's prefix) using UI CPU analysis with files files
+free files
+set helper to a UI source document named "helper.dl" at "file:///workspace/helper.dl" containing "helper means: 7" in (main's project)
+set game's document to helper
+set UI control (game's node) read only true in window
+synchronize UI source workspace workspace at 5.0 seconds
+require condition (((the UI value for (game's node) in window)'s text = helper's source) and (main's source = "edited after failure")) reporting "Viewing an import overwrote its source with the main editor's preceding text."
+set files to a JSON object containing [JSON text "helper.dl" is "helper means: 9"]
+configure UI source document main named "game.dl" at (main's uri) prefixed by (main's prefix) using UI CPU analysis with files files
+free files
+synchronize UI source workspace workspace at 6.0 seconds
+require condition ((helper's source = "helper means: 9") and ((the UI value for (game's node) in window)'s text = helper's source)) reporting "A read-only view overwrote replaced imported source with its preceding widget text."
 free UI source workspace workspace
 close window
 print line "Source workspaces discover editors, follow selected views and synchronize programmatic edits."

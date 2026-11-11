@@ -3,10 +3,14 @@ import ../../../ui/source_language.dl
 set first to a UI source document named "first.dl" at "file:///workspace/first.dl" prefixed by "" containing "first means: 1" using UI CPU analysis
 set second to a UI source document named "second.dl" at "file:///workspace/second.dl" prefixed by "" containing "second means: 2" using UI CPU analysis
 set client to a UI language client rooted at "file:///workspace"
+set client's project to first's project
+set client's model to the UI language model for first in client
 set client's document to first
 set client's uri to first's uri
 set client's context to first's context
-set client's profiles to the compact JSON form of (first's profiles)
+set client's project context to first's project's context
+set client's project revision to first's project's revision
+set client's profiles to the compact JSON form of (first's project's profiles)
 set work to the UI language opening in client
 free work's payload
 set response to a new JSON-RPC array
@@ -43,6 +47,6 @@ require condition ((work's step = 10) and (client's document = second)) reportin
 free work's payload
 
 free UI language client client
-free UI source document first
-free UI source document second
+free UI source project (first's project)
+free UI source project (second's project)
 print line "Closing refreshes receive replies without requeuing closed source projects."

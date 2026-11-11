@@ -14,9 +14,11 @@ class:
         caret as an integer
         revision as an integer
         context as a string
+        project as a pointer to UI source project
+        project revision as an integer
 
 to get {UI source change:change} [is current for UI source document] {a pointer to UI source document:document}:
-    return (change's revision = document's revision) and (change's context = document's context)
+    return ((change's revision = document's revision) and (change's context = document's context)) and ((change's project = document's project) and (change's project revision = document's project's revision))
 
 to get [a UI source change for] {a pointer to UI source document:document} [applying] {a pointer to JSON value:edits} [with caret] {integer:caret}:
     require condition (edits's kind = the JSON array kind) reporting "Source edits must be an array"
@@ -29,6 +31,8 @@ to get [a UI source change for] {a pointer to UI source document:document} [appl
     set result's caret to caret
     set result's revision to document's revision
     set result's context to document's context
+    set result's project to document's project
+    set result's project revision to document's project's revision
     set payload to a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child (document's uri) is (a copy of JSON-RPC node edits)])]
     set parsed to the result of parsing payload as a workspace edit
     free payload

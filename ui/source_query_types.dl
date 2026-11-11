@@ -10,6 +10,8 @@ class:
         parameters as a pointer to JSON value
         result as a pointer to JSON value
         context as a string
+        project as a pointer to UI source project
+        project revision as an integer
         revision as an integer
         generation as an integer
         queued as a boolean

@@ -16,7 +16,7 @@ to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set editor to workspace's editors
     loop while editor != @intrinsic("construct", a pointer to UI source editor):
         if editor's node = view's text focus:
-            if (UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (the UI element (editor's node) accepts edits in (view's instance)):
+            if ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and ((editor's document's writable) and (editor's document's available))) and (the UI element (editor's node) accepts edits in (view's instance)):
                 set value to the UI value for (editor's node) in (view's instance)
                 edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
                 if tools's node != editor's node:

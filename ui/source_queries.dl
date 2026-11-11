@@ -1,7 +1,7 @@
 import source_annotations.dl
 
 to get {a pointer to UI source query:query} [is current for UI source document] {a pointer to UI source document:document}:
-    return (query's revision = document's revision) and (query's context = document's context)
+    return document's available and (((query's revision = document's revision) and (query's context = document's context)) and ((query's project = document's project) and (query's project revision = document's project's revision)))
 
 to get [the next pending UI source query in] {a pointer to UI source document:document}:
     set query to document's queries
@@ -17,6 +17,7 @@ to get {a pointer to UI source document:document} [has pending UI source queries
     return (the next pending UI source query in document) != @intrinsic("construct", a pointer to UI source query)
 
 to get [request UI source feature] {string:method} [with parameters] {a pointer to JSON value:parameters} [in] {a pointer to UI source document:document}:
+    require condition (document's available) reporting "A source feature was requested for an unavailable document"
     set query to document's queries
     set found to false
     loop while (query != @intrinsic("construct", a pointer to UI source query)) and (found = false):
@@ -36,6 +37,8 @@ to get [request UI source feature] {string:method} [with parameters] {a pointer 
     free query's result
     set query's result to a new JSON-RPC null
     set query's context to document's context
+    set query's project to document's project
+    set query's project revision to document's project's revision
     set query's revision to document's revision
     increment query's generation
     set query's queued to true

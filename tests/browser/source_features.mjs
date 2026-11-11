@@ -10,7 +10,7 @@ const checkout=path.resolve(process.argv[2]);
 const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(
   pathToFileURL(path.join(checkout,'src/web/ide/public/compiler/runtimeImports.js')));
 const {observeAllocations}=await import(pathToFileURL(path.join(checkout,'tests/web/allocation_probe.mjs')));
-const cases=['shared/source_language','shared/source_protocol','shared/source_close_refresh','shared/source_queries','shared/source_edits','shared/source_completions','shared/source_workspace','shared/source_theme','shared/source_triggers','shared/source_popup','shared/overlays','shared/overlay_capture','shared/viewports','shared/source_tools','unit/read_only','shared/services'];
+const cases=['shared/source_projects','shared/source_models','shared/source_diagnostics','shared/source_reconfigure','shared/source_annotations','shared/source_language','shared/source_protocol','shared/source_close_refresh','shared/source_queries','shared/source_edits','shared/source_completions','shared/source_workspace','shared/source_theme','shared/source_triggers','shared/source_popup','shared/overlays','shared/overlay_capture','shared/viewports','shared/source_tools','unit/read_only','shared/services'];
 const selected=process.argv.slice(3);
 assert(selected.every(name=>cases.includes(name)), 'Unknown shared source fixture');
 const directory=await fs.mkdtemp(path.join(os.tmpdir(),'dynlex-source-features-'));

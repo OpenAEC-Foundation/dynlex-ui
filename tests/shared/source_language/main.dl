@@ -75,6 +75,6 @@ set work to the UI language reply response at step 6 in client
 free response
 require condition (other's analyzed revision = other's revision) reporting "The River source did not use the shared analysis lifecycle."
 free UI language client client
-free UI source document document
-free UI source document other
+free UI source project (document's project)
+free UI source project (other's project)
 print line "Source editors share project lifecycle, prefixes, debouncing and stale-result isolation."

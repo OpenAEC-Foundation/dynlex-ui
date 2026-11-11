@@ -16,7 +16,7 @@ class:
         document as a pointer to UI source document
         next as a pointer to UI source editor
         colors revision as an integer
-        diagnostics revision as an integer
+        diagnostics generation as an integer
         shown as a boolean
         complete as a boolean
         failed as a boolean
@@ -83,7 +83,10 @@ to [synchronize UI source workspace] {a pointer to UI source workspace:workspace
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
         set source to (the UI value for (entry's node) in (workspace's instance))'s text
-        edit UI source document (entry's document) to source at seconds seconds
+        if entry's document's writable:
+            edit UI source document (entry's document) to source at seconds seconds
+        else:
+            set the text of (entry's node's text) in (workspace's instance) to (entry's document's source)
         set entry to entry's next
 
 to get [the next UI source workspace work in] {a pointer to UI source workspace:workspace} [focused on] {UI reference:focused} [at] {floating-point number:seconds} [seconds]:
@@ -91,7 +94,7 @@ to get [the next UI source workspace work in] {a pointer to UI source workspace:
     set chosen to @intrinsic("construct", a pointer to UI source editor)
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
-        if (entry's document needs UI source analysis) or (entry's document has pending UI source queries):
+        if ((entry's document needs UI source analysis) or (entry's document's project's entry needs UI source analysis)) or (entry's document has pending UI source queries):
             if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
                 if (chosen = @intrinsic("construct", a pointer to UI source editor)) or (entry's node = focused):
                     set chosen to entry
@@ -130,10 +133,10 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
             apply UI source colors from document to (entry's node) in instance using theme
             set entry's colors revision to document's token generation
         set active to UI source element (entry's node) is active within (instance's description) in instance
-        set complete to document's diagnostic revision = document's revision
-        set failed to workspace's client's phase = 8
+        set complete to (document's diagnostic revision = document's revision) and (document's diagnostic project revision = document's project's revision)
+        set failed to (workspace's client's phase = 8) or (document's available = false)
         if active:
-            if ((entry's shown = false) or (entry's diagnostics revision != document's revision)) or ((entry's complete != complete) or (entry's failed != failed)):
+            if ((entry's shown = false) or (entry's diagnostics generation != document's diagnostic generation)) or ((entry's complete != complete) or (entry's failed != failed)):
                 if entry's diagnostics != @intrinsic("construct", UI reference):
                     set text to the UI source diagnostic text of document
                     if complete and (text's length = 0):
@@ -147,9 +150,9 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
                         if count > 0:
                             set text to (the string form of "1 problem") if (count = 1), else (formatted "{count} problems")
                     if failed:
-                        set text to "An error occurred. Check the log."
+                        set text to (the string form of "An error occurred. Check the log.") if (workspace's client's phase = 8), else (the string form of "Source unavailable.")
                     set the text of (entry's status' text) in instance to text
-                set entry's diagnostics revision to document's revision
+                set entry's diagnostics generation to document's diagnostic generation
                 set entry's complete to complete
                 set entry's failed to failed
         set entry's shown to active
@@ -162,7 +165,7 @@ to [free UI source workspace] {a pointer to UI source workspace:workspace}:
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
         set next to entry's next
-        free UI source document (entry's document)
+        free UI source project (entry's document's project)
         destroy the value at entry
         deallocate entry
         set entry to next

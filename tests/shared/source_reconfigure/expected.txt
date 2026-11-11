@@ -1,0 +1,1 @@
+Project reconfiguration replaces, removes and restores imports without changing external libraries or resurrecting deleted sources.

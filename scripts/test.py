@@ -50,6 +50,7 @@ def main():
         subprocess.run(['node', 'tests/browser/service_provider.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/driver_integer_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/source_features.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/source_connection.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services']:

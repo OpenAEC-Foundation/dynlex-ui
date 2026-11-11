@@ -1,8 +1,23 @@
 # Source ownership is independent of UI controls and language-server transports.
 import lib/sections.dl
 import lib/json_builders.dl
+import lib/json_edit.dl
 import lib/lsp_json.dl
 import source_query_types.dl
+
+class:
+    patterns:
+        UI source project
+    members:
+        entry as a pointer to UI source document
+        documents as a pointer to UI source document
+        profiles as a pointer to JSON value
+        files as a pointer to JSON value
+        context as a string
+        revision as an integer
+        reports as a pointer to JSON value
+        report revision as an integer
+        reports complete as a boolean
 
 class:
     patterns:
@@ -12,13 +27,18 @@ class:
         uri as a string
         prefix as a string
         source as a string
-        profiles as a pointer to JSON value
-        files as a pointer to JSON value
+        project as a pointer to UI source project
+        next as a pointer to UI source document
+        writable as a boolean
+        available as a boolean
         context as a string
         revision as an integer
         edited at as a floating-point number
         analyzed revision as an integer
+        analyzed project revision as an integer
         diagnostic revision as an integer
+        diagnostic project revision as an integer
+        diagnostic generation as an integer
         token revision as an integer
         token generation as an integer
         token epoch as an integer
@@ -44,62 +64,179 @@ to [refresh the context of UI source document] {a pointer to UI source document:
     set context to a JSON object containing [
         JSON text "filename" is (document's filename),
         JSON text "uri" is (document's uri),
-        JSON text "prefix" is (document's prefix),
-        JSON child "profiles" is (a copy of JSON-RPC node (document's profiles)),
-        JSON child "files" is (a copy of JSON-RPC node (document's files))
+        JSON text "prefix" is (document's prefix)
     ]
     set document's context to the compact JSON form of context
     free context
 
+to [refresh the context of UI source project] {a pointer to UI source project:project}:
+    set entry to project's entry
+    set context to a JSON object containing [
+        JSON text "entry" is (entry's context),
+        JSON child "profiles" is (a copy of JSON-RPC node (project's profiles)),
+        JSON child "files" is (a copy of JSON-RPC node (project's files))
+    ]
+    set project's context to the compact JSON form of context
+    free context
+
+to get [the UI source document at] {string:uri} [in] {a pointer to UI source project:project}:
+    set document to project's documents
+    loop while document != @intrinsic("construct", a pointer to UI source document):
+        if document's uri = uri:
+            return document
+        set document to document's next
+    return @intrinsic("construct", a pointer to UI source document)
+
+# Reports belong to the complete project analysis, including unopened imports.
+# Document diagnostics are the presentation snapshot committed at its barrier.
+to [apply the UI source report to] {a pointer to UI source document:document}:
+    set project to document's project
+    set diagnostics to a new JSON-RPC array
+    if project's reports has JSON member named (document's uri):
+        free diagnostics
+        set diagnostics to a copy of JSON-RPC node (the JSON member named (document's uri) in (project's reports))
+    set changed to (the compact JSON form of diagnostics) != (the compact JSON form of (document's diagnostics))
+    set changed to changed or ((document's diagnostic revision != document's revision) or (document's diagnostic project revision != project's report revision))
+    free document's diagnostics
+    set document's diagnostics to diagnostics
+    if changed:
+        increment document's diagnostic generation
+    set document's diagnostic revision to document's revision
+    set document's diagnostic project revision to project's report revision
+
+to [begin UI source reports for] {a pointer to UI source project:project}:
+    free project's reports
+    set project's reports to a new JSON-RPC object
+    set project's report revision to project's revision
+    set project's reports complete to false
+
+to [retain UI source diagnostics] {a pointer to JSON value:diagnostics} [at] {string:uri} [in] {a pointer to UI source project:project}:
+    require condition (project's report revision = project's revision) reporting "Source diagnostics arrived without their project analysis snapshot"
+    set JSON member (JSON child uri is (a copy of JSON-RPC node diagnostics)) in (project's reports)
+    if project's reports complete:
+        set document to the UI source document at uri in project
+        if document != @intrinsic("construct", a pointer to UI source document):
+            apply the UI source report to document
+
+to [finish UI source reports for] {a pointer to UI source project:project}:
+    require condition (project's report revision = project's revision) reporting "Source analysis finished without its diagnostic snapshot"
+    if project's reports complete:
+        return nothing
+    set project's reports complete to true
+    set document to project's documents
+    loop while document != @intrinsic("construct", a pointer to UI source document):
+        apply the UI source report to document
+        set document to document's next
+
+local function [allocate UI source document named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [containing] {string:source} [in] {a pointer to UI source project:project}:
+    execute:
+        set document to storage for one slot initialized with (a new UI source document)
+        set document's filename to filename
+        set document's uri to uri
+        set document's prefix to prefix
+        set document's source to source
+        set document's project to project
+        set document's available to true
+        set document's next to project's documents
+        set project's documents to document
+        set document's revision to 1
+        set document's token generation to 1
+        set document's edited at to -1.0
+        set document's diagnostics to a new JSON-RPC array
+        set document's tokens to a JSON object containing [JSON child "data" is (a new JSON-RPC array)]
+        set document's token types to a new JSON-RPC array
+        refresh the context of UI source document document
+        if (project's reports complete) and (project's report revision = project's revision):
+            apply the UI source report to document
+        return document
+
 to get [a UI source document named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [containing] {string:source} [using] {a pointer to JSON value:profiles}:
-    set document to storage for one slot initialized with (a new UI source document)
-    set document's filename to filename
-    set document's uri to uri
-    set document's prefix to prefix
-    set document's source to source
-    set document's profiles to profiles
-    set document's files to a new JSON-RPC object
-    set document's revision to 1
-    set document's token generation to 1
-    set document's edited at to -1.0
-    set document's diagnostics to a new JSON-RPC array
-    set document's tokens to a JSON object containing [JSON child "data" is (a new JSON-RPC array)]
-    set document's token types to a new JSON-RPC array
-    refresh the context of UI source document document
+    set project to storage for one slot initialized with (a new UI source project)
+    set project's profiles to profiles
+    set project's files to a new JSON-RPC object
+    set project's reports to a new JSON-RPC object
+    set project's report revision to -1
+    set document to allocate UI source document named filename at uri prefixed by prefix containing source in project
+    set document's writable to true
+    set project's entry to document
+    refresh the context of UI source project project
     return document
 
+to get [a UI source document named] {string:filename} [at] {string:uri} [containing] {string:source} [in] {a pointer to UI source project:project}:
+    require condition ((the UI source document at uri in project) = @intrinsic("construct", a pointer to UI source document)) reporting "The source project already contains this document URI"
+    return allocate UI source document named filename at uri prefixed by "" containing source in project
+
 to get {a pointer to UI source document:document} [needs UI source analysis]:
-    return (document's analyzed revision != document's revision) or (document's analyzed token epoch != document's token epoch)
+    return document's available and (((document's analyzed revision != document's revision) or (document's analyzed project revision != document's project's revision)) or (document's analyzed token epoch != document's token epoch))
+
+to [invalidate UI source project] {a pointer to UI source project:project}:
+    increment project's revision
+    set document to project's documents
+    loop while document != @intrinsic("construct", a pointer to UI source document):
+        cancel UI source queries (document's queries)
+        set document to document's next
 
 to [edit UI source document] {a pointer to UI source document:document} [to] {string:source} [at] {floating-point number:seconds} [seconds]:
     if source != document's source:
         set document's source to source
         increment document's revision
         set document's edited at to seconds
-        cancel UI source queries (document's queries)
+        invalidate UI source project (document's project)
 
 # Reconfiguration consumes profiles; files are borrowed and copied.
 to [configure UI source document] {a pointer to UI source document:document} [named] {string:filename} [at] {string:uri} [prefixed by] {string:prefix} [using] {a pointer to JSON value:profiles} [with files] {a pointer to JSON value:files}:
+    set project to document's project
+    require condition (project's entry = document) reporting "Project configuration belongs to its main source document"
+    set found to the UI source document at uri in project
+    require condition ((found = @intrinsic("construct", a pointer to UI source document)) or (found = document)) reporting "The source project already contains the new document URI"
     set previous to document's context
+    set configuration to project's context
     set document's filename to filename
     set document's uri to uri
     set document's prefix to prefix
-    free document's profiles
-    set document's profiles to profiles
     set copied to a copy of JSON-RPC node files
-    free document's files
-    set document's files to copied
+    free project's profiles
+    set project's profiles to profiles
+    set {previous files} to project's files
+    set project's files to copied
+    set imported to project's documents
+    loop while imported != @intrinsic("construct", a pointer to UI source document):
+        if imported != document:
+            set provided to copied has JSON member named (imported's filename)
+            if provided or (previous files has JSON member named (imported's filename)):
+                set changed to imported's available != provided
+                set imported's available to provided
+                if provided:
+                    set source to the JSON text named (imported's filename) in copied
+                    if imported's source != source:
+                        set imported's source to source
+                        set changed to true
+                if changed:
+                    increment imported's revision
+        set imported to imported's next
+    free previous files
     refresh the context of UI source document document
     if document's context != previous:
         increment document's revision
-        cancel UI source queries (document's queries)
+    refresh the context of UI source project project
+    if project's context != configuration:
+        invalidate UI source project project
 
-to [free UI source document] {a pointer to UI source document:document}:
-    free UI source queries (document's queries)
-    free document's profiles
-    free document's files
-    free document's diagnostics
-    free document's tokens
-    free document's token types
-    destroy the value at document
-    deallocate document
+to [free UI source project] {a pointer to UI source project:project}:
+    # The argument may be a field of a document released by this operation.
+    set owner to project
+    set document to owner's documents
+    loop while document != @intrinsic("construct", a pointer to UI source document):
+        set next to document's next
+        free UI source queries (document's queries)
+        free document's diagnostics
+        free document's tokens
+        free document's token types
+        destroy the value at document
+        deallocate document
+        set document to next
+    free owner's profiles
+    free owner's files
+    free owner's reports
+    destroy the value at owner
+    deallocate owner
