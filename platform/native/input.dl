@@ -24,7 +24,7 @@ to receive native UI key from {a pointer:handle} numbered {integer:key} scan {in
             set kind to 9
         queue UI input of kind kind key key at 0.0 0.0 with modifiers modifiers containing "" in (surface's view)
         if ((key = 86) and (action != 0)) and (((modifiers bitwise and 10) != 0) and ((modifiers bitwise and 4) = 0)):
-            queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing (the native UI clipboard in (surface's view)) in (surface's view)
+            queue UI input of kind 4 key 1 at 0.0 0.0 with modifiers 0 containing (the native UI clipboard in (surface's view)) in (surface's view)
 
 to receive native UI character from {a pointer:handle} numbered {32 bit unsigned integer:code}:
     set surface to the native UI surface for handle handle

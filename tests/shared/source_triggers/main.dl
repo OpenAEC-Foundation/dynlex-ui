@@ -1,0 +1,74 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_tools.dl
+
+document example:
+    editor "Source" containing "g" using no UI appearance
+
+set instance to an instance of example
+set window to the address of instance
+set view to a UI view of window sized 900 by 600 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+enable UI source tools for workspace in (the address of view)
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+update UI source tools in workspace
+set pasted to the string form of "first line\nsecond line\n"
+set epoch to view's input context's epoch
+queue UI input of kind 13 key epoch at (pasted's length as a floating-point number) (pasted's length as a floating-point number) with modifiers 0 containing pasted in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 1.0
+update UI source tools in workspace
+require condition (workspace's tools' mode = 0) reporting "Pasting a complete source opened an automatic completion menu."
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "x" in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 1.2
+update UI source tools in workspace
+require condition (workspace's tools' mode = 1) reporting "Typing one character did not request automatic completion."
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "\n" in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 2.0
+update UI source tools in workspace
+require condition (workspace's tools' mode = 0) reporting "Entering a new line opened suggestions without a word."
+set value to the UI value for (the control labeled "Source" in window) in window
+set prior to value's text
+queue UI input of kind 4 key 1 at 0.0 0.0 with modifiers 0 containing "p" in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 3.0
+update UI source tools in workspace
+require condition (value's text = (prior + "p")) reporting "The clipboard character was not inserted."
+require condition (workspace's tools' mode = 0) reporting "Pasting one character opened automatic suggestions."
+queue UI input of kind 3 key 32 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (workspace's tools' mode = 1) reporting "Explicit completion stopped working after a paste."
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set epoch to view's input context's epoch
+queue UI input of kind 10 key epoch at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 10 key epoch at 2.0 2.0 with modifiers 2 containing "東京" in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 4.0
+update UI source tools in workspace
+require condition (workspace's tools' mode = 0) reporting "Tentative composition opened a suggestion list."
+queue UI input of kind 10 key epoch at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set committed to value's text + "東京"
+set offset to the UTF-16 position of UTF-8 byte offset (committed's length) in committed
+queue UI input of kind 13 key (view's input context's epoch) at (offset's position as a floating-point number) (offset's position as a floating-point number) with modifiers 0 containing committed in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 4.2
+update UI source tools in workspace
+require condition (workspace's tools' mode = 1) reporting "Committing an IME word did not request suggestions."
+queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "x" in (the address of view)
+queue UI input of kind 7 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set view's seconds to 5.0
+update UI source tools in workspace
+require condition (workspace's tools' mode = 0) reporting "A pending suggestion opened after surface focus was lost."
+free UI source workspace workspace
+close the address of view
+close window
+print line "Automatic completion follows typed characters; paste and newlines require explicit suggestions."

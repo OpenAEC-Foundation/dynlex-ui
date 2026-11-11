@@ -1,0 +1,44 @@
+import lib/unicode.dl
+
+to get [UI source text] {string:inserted} [can trigger completion]:
+    if inserted's length = 0:
+        return false
+    set character to the UTF8 character at 0 in inserted
+    return (character's valid and (character's next = inserted's length)) and ((character's code >= 32) and (character's code != 127))
+
+# Compare Unicode boundaries so browser replacement edits and native character
+# input follow one policy. Bulk paste, deletion and line breaks do not open it.
+to get [the UI source insertion from] {string:before} [to] {string:after}:
+    set start to 0
+    set matching to true
+    loop while (start < (the minimum of (before's length) and (after's length))) and matching:
+        set first to the UTF8 character at start in before
+        set last to the UTF8 character at start in after
+        require condition (first's valid and last's valid) reporting "Source edits must contain valid UTF-8"
+        if first's code = last's code:
+            set start to first's next
+        else:
+            set matching to false
+    set {first end} to before's length
+    set {last end} to after's length
+    set matching to true
+    loop while ((first end > start) and (last end > start)) and matching:
+        set first to the previous UTF8 boundary before first end in before
+        set last to the previous UTF8 boundary before last end in after
+        if (the UTF8 character at first in before)'s code = (the UTF8 character at last in after)'s code:
+            set first end to first
+            set last end to last
+        else:
+            set matching to false
+    return the substring of after from start spanning (last end - start) bytes
+
+to get [UI source text] {string:inserted} [completes a composition]:
+    if inserted's length = 0:
+        return false
+    set index to 0
+    loop while index < inserted's length:
+        set character to the UTF8 character at index in inserted
+        if ((character's valid = false) or (character's code < 32)) or (character's code = 127):
+            return false
+        set index to character's next
+    return true

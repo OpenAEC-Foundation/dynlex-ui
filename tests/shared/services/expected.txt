@@ -1,0 +1,1 @@
+Host capabilities use one transport contract independently of the renderer.

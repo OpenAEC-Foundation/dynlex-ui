@@ -113,7 +113,7 @@ export function connectInput(surface, send, schedule) {
     }, options);
   }
   input.addEventListener("paste", event => {
-    event.preventDefault(); send(4, 0, 0, 0, 0, event.clipboardData.getData("text/plain"));
+    event.preventDefault(); send(4, 1, 0, 0, 0, event.clipboardData.getData("text/plain"));
   }, options);
   const commit = () => {
     if (composing || context.owner === 0) return;

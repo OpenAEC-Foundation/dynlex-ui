@@ -10,6 +10,7 @@ class:
         overlay as a pointer to UI overlay
         node as UI reference
         document as a pointer to UI source document
+        source as a string
         query as a pointer to UI source query
         items as a pointer to JSON value
         generation as an integer
@@ -17,9 +18,11 @@ class:
         selected as an integer
         first as an integer
         rows as an integer
+        row height as a floating-point number
         position as an integer
         bounds as UI bounds
         edited as a boolean
+        composed as a boolean
         deadline as a floating-point number
         message as a string
 

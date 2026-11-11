@@ -1,15 +1,10 @@
-# Generic asynchronous platform services. Responses enter the shared input queue.
+# Browser implementation of the shared host capability contract.
 import services.dl
-
-class:
-    patterns:
-        browser UI call result
-    members:
-        success as a boolean
-        contents as a string
+import ../../ui/services.dl
 
 # The host transfers an allocation; the returned string owns its copied bytes.
-to get a browser UI call named {C string:name} containing {string:payload} in {a pointer to UI view:view}:
+local function [call browser UI capability] {a pointer:context} [in] {a pointer to UI view:view} [named] {C string:name} [containing] {string:payload}:
+    ignore context
     set data to 0 as a pointer to byte
     set count to 0
     set status to @intrinsic("call", "dynlex_ui", "ui_call", an integer, view's window, name, the data of payload, payload's length, the address of data, the address of count)
@@ -17,10 +12,19 @@ to get a browser UI call named {C string:name} containing {string:payload} in {a
     if status = 0:
         set contents to the substring of (a new string from data containing count bytes) from 0 spanning count bytes
         deallocate data
-    return @intrinsic("construct", browser UI call result, status = 0, contents)
+    return @intrinsic("construct", UI call result, status = 0, contents)
 
-to get a browser UI request named {C string:name} containing {string:payload} in {a pointer to UI view:view}:
+local function [request browser UI capability] {a pointer:context} [in] {a pointer to UI view:view} [named] {C string:name} [containing] {string:payload}:
+    ignore context
     return @intrinsic("call", "dynlex_ui", "ui_request", an integer, view's window, name, the data of payload, payload's length)
 
-to get cancel browser UI request {integer:request}:
+local function [cancel browser UI capability] {a pointer:context} [in] {a pointer to UI view:view} [numbered] {integer:request}:
+    ignore context
+    ignore view
     return @intrinsic("call", "dynlex_ui", "ui_cancel_request", a boolean, request)
+
+the browser UI service provider means: a static reference to @intrinsic("construct", UI service provider,
+    @intrinsic("construct", a pointer),
+    the function named "call browser UI capability $ in $ named $ containing $",
+    the function named "request browser UI capability $ in $ named $ containing $",
+    the function named "cancel browser UI capability $ in $ numbered $")

@@ -1,0 +1,52 @@
+import ../../helpers/driver.dl
+import ../../../ui/services.dl
+
+class:
+    patterns:
+        test capabilities
+    members:
+        calls as an integer
+        requests as an integer
+        cancellations as an integer
+
+to get [call test capability] {a pointer:context} [in] {a pointer to UI view:view} [named] {C string:name} [containing] {string:payload}:
+    set state to context as a pointer to test capabilities
+    increment state's calls
+    require condition (name = "storage") reporting "A service call changed its name."
+    return @intrinsic("construct", UI call result, true, (payload + "-stored"))
+
+to get [request test capability] {a pointer:context} [in] {a pointer to UI view:view} [named] {C string:name} [containing] {string:payload}:
+    set state to context as a pointer to test capabilities
+    increment state's requests
+    require condition (name = "language") reporting "A service request changed its name."
+    queue UI input of kind 11 key (state's requests) at 0.0 0.0 with modifiers 0 containing payload in view
+    return state's requests
+
+to get [cancel test capability] {a pointer:context} [in] {a pointer to UI view:view} [numbered] {integer:request}:
+    set state to context as a pointer to test capabilities
+    increment state's cancellations
+    return request = state's requests
+
+document example:
+    paragraph "Status" containing "Host capabilities" using no UI appearance
+
+set instance to an instance of example
+set view to a UI view of (the address of instance) sized 900 by 600 using font "regular" with the test UI driver
+set state to a new test capabilities
+set provider to @intrinsic("construct", UI service provider, (the address of state) as a pointer,
+    the function named "call test capability $ in $ named $ containing $",
+    the function named "request test capability $ in $ named $ containing $",
+    the function named "cancel test capability $ in $ numbered $")
+set services to the address of provider
+set result to a UI call named "storage" containing "data" through services in (the address of view)
+set following to a UI call named "storage" containing "next" through services in (the address of view)
+require condition (result's success and (result's contents = "data-stored")) reporting "A subsequent call invalidated an owned result."
+require condition (following's success and (following's contents = "next-stored")) reporting "A synchronous service lost its payload or owned result."
+set request to a UI request named "language" containing "reply" through services in (the address of view)
+require condition (request = 1) reporting "An asynchronous service lost its request identity."
+require condition ((view's input first's key = request) and (view's input first's text = "reply")) reporting "A service reply did not enter the shared event stream."
+require condition (cancel UI request request through services in (the address of view)) reporting "A service could not cancel its own request."
+require condition ((state's calls = 2) and ((state's requests = 1) and (state's cancellations = 1))) reporting "Service contexts were not retained."
+close the address of view
+close the address of instance
+print line "Host capabilities use one transport contract independently of the renderer."

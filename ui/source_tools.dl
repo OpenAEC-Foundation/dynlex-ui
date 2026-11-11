@@ -2,30 +2,43 @@
 import application.dl
 import source_workspace.dl
 import source_completions.dl
+import source_triggers.dl
 import source_tools_rendering.dl
 
 to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set workspace to tools's workspace as a pointer to UI source workspace
     set view to tools's view
-    if workspace's client's phase = 8:
+    if (workspace's client's phase = 8) or (view's active = false):
         dismiss UI source tools tools
+        set tools's edited to false
+        set tools's composed to false
         return false
     set editor to workspace's editors
     loop while editor != @intrinsic("construct", a pointer to UI source editor):
         if editor's node = view's text focus:
             if (UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (the UI element (editor's node) accepts edits in (view's instance)):
-                edit UI source document (editor's document) to ((the UI value for (editor's node) in (view's instance))'s text) at (view's seconds) seconds
+                set value to the UI value for (editor's node) in (view's instance)
+                edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
                 if tools's node != editor's node:
                     dismiss UI source tools tools
                     set tools's edited to false
+                    set tools's composed to false
+                else if tools's source != value's text:
+                    if value's undo = @intrinsic("construct", a pointer to UI text edit):
+                        set tools's edited to false
+                    else if value's undo's after != value's text:
+                        set tools's edited to false
                 set tools's node to editor's node
                 set tools's document to editor's document
+                set tools's source to value's text
                 return true
         set editor to editor's next
     dismiss UI source tools tools
     set tools's node to @intrinsic("construct", UI reference)
     set tools's document to @intrinsic("construct", a pointer to UI source document)
+    set tools's source to ""
     set tools's edited to false
+    set tools's composed to false
     return false
 
 to [request UI source completions in] {a pointer to UI source tools:tools}:
@@ -71,16 +84,20 @@ to [accept the UI source completion in] {a pointer to UI source tools:tools}:
 
 to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
     set tools to context as a pointer to UI source tools
-    if view's active = false:
-        dismiss UI source tools tools
-        return false
+    set previous to tools's source
+    set owner to tools's node
     if (focus UI source tools tools) = false:
         return false
     if (view's selection's composing) or (view's input kind = 10):
         dismiss UI source tools tools
-        set tools's edited to true
-        set tools's deadline to view's seconds + 0.12
+        set tools's edited to false
+        if view's input kind = 10:
+            if view's modifiers = 1:
+                set tools's composed to false
+            if view's modifiers = 2:
+                set tools's composed to view's message's length > 0
         return false
+    set opened to tools's mode = 1
     if tools's mode = 1:
         if ((tools's query is current for UI source document (tools's document)) = false) or (tools's position != view's selection's caret):
             dismiss UI source tools tools
@@ -88,9 +105,24 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
     if command and (view's key press = 32):
         request UI source completions in tools
         return true
-    if (view's input kind = 4) or ((view's input kind = 13) or ((view's key press = 259) or (view's key press = 261))):
+    if (view's input kind = 4) or (view's input kind = 13):
+        set inserted to the string form of ""
+        if view's input kind = 4:
+            if view's input code = 0:
+                set inserted to view's message
+        else if owner = tools's node:
+            set value to the UI value for (tools's node) in (view's instance)
+            if value's undo != @intrinsic("construct", a pointer to UI text edit):
+                if (value's undo's before = previous) and (value's undo's after = value's text):
+                    set inserted to the UI source insertion from previous to (value's text)
         dismiss UI source tools tools
-        set tools's edited to true
+        set tools's edited to (UI source text inserted can trigger completion) or (tools's composed and (UI source text inserted completes a composition))
+        set tools's composed to false
+        set tools's deadline to view's seconds + 0.12
+        return false
+    if (view's key press = 259) or (view's key press = 261):
+        dismiss UI source tools tools
+        set tools's edited to opened
         set tools's deadline to view's seconds + 0.12
         return false
     if tools's mode = 0:
@@ -100,18 +132,18 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
         dismiss UI source tools tools
         set tools's edited to false
         return true
-    if ((view's key press = 264) or (view's key press = 265)) and (count > 0):
+    if ((view's key press = 264) or (view's key press = 265)) and ((count > 0) and (tools's rows > 0)):
         set direction to 1 if (view's key press = 264), else -1
         set tools's selected to (tools's selected + count + direction) mod count
         set view's damaged to true
         return true
-    if ((view's key press = 257) or (view's key press = 258)) and (count > 0):
+    if ((view's key press = 257) or (view's key press = 258)) and ((count > 0) and (tools's rows > 0)):
         accept the UI source completion in tools
         return true
     set cursor to the UI cursor in view
     if cursor is inside (tools's bounds):
         if (view's input kind = 1) or (view's input kind = 2):
-            set row to ((cursor's y - tools's bounds' y - 6.0) / 28.0) as an integer
+            set row to (((cursor's y - tools's bounds' y) - 6.0) / tools's row height) as an integer
             set selected to tools's first + row
             if (cursor's y >= (tools's bounds' y + 6.0)) and ((0 <= row < tools's rows) and (selected < count)):
                 set tools's selected to selected

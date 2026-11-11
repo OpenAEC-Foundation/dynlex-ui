@@ -197,9 +197,21 @@ voice identifier for each play. Release normally ended voices explicitly; cancel
 relinquish their resources.
 `close()` stops all voices, releases buffers and closes the audio context.
 
+Host capabilities use `ui/services.dl`, independently of the renderer. Supply a
+`UI service provider` containing its context and call, request and cancellation
+callbacks. `a UI request named name containing json through services in view`
+returns a request ID; responses enter the shared input queue as kind 11.
+The caller owns the provider and keeps its context alive until requests finish.
+Handlers are typed callbacks: calls and requests receive context, view, name and
+payload; cancellation receives context, view and request ID. Their return types
+are `UI call result`, integer and boolean, respectively.
+`cancel UI request id through services in view` reports whether delivery was cancelled.
+The browser adapter supplies `the browser UI service provider` from
+`platform/browser/requests.dl`.
+
 For immediate capabilities, pass an explicit `synchronousServices` table to the
-browser application host. `a browser UI call named name containing json in view`
-returns a `browser UI call result` with `success` and `contents`. Successful
+browser application host. `a UI call named name containing json through services in view`
+returns a `UI call result` with `success` and `contents`. Successful
 contents contain owned UTF-8 JSON. A failed provider is logged by the host and
 returns `success = false`; provider error details never enter the application.
 Storage and the epoch-millisecond `clock` capability from `createWebServices`

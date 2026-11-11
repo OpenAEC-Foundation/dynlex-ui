@@ -1,0 +1,1 @@
+Automatic completion follows typed characters; paste and newlines require explicit suggestions.

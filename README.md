@@ -99,8 +99,17 @@ unchanged theme preserves cached colors. `read only editor` and `read only text
 field` retain selection, copying and navigation while excluding editing and IME.
 The same policy can change at runtime with `set UI control node read only true in
 instance`; programmatic `set the text of` updates still work.
+Suggestions follow typed characters and committed IME words. Paste and newlines
+keep the code surface clear, and Ctrl+Space remains available explicitly. Popups
+inherit their editor's font and colors. Multiline editors keep them inside the
+code area; compact fields place them in the available space beside the field.
 The same workspace can contain plain editors and editors with hidden vocabulary
 imports. No application-specific completion handlers are needed.
+Host capabilities use `ui/services.dl`. Applications receive a `UI service provider`
+separately from their renderer; immediate calls, asynchronous requests and
+cancellation carry its context and the target view. The browser adapter supplies
+`the browser UI service provider`, with replies delivered through the shared
+input queue.
 Window dimensions, font sizes and shader operation arguments share checked
 32-bit driver conversion. Wider public integers retain their values when they
 fit; out-of-range values fail before conversion.

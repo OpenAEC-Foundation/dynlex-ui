@@ -1,0 +1,31 @@
+# Host capabilities are independent of the renderer and application policy.
+import application.dl
+
+class:
+    patterns:
+        UI call result
+    members:
+        success as a boolean
+        contents as a string
+
+a UI call handler means: @intrinsic("function type", UI call result, a pointer, a pointer to UI view, a C string, a string)
+a UI request handler means: @intrinsic("function type", an integer, a pointer, a pointer to UI view, a C string, a string)
+a UI cancellation handler means: @intrinsic("function type", a boolean, a pointer, a pointer to UI view, an integer)
+
+class:
+    patterns:
+        UI service provider
+    members:
+        context as a pointer
+        call as a UI call handler
+        request as a UI request handler
+        cancel as a UI cancellation handler
+
+to get [a UI call named] {C string:name} [containing] {string:payload} [through] {a pointer to UI service provider:services} [in] {a pointer to UI view:view}:
+    return @intrinsic("invoke", services's call, services's context, view, name, payload)
+
+to get [a UI request named] {C string:name} [containing] {string:payload} [through] {a pointer to UI service provider:services} [in] {a pointer to UI view:view}:
+    return @intrinsic("invoke", services's request, services's context, view, name, payload)
+
+to get [cancel UI request] {integer:request} [through] {a pointer to UI service provider:services} [in] {a pointer to UI view:view}:
+    return @intrinsic("invoke", services's cancel, services's context, view, request)
