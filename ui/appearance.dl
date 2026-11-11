@@ -24,6 +24,7 @@ UI appearance reference means: a pointer to UI appearance
 no UI appearance means: a static reference to @intrinsic("construct", UI appearance, @intrinsic("construct", a pointer to UI appearance rule), 0)
 UI appearance rule {integer:kind} valued {a value:number} means: @intrinsic("construct", UI appearance rule, kind, number as a floating-point number, UI ink 0 0 0, "", no UI appearance)
 UI appearance rule {integer:kind} colored {UI paint:ink} means: @intrinsic("construct", UI appearance rule, kind, 0.0, ink, "", no UI appearance)
+a UI appearance with rules {an array:rules} means: a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to rules, a pointer to UI appearance rule), the length of rules)
 
 section appearance {name}:
     declares: name
@@ -31,14 +32,14 @@ section appearance {name}:
     body:
         rules: many UI appearance rule
     value:
-        a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to (the body's rules), a pointer to UI appearance rule), the length of (the body's rules))
+        a UI appearance with rules (the body's rules)
 
 section when viewport is below {a value:width}:
     result: UI appearance rule
     body:
         rules: many UI appearance rule
     value:
-        @intrinsic("construct", UI appearance rule, 100, width as a floating-point number, UI ink 0 0 0, "", a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to (the body's rules), a pointer to UI appearance rule), the length of (the body's rules)))
+        @intrinsic("construct", UI appearance rule, 100, width as a floating-point number, UI ink 0 0 0, "", a UI appearance with rules (the body's rules))
 
 use {UI appearance reference:appearance} means: @intrinsic("construct", UI appearance rule, 0, 0.0, UI ink 0 0 0, "", appearance)
 padding is {a value:number} means: UI appearance rule 1 valued number
@@ -48,6 +49,7 @@ font size is {integer:number} means: UI appearance rule 4 valued number
 line spacing is {a value:number} means: UI appearance rule 5 valued number
 text is {UI paint:ink} means: UI appearance rule 6 colored ink
 background is {UI paint:ink} means: UI appearance rule 7 colored ink
+background is transparent means: UI appearance rule 26 valued 0
 corner radius is {a value:number} means: UI appearance rule 8 valued number
 border width is {a value:number} means: UI appearance rule 9 valued number
 border is {UI paint:ink} means: UI appearance rule 10 colored ink
@@ -168,6 +170,8 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
         if kind = 25:
             require condition ((rule's number > 0.0) and (rule's number is finite)) reporting "A UI aspect ratio must be positive and finite"
             set settings's aspect ratio to rule's number
+        if kind = 26:
+            set settings's filled to false
         increment index
 
 to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport}:

@@ -1,0 +1,56 @@
+import ../../helpers/driver.dl
+
+appearance row appearance:
+    flow is horizontal
+    gap is 8
+    padding is 10
+
+appearance action appearance:
+    padding is 6
+    background is UI ink 230 235 240
+    corner radius is 4
+
+document actions:
+    region "Actions" using row appearance:
+        (button "Back") wearing action appearance
+        (button "Main file") wearing action appearance
+    paragraph "Below" containing "Content below the actions" using no UI appearance
+
+set instance to an instance of actions
+set window to the address of instance
+set count to 0
+function [record document action] {a pointer to UI instance:instance}:
+    globals:
+        count
+    execute:
+        increment count
+bind (the control labeled "Main file" in window) in window to (the function named "record document action $") for event 0
+set view to a UI view of window sized 400 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set back to the UI layout labeled "Back" in (view's layout)
+set main to the UI layout labeled "Main file" in (view's layout)
+set below to the UI layout labeled "Below" in (view's layout)
+require condition ((back's bounds' width = 44.0) and (main's bounds' width = 84.0)) reporting "Document actions did not receive intrinsic text widths and padding."
+require condition ((main's bounds' y = back's bounds' y) and (main's bounds' x = (back's bounds' x + back's bounds' width + 8.0))) reporting "Horizontal document actions did not share one row."
+require condition (below's bounds' y >= (back's painted bounds' y + back's bounds' height)) reporting "Document actions overlapped following content."
+set point to a UI point at (main's painted bounds' x + 5.0) and (main's painted bounds' y + 5.0)
+queue UI input of kind 1 key 0 at (point's x) (point's y) with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's hot = main) reporting "A document button did not receive pointer hover."
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (count = 1) reporting "A document button did not activate through shared pointer input."
+set view's width to 120
+ignore update UI view (the address of view)
+require condition (main's bounds' y > back's bounds' y) reporting "A horizontal document row did not wrap when its actions no longer fit."
+set the "Main file" control in window enabled false
+set point to a UI point at (main's painted bounds' x + 5.0) and (main's painted bounds' y + 5.0)
+queue UI input of kind 1 key 0 at (point's x) (point's y) with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((count = 1) and (main's hover = 0.0)) reporting "A disabled document action remained interactive."
+close the address of view
+close window
+print line "Document buttons share natural horizontal flow, responsive wrapping, hover and activation."

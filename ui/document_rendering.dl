@@ -26,24 +26,24 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         set box's y to the maximum of 0.0 and (box's y)
     set layout's painted bounds to box
     set kind to layout's node's kind
-    if appearance's filled or ((((kind = 20) or (kind = 43)) or (kind = 44)) or (kind = 45)):
+    if appearance's filled or (((((kind = 2) or (kind = 20)) or (kind = 43)) or (kind = 44)) or (kind = 45)):
         set layout's paint generation to view's paint count
         set layout's hit bounds to the UI intersection of box and (view's hit bounds)
     if appearance's filled:
         draw a rounded UI box box with radius (appearance's radius) in (appearance's background) on frame
     if appearance's border width > 0.0:
         draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
-    if (((kind = 42) or (kind = 43)) or (kind = 44)) or (kind = 46):
-        if (kind = 43) or (kind = 44):
+    if ((((kind = 2) or (kind = 42)) or (kind = 43)) or (kind = 44)) or (kind = 46):
+        if ((kind = 2) or (kind = 43)) or (kind = 44):
             set target to 0.0
             if available and ((view's hot = layout) or ((view's focused = layout) and (view's keyboard focus))):
                 set target to 1.0
             set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
-            if (layout's hover > 0.01) and (kind = 43):
+            if (layout's hover > 0.01) and ((kind = 2) or (kind = 43)):
                 set tint to appearance's foreground
                 draw a rounded UI surface box with radius (appearance's radius) from tint to tint opacity ((layout's hover * 20.4) as an integer) feathered by 0.75 on frame
         set top to box's y + appearance's padding
-        set view's selectable to kind != 43
+        set view's selectable to (kind != 2) and (kind != 43)
         set view's text source to the address of (layout's text source)
         set clip to UI box at (box's x + appearance's padding) (box's y + appearance's padding) sized (box's width - appearance's padding * 2.0) (box's height - appearance's padding * 2.0)
         set saved to a UI clip restricted to clip in view on frame

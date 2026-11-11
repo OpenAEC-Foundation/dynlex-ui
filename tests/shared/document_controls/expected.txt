@@ -1,0 +1,1 @@
+Document buttons share natural horizontal flow, responsive wrapping, hover and activation.

@@ -1,0 +1,26 @@
+import source_buffers.dl
+
+to [navigate a UI source pane] {a pointer to UI instance:instance}:
+    set editor to instance's event context as a pointer to UI source editor
+    set workspace to editor's workspace
+    set tools to workspace's tools
+    cancel UI source navigation (the address of (tools's navigation))
+    dismiss UI source tools tools
+    if instance's event target = editor's back:
+        ignore go back in UI source editor editor in (tools's view)
+    else:
+        require condition (instance's event target = editor's home) reporting "An unregistered source pane action was activated"
+        set main to editor's document's project's entry
+        set buffer to the UI source buffer for main in editor
+        visit UI source document main selecting (buffer's anchor) through (buffer's caret) in editor in (tools's view)
+    present UI source pane editor in instance
+
+to [bind UI source panes in] {a pointer to UI source workspace:workspace}:
+    set editor to workspace's editors
+    loop while editor != @intrinsic("construct", a pointer to UI source editor):
+        if editor's pane != @intrinsic("construct", UI reference):
+            require condition ((editor's back != @intrinsic("construct", UI reference)) and ((editor's home != @intrinsic("construct", UI reference)) and (editor's location != @intrinsic("construct", UI reference)))) reporting "A source pane is missing its declared controls"
+            bind (editor's back) in (workspace's instance) to (the function named "navigate a UI source pane $") for event 0 with context (editor as a pointer)
+            bind (editor's home) in (workspace's instance) to (the function named "navigate a UI source pane $") for event 0 with context (editor as a pointer)
+            present UI source pane editor in (workspace's instance)
+        set editor to editor's next

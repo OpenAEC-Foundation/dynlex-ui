@@ -5,6 +5,7 @@ import source_completions.dl
 import source_triggers.dl
 import source_tools_rendering.dl
 import source_navigation.dl
+import source_pane_actions.dl
 
 to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set workspace to tools's workspace as a pointer to UI source workspace
@@ -195,6 +196,7 @@ to [enable UI source tools for] {a pointer to UI source workspace:workspace} [in
     set tools's view to view
     set tools's items to a new JSON-RPC array
     set tools's overlay to a UI overlay in view with context (tools as a pointer) handling input ((the function named "read UI source tools $ in $") as a pointer) painting ((the function named "paint UI source tools $ on $") as a pointer) closing ((the function named "close UI source tools $ in $") as a pointer)
+    bind UI source panes in workspace
 
 to [update UI source tools in] {a pointer to UI source workspace:workspace}:
     set tools to workspace's tools

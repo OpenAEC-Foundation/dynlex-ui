@@ -1,0 +1,1 @@
+Declarative source panes share scoped navigation buttons without overlapping source content.

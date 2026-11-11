@@ -1,0 +1,29 @@
+# Reusable editor chrome is an ordinary static UI description. Behavior is
+# attached by source_tools.dl and never changes the application's event state.
+import document_declarations.dl
+
+appearance UI source header appearance:
+    flow is horizontal
+    padding is 8
+    gap is 6
+    font size is 12
+
+appearance UI source action appearance:
+    padding is 5
+    corner radius is 4
+
+appearance UI source location appearance:
+    padding is 5
+    lines do not wrap
+
+the UI source frame appearance using {UI appearance reference:appearance} means: a UI appearance with rules [use appearance, padding is 0, gap is 0, height is 0, minimum height is 0]
+the UI source content appearance using {UI appearance reference:appearance} means: a UI appearance with rules [use appearance, background is transparent, border width is 0, corner radius is 0, maximum width is 0]
+
+source pane {C string:name} containing {C string:source} using {UI appearance reference:appearance} means: (a UI component 41 labeled "" styled "source-pane" at 0 0 sized 0 by 0 containing [
+    (a UI container of kind 41 containing [
+        (button "Back") wearing UI source action appearance,
+        (button "Main file") wearing UI source action appearance,
+        paragraph "Location" containing name using UI source location appearance
+    ]) wearing UI source header appearance,
+    editor name containing source using (the UI source content appearance using appearance)
+]) wearing (the UI source frame appearance using appearance)

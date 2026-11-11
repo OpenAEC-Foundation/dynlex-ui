@@ -47,7 +47,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     if appearance's hidden:
         return nothing
     set inner to the maximum of 1.0 and (width - (appearance's padding * 2.0))
-    if (((node's kind = 42) or (node's kind = 43)) or (node's kind = 44)) or (node's kind = 46):
+    if ((((node's kind = 2) or (node's kind = 42)) or (node's kind = 43)) or (node's kind = 44)) or (node's kind = 46):
         set layout's content to (the UI value for node in (view's instance))'s text
         set layout's rich to (node's kind = 42) and (node's count > 0)
         set layout's typeface to a document UI font for appearance in view
@@ -112,6 +112,27 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
                 set layout's bounds' height to child's bounds' y + child's bounds' height + appearance's padding
             set child to child's next
             increment index
+    else if appearance's horizontal:
+        set left and top to appearance's padding
+        set height to 0.0
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            reflow document UI layout child within inner inheriting appearance in view
+            if child's appearance's hidden = false:
+                set kind to child's node's kind
+                if (((kind = 2) or (kind = 42)) or (kind = 43)) or (kind = 46):
+                    set width to the minimum of inner and (the maximum of (child's appearance's minimum width) and (child's text width + child's appearance's padding * 2.0))
+                    reflow document UI layout child within width inheriting appearance in view
+                if (left > appearance's padding) and ((left + child's bounds' width) > (appearance's padding + inner)):
+                    set top to top + height + appearance's gap
+                    set left to appearance's padding
+                    set height to 0.0
+                set child's bounds' x to left
+                set child's bounds' y to top
+                set left to left + child's bounds' width + appearance's gap
+                set height to the maximum of height and (child's bounds' height)
+            set child to child's next
+        set layout's bounds' height to top + height + appearance's padding
     else:
         set columns to appearance's columns
         if (view's width as a floating-point number) < appearance's stack below:
