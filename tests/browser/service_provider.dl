@@ -1,0 +1,13 @@
+import ../../platform/browser/requests.dl
+
+set view to a new UI view
+set view's window to 41 as a pointer
+set services to the browser UI service provider
+set result to a UI call named "storage" containing "{\"text\":\"é😀\"}" through services in (the address of view)
+require condition (result's success and (result's contents = "{\"stored\":\"é😀\"}")) reporting "The browser provider lost its owned UTF-8 result."
+set failed to a UI call named "broken" containing "null" through services in (the address of view)
+require condition ((failed's success = false) and (failed's contents' length = 0)) reporting "A failed browser service exposed its error details."
+set request to a UI request named "language" containing "{\"operation\":\"project\"}" through services in (the address of view)
+require condition (request = 7) reporting "The browser provider lost its request ID."
+require condition (cancel UI request request through services in (the address of view)) reporting "The browser provider lost its cancellation."
+print line "Browser capabilities implement the shared typed service contract."
