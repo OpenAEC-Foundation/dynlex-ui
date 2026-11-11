@@ -89,10 +89,10 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             set child to child's next
         draw document UI layout child at (box's x) (box's y) in view on frame
     else if kind = 20:
-        set action to the action for (layout's node) in (view's instance) for event 1
-        require condition (action != no UI action) reporting "The UI surface has no painting callback"
+        set handler to the UI handler for (layout's node) in (view's instance) for event 1
+        require condition (handler != @intrinsic("construct", a pointer to UI handler)) reporting "The UI surface has no painting callback"
         set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
-        @intrinsic("call pointer", action, nothing, the address of painting)
+        invoke UI handler handler for (layout's node) in (view's instance) receiving (the address of painting)
     else:
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):

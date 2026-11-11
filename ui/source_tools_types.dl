@@ -1,5 +1,6 @@
 import overlays.dl
 import source_queries.dl
+import source_navigation_types.dl
 
 class:
     patterns:
@@ -25,6 +26,7 @@ class:
         composed as a boolean
         deadline as a floating-point number
         message as a string
+        navigation as UI source navigation
 
 to [dismiss UI source tools] {a pointer to UI source tools:tools}:
     if (tools's mode = 0) and (tools's query = @intrinsic("construct", a pointer to UI source query)):
@@ -42,6 +44,7 @@ to [free UI source tools] {a pointer to UI source tools:tools}:
         return nothing
     if tools's view != @intrinsic("construct", a pointer to UI view):
         detach UI overlay (tools's overlay) in (tools's view)
+    cancel UI source navigation (the address of (tools's navigation))
     free tools's items
     destroy the value at tools
     deallocate tools

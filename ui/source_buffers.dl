@@ -1,0 +1,128 @@
+# A source control presents one buffer at a time. Its project always owns the
+# main document, so opening a definition never changes Run, Save or Share.
+import source_workspace.dl
+import text.dl
+import focus.dl
+
+to get [the UI source buffer for] {a pointer to UI source document:document} [in] {a pointer to UI source editor:editor}:
+    require condition (document's project = editor's document's project) reporting "A source view cannot display another editor's project"
+    set buffer to editor's buffers
+    loop while buffer != @intrinsic("construct", a pointer to UI source buffer):
+        if buffer's document = document:
+            return buffer
+        set buffer to buffer's next
+    set buffer to storage for one slot initialized with (a new UI source buffer)
+    set buffer's document to document
+    set buffer's state's text to document's source
+    set buffer's next to editor's buffers
+    set editor's buffers to buffer
+    return buffer
+
+to [remember the UI source location of] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    set buffer to editor's current
+    set layout to the UI layout for element (editor's node) in (view's layout)
+    require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
+    if view's selection's caret source = (the address of (layout's text source)):
+        set buffer's caret to view's selection's caret
+        if view's selection's anchor source = view's selection's caret source:
+            set buffer's anchor to view's selection's anchor
+        else:
+            set buffer's anchor to buffer's caret
+    set buffer's horizontal to layout's text scroll
+    set buffer's vertical to layout's scroll position
+
+to [restore UI source location] {a pointer to UI source buffer:buffer} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    require condition (editor's current = buffer) reporting "Only the visible source buffer can receive focus"
+    set layout to the UI layout for element (editor's node) in (view's layout)
+    require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
+    set text to (the UI value for (editor's node) in (view's instance))'s text
+    set source to the address of (layout's text source)
+    set source's text to text
+    set source's element to editor's node
+    set view's selection to a new UI text selection
+    set view's selection's anchor source and view's selection's caret source to source
+    set view's selection's anchor to the UI text boundary at or before (buffer's anchor) in text
+    set view's selection's caret to the UI text boundary at or before (buffer's caret) in text
+    set view's keyboard focus to true
+    set view's focus order to layout's order
+    refresh UI focus in view
+    set view's text focus to editor's node
+    set view's reveal caret to false
+    set layout's text scroll to buffer's horizontal
+    set layout's scroll position to buffer's vertical
+    set layout's scroll target to buffer's vertical
+    set view's damaged to true
+
+to [show UI source document] {a pointer to UI source document:document} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    require condition (document's available) reporting "An unavailable source cannot be opened"
+    set buffer to the UI source buffer for document in editor
+    if buffer != editor's current:
+        remember the UI source location of editor in view
+        if editor's document's writable:
+            edit UI source document (editor's document) to ((the UI value for (editor's node) in (view's instance))'s text) at (view's seconds) seconds
+        exchange UI text state for (editor's node) in view with (the address of (editor's current's state))
+        if buffer's state's text != document's source:
+            clear UI text state (the address of (buffer's state))
+            set buffer's state's text to document's source
+        exchange UI text state for (editor's node) in view with (the address of (buffer's state))
+        set editor's current to buffer
+        set editor's document to document
+        set editor's colors revision to 0
+        set editor's shown to false
+        set UI control (editor's node) read only (editor's read only or (document's writable = false)) in (view's instance)
+    restore UI source location buffer in editor in view
+
+to [visit UI source document] {a pointer to UI source document:document} [selecting] {integer:anchor} [through] {integer:caret} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    remember the UI source location of editor in view
+    set buffer to editor's current
+    set location to @intrinsic("construct", UI source location, buffer, buffer's anchor, buffer's caret, buffer's horizontal, buffer's vertical, editor's locations)
+    set editor's locations to storage for one slot initialized with location
+    show UI source document document in editor in view
+    set editor's current's anchor to anchor
+    set editor's current's caret to caret
+    restore UI source location (editor's current) in editor in view
+    set view's reveal caret to true
+
+to get [go back in UI source editor] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    loop while editor's locations != @intrinsic("construct", a pointer to UI source location):
+        set location to editor's locations
+        set editor's locations to location's next
+        set buffer to location's buffer
+        if buffer's document's available:
+            show UI source document (buffer's document) in editor in view
+            set buffer's anchor to location's anchor
+            set buffer's caret to location's caret
+            set buffer's horizontal to location's horizontal
+            set buffer's vertical to location's vertical
+            restore UI source location buffer in editor in view
+            deallocate location
+            return true
+        deallocate location
+    return false
+
+to get [the UI text state for] {a pointer to UI source document:document} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI instance:instance}:
+    if document = editor's document:
+        return the address of ((the UI value for (editor's node) in instance)'s text state)
+    set buffer to the UI source buffer for document in editor
+    if buffer's state's text != document's source:
+        clear UI text state (the address of (buffer's state))
+        set buffer's state's text to document's source
+    return the address of (buffer's state)
+
+to get [the UI main source of] {a pointer to UI source editor:editor} [in] {a pointer to UI source workspace:workspace} [at] {floating-point number:seconds} [seconds]:
+    synchronize UI source workspace workspace at seconds seconds
+    return editor's document's project's entry's source
+
+to [replace UI main source of] {a pointer to UI source editor:editor} [in] {a pointer to UI source workspace:workspace} [with] {string:text} [at] {floating-point number:seconds} [seconds]:
+    set main to editor's document's project's entry
+    if main = editor's document:
+        set value to the UI value for (editor's node) in (workspace's instance)
+        if value's text != text:
+            clear UI text state (the address of (value's text state))
+            set UI text of (editor's node) in (workspace's instance) to text
+    else:
+        set buffer to the UI source buffer for main in editor
+        if buffer's state's text != text:
+            clear UI text state (the address of (buffer's state))
+            set buffer's state's text to text
+    edit UI source document main to text at seconds seconds

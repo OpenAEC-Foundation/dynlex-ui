@@ -1,0 +1,86 @@
+# Text ownership is independent of the control that currently presents it.
+import geometry.dl
+
+class:
+    patterns:
+        UI text edit
+    members:
+        before as a string
+        after as a string
+        anchor as an integer
+        caret as an integer
+        after anchor as an integer
+        after caret as an integer
+        next as a pointer to UI text edit
+
+class:
+    patterns:
+        UI text color span
+    members:
+        start as an integer
+        end as an integer
+        ink as UI paint
+        next as a pointer to UI text color span
+
+class:
+    patterns:
+        UI text mark
+    members:
+        start as an integer
+        end as an integer
+        ink as UI paint
+        opacity as an integer
+        next as a pointer to UI text mark
+
+class:
+    patterns:
+        UI text state
+    members:
+        text as a string
+        undo as a pointer to UI text edit
+        redo as a pointer to UI text edit
+        colored text as a string
+        colors as a pointer to UI text color span
+        last color as a pointer to UI text color span
+        marked text as a string
+        marks as a pointer to UI text mark
+        last mark as a pointer to UI text mark
+
+to [exchange UI text states between] {a pointer to UI text state:left} [and] {a pointer to UI text state:right}:
+    set previous to the value at left
+    set the value at left to the value at right
+    set the value at right to previous
+
+to release UI text edits {a pointer to UI text edit:edit}:
+    loop while edit != @intrinsic("construct", a pointer to UI text edit):
+        set next to edit's next
+        destroy the value at edit
+        deallocate edit
+        set edit to next
+
+to release UI text colors {a pointer to UI text state:state}:
+    set span to state's colors
+    loop while span != @intrinsic("construct", a pointer to UI text color span):
+        set next to span's next
+        deallocate span
+        set span to next
+    set state's colors to @intrinsic("construct", a pointer to UI text color span)
+    set state's last color to @intrinsic("construct", a pointer to UI text color span)
+    set state's colored text to ""
+
+to release UI text marks {a pointer to UI text state:state}:
+    set mark to state's marks
+    loop while mark != @intrinsic("construct", a pointer to UI text mark):
+        set next to mark's next
+        deallocate mark
+        set mark to next
+    set state's marks to @intrinsic("construct", a pointer to UI text mark)
+    set state's last mark to @intrinsic("construct", a pointer to UI text mark)
+    set state's marked text to ""
+
+to [clear UI text state] {a pointer to UI text state:state}:
+    release UI text edits state's undo
+    release UI text edits state's redo
+    release UI text colors state
+    release UI text marks state
+    set the value at state to a new UI text state

@@ -4,6 +4,10 @@ document content test:
     paragraph "Output" containing "" using no UI appearance
     editor "Code" containing "print 42" using no UI appearance
     link "Reference" to "/docs" using no UI appearance
+    region "First" using no UI appearance:
+        paragraph "Repeated" containing "first" using no UI appearance
+    region "Second" using no UI appearance:
+        paragraph "Repeated" containing "second" using no UI appearance
 
 set instance to an instance of content test
 set output to the control labeled "Output" in (the address of instance)
@@ -16,5 +20,9 @@ require condition (code's content = "print 42") reporting "Editor content was st
 set link to the control labeled "Reference" in (the address of instance)
 require condition (link's destination = "/docs") reporting "The link destination was lost"
 require condition ((link's variant = "") and (code's variant = "")) reporting "Content or navigation still occupies the style variant"
+set first to the UI child at 0 in (the control labeled "First" in (the address of instance))
+set second to the UI child at 0 in (the control labeled "Second" in (the address of instance))
+set UI text of second in (the address of instance) to "updated second"
+require condition (((the UI value for first in (the address of instance))'s text = "first") and ((the UI value for second in (the address of instance))'s text = "updated second")) reporting "Updating a reference used another element with the same label."
 close the address of instance
 print line "Names, initial content, style variants and destinations remain separate."

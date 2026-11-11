@@ -1,0 +1,97 @@
+import ../../helpers/driver.dl
+
+class:
+    patterns:
+        nested event context
+    members:
+        count as an integer
+        child as UI reference
+
+class:
+    patterns:
+        replacement event context
+    members:
+        count as an integer
+        next as a pointer to integer
+
+to [count scoped action] {a pointer to UI instance:instance}:
+    increment the value at (instance's event context as a pointer to integer)
+
+to [count nested action] {a pointer to UI instance:instance}:
+    set context to instance's event context as a pointer to nested event context
+    set target to instance's event target
+    increment context's count
+    click (context's child) in instance
+    require condition (@intrinsic("equal", instance's event context, context as a pointer) and (instance's event target = target)) reporting "Nested activation did not restore its outer callback context."
+
+to [replace scoped action] {a pointer to UI instance:instance}:
+    set context to instance's event context as a pointer to replacement event context
+    set target to instance's event target
+    increment context's count
+    unbind UI handlers with context (instance's event context) in instance
+    bind target in instance to (the function named "count scoped action $") for event 0 with context (context's next as a pointer)
+
+to [count scoped paint] {a pointer to UI canvas frame:painting}:
+    set instance to painting's instance
+    require condition (instance's event target = (the control labeled "Paint" in instance)) reporting "A paint callback did not receive its target scope."
+    increment the value at (instance's event context as a pointer to integer)
+
+document context example:
+    button "One"
+    button "Two"
+    button "Other"
+    surface "Paint" using no UI appearance
+    code:
+        when the "Other" button is clicked:
+            require condition @intrinsic("equal", this window's event context, @intrinsic("construct", a pointer)) reporting "An ordinary callback inherited another binding's context."
+            increment the value at (this window's state as a pointer to integer)
+
+set application to 7
+set instance to an instance of context example with state (the address of application)
+set window to the address of instance
+set first to the control labeled "One" in window
+set second to the control labeled "Two" in window
+set inner to 0
+set outer to @intrinsic("construct", nested event context, 0, second)
+bind second in window to (the function named "count scoped action $") for event 0 with context ((the address of inner) as a pointer)
+bind first in window to (the function named "count nested action $") for event 0 with context ((the address of outer) as a pointer)
+click first in window
+require condition ((outer's count = 1) and (inner = 1)) reporting "Reusable callbacks did not receive their separate binding contexts."
+require condition (@intrinsic("equal", instance's event context, @intrinsic("construct", a pointer)) and (instance's event target = @intrinsic("construct", UI reference))) reporting "Activation leaked its context outside dispatch."
+unbind UI handlers with context ((the address of outer) as a pointer) in window
+unbind UI handlers with context ((the address of inner) as a pointer) in window
+
+# Rebinding one target/event replaces its single callback, including its owner.
+set old to 0
+set current to 0
+bind first in window to (the function named "count scoped action $") for event 0 with context ((the address of old) as a pointer)
+bind first in window to (the function named "count scoped action $") for event 0 with context ((the address of current) as a pointer)
+unbind UI handlers with context ((the address of old) as a pointer) in window
+click first in window
+set message to formatted "Rebinding counter results: old={old}, current={current}."
+require condition ((old = 0) and (current = 1)) reporting (the data of message)
+
+# Removing the executing binding and adding its replacement affects the next
+# activation. The dispatcher must not read a freed handler after its callback.
+set replacement to @intrinsic("construct", replacement event context, 0, the address of current)
+bind first in window to (the function named "replace scoped action $") for event 0 with context ((the address of replacement) as a pointer)
+click first in window
+require condition ((replacement's count = 1) and (current = 1)) reporting "Replacing the executing callback invoked its replacement in the same dispatch."
+click first in window
+require condition (current = 2) reporting "The replacement callback did not run on its next activation."
+bind second in window to (the function named "count scoped action $") for event 0 with context ((the address of current) as a pointer)
+unbind UI handlers with context (instance's handlers' context) in window
+require condition (((the UI handler for first in window for event 0) = @intrinsic("construct", a pointer to UI handler)) and ((the UI handler for second in window for event 0) = @intrinsic("construct", a pointer to UI handler))) reporting "Removing bindings through a borrowed owner field lost its context during traversal."
+click first in window
+require condition (current = 2) reporting "An unbound callback still responded to activation."
+click the "Other" button in window
+require condition (application = 8) reporting "Callback contexts overwrote the application's own state."
+
+set paints to 0
+bind (the control labeled "Paint" in window) in window to (the function named "count scoped paint $") for event 1 with context ((the address of paints) as a pointer)
+set view to a UI view of window sized 500 by 400 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+require condition ((paints > 0) and @intrinsic("equal", instance's event context, @intrinsic("construct", a pointer))) reporting "Paint dispatch did not restore its callback context."
+close the address of view
+close window
+print line "UI callback contexts nest, replace and remove bindings while preserving application state."

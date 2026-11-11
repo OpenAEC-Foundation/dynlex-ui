@@ -7,6 +7,7 @@ import view.dl
 import layout_lookup.dl
 import source_tools_types.dl
 import source_palette.dl
+import source_buffer_types.dl
 
 class:
     patterns:
@@ -14,6 +15,10 @@ class:
     members:
         node as UI reference
         document as a pointer to UI source document
+        buffers as a pointer to UI source buffer
+        current as a pointer to UI source buffer
+        locations as a pointer to UI source location
+        read only as a boolean
         next as a pointer to UI source editor
         colors revision as an integer
         diagnostics generation as an integer
@@ -42,6 +47,10 @@ to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI
         set entry's clean text to "No problems found."
         set entry's ready text to "0 problems"
         set entry's document to a UI source document named "main.dl" at (workspace's client's root + "/main.dl") prefixed by "" containing ((the UI value for node in (workspace's instance))'s text) using UI CPU analysis
+        set entry's read only to (the UI value for node in (workspace's instance))'s read only
+        set entry's current to storage for one slot initialized with (a new UI source buffer)
+        set entry's current's document to entry's document
+        set entry's buffers to entry's current
         set entry's next to workspace's editors
         set workspace's editors to storage for one slot initialized with entry
     set index to node's count
@@ -86,7 +95,7 @@ to [synchronize UI source workspace] {a pointer to UI source workspace:workspace
         if entry's document's writable:
             edit UI source document (entry's document) to source at seconds seconds
         else:
-            set the text of (entry's node's text) in (workspace's instance) to (entry's document's source)
+            set UI text of (entry's node) in (workspace's instance) to (entry's document's source)
         set entry to entry's next
 
 to get [the next UI source workspace work in] {a pointer to UI source workspace:workspace} [focused on] {UI reference:focused} [at] {floating-point number:seconds} [seconds]:
@@ -141,7 +150,7 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
                     set text to the UI source diagnostic text of document
                     if complete and (text's length = 0):
                         set text to entry's clean text
-                    set the text of (entry's diagnostics' text) in instance to text
+                    set UI text of (entry's diagnostics) in instance to text
                 if entry's status != @intrinsic("construct", UI reference):
                     set text to the string form of "Analyzing…"
                     if complete:
@@ -151,7 +160,7 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
                             set text to (the string form of "1 problem") if (count = 1), else (formatted "{count} problems")
                     if failed:
                         set text to (the string form of "An error occurred. Check the log.") if (workspace's client's phase = 8), else (the string form of "Source unavailable.")
-                    set the text of (entry's status' text) in instance to text
+                    set UI text of (entry's status) in instance to text
                 set entry's diagnostics generation to document's diagnostic generation
                 set entry's complete to complete
                 set entry's failed to failed
@@ -165,6 +174,8 @@ to [free UI source workspace] {a pointer to UI source workspace:workspace}:
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
         set next to entry's next
+        free UI source locations (entry's locations)
+        free UI source buffers (entry's buffers)
         free UI source project (entry's document's project)
         destroy the value at entry
         deallocate entry

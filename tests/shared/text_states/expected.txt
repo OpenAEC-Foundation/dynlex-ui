@@ -1,0 +1,1 @@
+UI text states retain independent undo and annotations while preserving control identity.

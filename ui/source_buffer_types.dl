@@ -1,0 +1,39 @@
+import source_documents.dl
+import text_states.dl
+
+class:
+    patterns:
+        UI source buffer
+    members:
+        document as a pointer to UI source document
+        state as UI text state
+        anchor as an integer
+        caret as an integer
+        horizontal as a floating-point number
+        vertical as a floating-point number
+        next as a pointer to UI source buffer
+
+class:
+    patterns:
+        UI source location
+    members:
+        buffer as a pointer to UI source buffer
+        anchor as an integer
+        caret as an integer
+        horizontal as a floating-point number
+        vertical as a floating-point number
+        next as a pointer to UI source location
+
+to [free UI source buffers] {a pointer to UI source buffer:buffer}:
+    loop while buffer != @intrinsic("construct", a pointer to UI source buffer):
+        set next to buffer's next
+        clear UI text state (the address of (buffer's state))
+        destroy the value at buffer
+        deallocate buffer
+        set buffer to next
+
+to [free UI source locations] {a pointer to UI source location:location}:
+    loop while location != @intrinsic("construct", a pointer to UI source location):
+        set next to location's next
+        deallocate location
+        set location to next

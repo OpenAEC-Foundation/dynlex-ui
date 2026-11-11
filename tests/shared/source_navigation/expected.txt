@@ -1,0 +1,1 @@
+Studio and embedded editors share asynchronous definitions, imported sources, Unicode locations and navigation history.

@@ -4,6 +4,7 @@ import source_workspace.dl
 import source_completions.dl
 import source_triggers.dl
 import source_tools_rendering.dl
+import source_navigation.dl
 
 to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set workspace to tools's workspace as a pointer to UI source workspace
@@ -16,10 +17,12 @@ to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set editor to workspace's editors
     loop while editor != @intrinsic("construct", a pointer to UI source editor):
         if editor's node = view's text focus:
-            if ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and ((editor's document's writable) and (editor's document's available))) and (the UI element (editor's node) accepts edits in (view's instance)):
+            if ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (editor's document's available)) and (the UI element (editor's node) is enabled in (view's instance)):
                 set value to the UI value for (editor's node) in (view's instance)
-                edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
-                if tools's node != editor's node:
+                if editor's document's writable:
+                    edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
+                remember the UI source location of editor in view
+                if (tools's node != editor's node) or (tools's document != editor's document):
                     dismiss UI source tools tools
                     set tools's edited to false
                     set tools's composed to false
@@ -42,6 +45,10 @@ to get [focus UI source tools] {a pointer to UI source tools:tools}:
     return false
 
 to [request UI source completions in] {a pointer to UI source tools:tools}:
+    if ((tools's document's writable = false) or (tools's document's available = false)) or ((the UI element (tools's node) accepts edits in (tools's view's instance)) = false):
+        dismiss UI source tools tools
+        set tools's edited to false
+        return nothing
     set tools's position to tools's view's selection's caret
     set tools's query to request UI source feature "textDocument/completion" at byte (tools's position) in (tools's document)
     set tools's generation to 0
@@ -88,6 +95,13 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
     set owner to tools's node
     if (focus UI source tools tools) = false:
         return false
+    if (view's key press = 263) and (view's modifiers = 4):
+        set editor to (tools's workspace as a pointer to UI source workspace)'s editors
+        loop while editor's node != tools's node:
+            set editor to editor's next
+        cancel UI source navigation (the address of (tools's navigation))
+        dismiss UI source tools tools
+        return go back in UI source editor editor in view
     if (view's selection's composing) or (view's input kind = 10):
         dismiss UI source tools tools
         set tools's edited to false
@@ -96,6 +110,14 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
                 set tools's composed to false
             if view's modifiers = 2:
                 set tools's composed to view's message's length > 0
+        return false
+    if (view's key press = 301) and (view's modifiers = 0):
+        request a UI source definition in tools
+        return true
+    if (tools's document's writable = false) or ((the UI element (tools's node) accepts edits in (view's instance)) = false):
+        if (tools's mode = 1) or (view's key press = 256):
+            dismiss UI source tools tools
+        set tools's edited to false
         return false
     set opened to tools's mode = 1
     if tools's mode = 1:
@@ -179,6 +201,7 @@ to [update UI source tools in] {a pointer to UI source workspace:workspace}:
     if tools = @intrinsic("construct", a pointer to UI source tools):
         return nothing
     set view to tools's view
+    update UI source navigation in tools
     if (focus UI source tools tools) = false:
         return nothing
     if tools's mode = 1:

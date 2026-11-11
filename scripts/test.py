@@ -47,6 +47,7 @@ def main():
                             str(project), str(compiler)], cwd=project, env=native_environment, check=True)
         subprocess.run(["python3", "scripts/test_application_lifetime.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, env=native_environment, check=True)
     if args.browser:
+        subprocess.run(['node', 'tests/browser/input_keys.mjs'], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/service_provider.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/driver_integer_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/source_features.mjs', str(args.dynlex.resolve())], cwd=project, check=True)

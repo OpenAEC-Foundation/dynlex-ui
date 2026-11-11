@@ -1,0 +1,68 @@
+import ../../helpers/driver.dl
+
+document text state example:
+    editor "Source" containing "abc" using no UI appearance
+    paragraph "Caption" containing "Keep this caption" using no UI appearance
+
+set instance to an instance of text state example
+set window to the address of instance
+set caption to the UI value for (the control labeled "Caption" in window) in window
+set node to the control labeled "Source" in window
+set entry to the UI value for node in window
+set next to entry's next
+set view to a UI view of window sized 400 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "!" in (the address of view)
+ignore update UI view (the address of view)
+require condition (entry's text = "abc!") reporting "The initial document did not receive its edit."
+set history to entry's undo
+color UI text (entry's text) in node in window
+add UI text color (UI ink 100 160 220) from 0 to 3 in node in window
+mark UI text (entry's text) in node in window
+add UI text mark (UI ink 190 120 80) from 3 to 4 with opacity 100 in node in window
+set colors to entry's colors
+set marks to entry's marks
+
+set parked to a new UI text state
+set parked's text to "other"
+exchange UI text state for node in (the address of view) with (the address of parked)
+ignore update UI view (the address of view)
+require condition ((entry's text = "other") and (parked's text = "abc!")) reporting "Exchanging documents did not transfer their text."
+require condition ((entry's undo = @intrinsic("construct", a pointer to UI text edit)) and (parked's undo = history)) reporting "The inactive document lost its own undo history."
+require condition ((parked's colors = colors) and (parked's marks = marks)) reporting "Inactive document annotations lost their ownership."
+require condition ((entry's target = node) and ((entry's next = next) and (caption's text = "Keep this caption"))) reporting "Moving text changed the control identity or its value registry."
+
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (entry's text = "other") reporting "Undo in the second document used the first document's history."
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "Z" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((entry's text = "Zother") and (parked's text = "abc!")) reporting "Editing the second document changed the parked first document."
+
+exchange UI text state for node in (the address of view) with (the address of parked)
+ignore update UI view (the address of view)
+require condition ((entry's text = "abc!") and (entry's undo = history)) reporting "Returning to the first document lost its retained history."
+require condition ((entry's colors = colors) and (entry's marks = marks)) reporting "Returning to the first document lost its annotations."
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((entry's text = "abc") and (parked's text = "Zother")) reporting "The restored document could not undo independently."
+queue UI input of kind 3 key 89 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (entry's text = "abc!") reporting "The restored document could not redo independently."
+
+clear UI text state (the address of parked)
+require condition ((parked's text's length = 0) and (parked's undo = @intrinsic("construct", a pointer to UI text edit))) reporting "Clearing an inactive text state retained its resources."
+set parked's text to entry's text
+set epoch to view's input context's epoch
+receive UI composition (the string form of "draft") for epoch at phase 1 selecting 0 through 5 in (the address of view)
+exchange UI text state for node in (the address of view) with (the address of parked)
+require condition ((view's selection's composing = false) and (view's input context's active = false)) reporting "Changing buffers with identical text retained the preceding composition context."
+queue UI input of kind 13 key epoch at 0.0 0.0 with modifiers 0 containing "Old buffer input" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((entry's text = "abc!") and (view's input context's epoch > epoch)) reporting "A delayed platform event edited a new buffer with identical contents."
+clear UI text state (the address of parked)
+close the address of view
+close window
+print line "UI text states retain independent undo and annotations while preserving control identity."

@@ -1,0 +1,1 @@
+UI callback contexts nest, replace and remove bindings while preserving application state.

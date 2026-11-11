@@ -3,6 +3,19 @@ import platform.dl
 import lib/utf8.dl
 import input_context.dl
 
+to [exchange UI text state for] {UI reference:node} [in] {a pointer to UI view:view} [with] {a pointer to UI text state:state}:
+    set entry to the UI value for node in (view's instance)
+    exchange UI text states between (the address of (entry's text state)) and state
+    if view's input context's element = node:
+        set view's input context's active to false
+    set source to view's selection's caret source
+    if source != @intrinsic("construct", a pointer to UI text source):
+        if source's element = node:
+            set view's selection's composing to false
+            set view's selection's composition to ""
+            set view's selection's vertical to false
+    invalidate (view's instance)
+
 to get the UI text boundary at or before {integer:offset} in {string:text}:
     require condition (offset >= 0) reporting "A UI selection offset cannot be negative"
     set position to the minimum of offset and (text's length)

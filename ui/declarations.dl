@@ -4,6 +4,7 @@ import lib/sections.dl
 import lib/callbacks.dl
 import lib/check.dl
 import appearance.dl
+import text_states.dl
 
 class:
     patterns:
@@ -98,59 +99,40 @@ class:
     members:
         target as UI reference
         action as a pointer
+        context as a pointer
         next as a pointer to UI handler
         event as an integer
-
-class:
-    patterns:
-        UI text edit
-    members:
-        before as a string
-        after as a string
-        anchor as an integer
-        caret as an integer
-        after anchor as an integer
-        after caret as an integer
-        next as a pointer to UI text edit
-
-class:
-    patterns:
-        UI text color span
-    members:
-        start as an integer
-        end as an integer
-        ink as UI paint
-        next as a pointer to UI text color span
-
-class:
-    patterns:
-        UI text mark
-    members:
-        start as an integer
-        end as an integer
-        ink as UI paint
-        opacity as an integer
-        next as a pointer to UI text mark
 
 class:
     patterns:
         UI value
     members:
         target as UI reference
-        text as a string
+        text state as UI text state
         number as an integer
         next as a pointer to UI value
-        undo as a pointer to UI text edit
-        redo as a pointer to UI text edit
         destination as a string
-        colored text as a string
-        colors as a pointer to UI text color span
-        last color as a pointer to UI text color span
         enabled as a boolean
         read only as a boolean
-        marked text as a string
-        marks as a pointer to UI text mark
-        last mark as a pointer to UI text mark
+
+{UI value:entry}'s text means: entry's text state's text
+{a pointer to UI value:entry}'s text means: entry's text state's text
+{UI value:entry}'s undo means: entry's text state's undo
+{a pointer to UI value:entry}'s undo means: entry's text state's undo
+{UI value:entry}'s redo means: entry's text state's redo
+{a pointer to UI value:entry}'s redo means: entry's text state's redo
+{UI value:entry}'s colored text means: entry's text state's colored text
+{a pointer to UI value:entry}'s colored text means: entry's text state's colored text
+{UI value:entry}'s colors means: entry's text state's colors
+{a pointer to UI value:entry}'s colors means: entry's text state's colors
+{UI value:entry}'s last color means: entry's text state's last color
+{a pointer to UI value:entry}'s last color means: entry's text state's last color
+{UI value:entry}'s marked text means: entry's text state's marked text
+{a pointer to UI value:entry}'s marked text means: entry's text state's marked text
+{UI value:entry}'s marks means: entry's text state's marks
+{a pointer to UI value:entry}'s marks means: entry's text state's marks
+{UI value:entry}'s last mark means: entry's text state's last mark
+{a pointer to UI value:entry}'s last mark means: entry's text state's last mark
 
 class:
     patterns:
@@ -174,6 +156,7 @@ class:
         revision as an integer
         observers as a pointer to UI observer
         event target as UI reference
+        event context as a pointer
 
 to invalidate {a pointer to UI instance:instance}:
     increment instance's revision
@@ -222,8 +205,62 @@ the {C string:label} button means: the label button in this window
 
 to bind the button labeled {C string:label} in {a pointer to UI instance:instance} to {a callback:action}:
     set target to (the label button in instance)
-    set handler to @intrinsic("construct", UI handler, target, @intrinsic("cast", action, a pointer), instance's handlers, 0)
-    set instance's handlers to storage for one slot initialized with handler
+    bind UI action action to target in instance for event 0 with context @intrinsic("construct", a pointer)
+
+to get [the UI handler for] {UI reference:target} [in] {a pointer to UI instance:instance} [for event] {integer:event}:
+    set handler to instance's handlers
+    loop while handler != @intrinsic("construct", a pointer to UI handler):
+        if (handler's target = target) and (handler's event = event):
+            return handler
+        set handler to handler's next
+    return @intrinsic("construct", a pointer to UI handler)
+
+to [bind UI action] {a callback:action} [to] {UI reference:target} [in] {a pointer to UI instance:instance} [for event] {integer:event} [with context] {a pointer:context}:
+    set handler to the UI handler for target in instance for event event
+    set callback to @intrinsic("cast", action, a pointer)
+    if handler != @intrinsic("construct", a pointer to UI handler):
+        # Opaque byte pointers need identity; = compares C-string contents.
+        if @intrinsic("equal", handler's action, callback) and @intrinsic("equal", handler's context, context):
+            return nothing
+        set handler's action to callback
+        set handler's context to context
+    else:
+        set entry to @intrinsic("construct", UI handler, target, callback, context, instance's handlers, event)
+        set instance's handlers to storage for one slot initialized with entry
+    invalidate instance
+
+to [unbind UI handlers with context] {a pointer:context} [in] {a pointer to UI instance:instance}:
+    # The supplied owner can itself be a field of a released handler.
+    set owner to context
+    set handler to instance's handlers
+    set previous to @intrinsic("construct", a pointer to UI handler)
+    set changed to false
+    loop while handler != @intrinsic("construct", a pointer to UI handler):
+        set next to handler's next
+        if @intrinsic("equal", handler's context, owner):
+            if previous = @intrinsic("construct", a pointer to UI handler):
+                set instance's handlers to next
+            else:
+                set previous's next to next
+            deallocate handler
+            set changed to true
+        else:
+            set previous to handler
+        set handler to next
+    if changed:
+        invalidate instance
+
+to [invoke UI handler] {a pointer to UI handler:handler} [for] {UI reference:target} [in] {a pointer to UI instance:instance} [receiving] {a value:receiver}:
+    # A callback may replace or remove its own registration.
+    set action to handler's action
+    set context to handler's context
+    set {previous target} to instance's event target
+    set {previous context} to instance's event context
+    set instance's event target to target
+    set instance's event context to context
+    @intrinsic("call pointer", action, nothing, receiver)
+    set instance's event target to previous target
+    set instance's event context to previous context
 
 to initialize {a pointer to UI instance:instance} from {UI reference:node}:
     if node's kind = 10:
@@ -255,16 +292,10 @@ to get the UI element {UI reference:node} is enabled in {a pointer to UI instanc
 to click {UI reference:button} in {a pointer to UI instance:instance}:
     if (the UI element button is enabled in instance) = false:
         return nothing
-    set handler to instance's handlers
-    loop while handler != @intrinsic("construct", a pointer to UI handler):
-        if (handler's target = button) and (handler's event = 0):
-            set previous to instance's event target
-            set instance's event target to button
-            @intrinsic("call pointer", handler's action, nothing, instance)
-            set instance's event target to previous
-            invalidate instance
-            return nothing
-        set handler to handler's next
+    set handler to the UI handler for button in instance for event 0
+    if handler != @intrinsic("construct", a pointer to UI handler):
+        invoke UI handler handler for button in instance receiving instance
+        invalidate instance
 
 to click the {C string:label} button in {a pointer to UI instance:instance}:
     click (the label button in instance) in instance
@@ -280,41 +311,17 @@ to close {a pointer to UI instance:instance}:
     set value to instance's values
     loop while value != @intrinsic("construct", a pointer to UI value):
         set next to value's next
-        release UI text edits value's undo
-        release UI text edits value's redo
-        release UI text colors value
-        release UI text marks value
+        clear UI text state (the address of (value's text state))
         destroy the value at value
         deallocate value
         set value to next
     set instance's values to @intrinsic("construct", a pointer to UI value)
 
 to release UI text colors {a pointer to UI value:value}:
-    set span to value's colors
-    loop while span != @intrinsic("construct", a pointer to UI text color span):
-        set next to span's next
-        deallocate span
-        set span to next
-    set value's colors to @intrinsic("construct", a pointer to UI text color span)
-    set value's last color to @intrinsic("construct", a pointer to UI text color span)
-    set value's colored text to ""
+    release UI text colors (the address of (value's text state))
 
 to release UI text marks {a pointer to UI value:value}:
-    set mark to value's marks
-    loop while mark != @intrinsic("construct", a pointer to UI text mark):
-        set next to mark's next
-        deallocate mark
-        set mark to next
-    set value's marks to @intrinsic("construct", a pointer to UI text mark)
-    set value's last mark to @intrinsic("construct", a pointer to UI text mark)
-    set value's marked text to ""
-
-to release UI text edits {a pointer to UI text edit:edit}:
-    loop while edit != @intrinsic("construct", a pointer to UI text edit):
-        set next to edit's next
-        destroy the value at edit
-        deallocate edit
-        set edit to next
+    release UI text marks (the address of (value's text state))
 
 class:
     patterns:

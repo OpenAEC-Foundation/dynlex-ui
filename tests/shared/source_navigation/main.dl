@@ -1,0 +1,71 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_tools.dl
+
+document editors:
+    editor "Studio" containing "get" using no UI appearance
+    editor "River" containing "row" using no UI appearance
+
+to [answer navigation query] {a pointer to UI source query:query} [with] {a pointer to JSON value:result}:
+    free query's result
+    set query's result to result
+    set query's queued to false
+    set query's ready to true
+
+set instance to an instance of editors
+set window to the address of instance
+set view to a UI view of window sized 900 by 600 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+enable UI source tools for workspace in (the address of view)
+ignore update UI view (the address of view)
+set labels to ["Studio", "River"]
+set index to 0
+loop while index < the length of labels:
+    set editor to the UI source editor labeled (the item at index in labels) in workspace
+    set main to editor's document
+    set files to a new JSON-RPC object
+    configure UI source document main named "main.dl" at "file:///workspace/main.dl" prefixed by "# context\n\n" using UI CPU analysis with files files
+    free files
+    restore UI source location (editor's current) in editor in (the address of view)
+    set view's selection's anchor and view's selection's caret to 3
+    queue UI input of kind 3 key 301 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    set navigation to the address of (workspace's tools' navigation)
+    set query to navigation's query
+    require condition ((navigation's phase = 1) and (query's method = "textDocument/definition")) reporting "F12 did not request a shared source definition."
+    require condition ((the JSON number named "line" in (the JSON member named "position" in (query's parameters))) = 2.0) reporting "The definition request ignored the hidden source prefix."
+    answer navigation query query with (a JSON object containing [JSON text "uri" is "file:///lib/helper.dl", JSON child "range" is (an LSP range from line 1 and character 0 to line 1 and character 1)])
+    update UI source tools in workspace
+    require condition ((navigation's phase = 2) and (navigation's query's method = "dynlex/readDocument")) reporting "An imported definition did not request its source."
+    require condition ((the JSON text named "uri" in (navigation's query's parameters)) = "file:///lib/helper.dl") reporting "The source request used the originating document URI."
+    answer navigation query (navigation's query) with (JSON text "" is "# helper\nπ means: 7")'s value
+    update UI source tools in workspace
+    set imported to editor's document
+    require condition ((imported != main) and ((imported's filename = "helper.dl") and (imported's project = main's project))) reporting "Definition navigation did not retain its imported source in the project."
+    require condition ((view's selection's anchor = 9) and (view's selection's caret = 11)) reporting "Imported definition navigation did not convert UTF-16 to UTF-8."
+    require condition ((the UI element (editor's node) accepts edits in window) = false) reporting "An imported definition was writable."
+    queue UI input of kind 3 key 301 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition ((navigation's phase = 1) and (navigation's document = imported)) reporting "Read-only imported sources could not navigate to another definition."
+    answer navigation query (navigation's query) with (a JSON object containing [JSON text "uri" is (main's uri), JSON child "range" is (an LSP range from line 2 and character 0 to line 2 and character 3)])
+    update UI source tools in workspace
+    require condition ((editor's document = main) and (navigation's phase = 0)) reporting "An already loaded definition required another readDocument request."
+    require condition ((view's selection's anchor = 0) and (view's selection's caret = 3)) reporting "Returning to a prefixed main source selected its hidden context."
+    queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 4 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition (editor's document = imported) reporting "Alt+Left did not restore the preceding imported definition."
+    queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 4 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition ((editor's document = main) and (view's selection's caret = 3)) reporting "Alt+Left did not restore the original source location."
+    queue UI input of kind 3 key 301 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    set query to navigation's query
+    set UI text of (editor's node) in window to "edited"
+    synchronize UI source workspace workspace at 2.0 seconds
+    answer navigation query query with (a JSON object containing [JSON text "uri" is (imported's uri), JSON child "range" is (an LSP range from line 1 and character 0 to line 1 and character 1)])
+    update UI source tools in workspace
+    require condition ((navigation's phase = 0) and (editor's document = main)) reporting "A stale definition reply changed the active document after an edit."
+    increment index
+free UI source workspace workspace
+close the address of view
+close window
+print line "Studio and embedded editors share asynchronous definitions, imported sources, Unicode locations and navigation history."
