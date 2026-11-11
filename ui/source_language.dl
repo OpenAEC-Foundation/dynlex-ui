@@ -1,40 +1,8 @@
 # One asynchronous language connection can analyze independent editor projects.
 # Work is protocol data. A platform supplies transport, never editor policy.
-import source_queries.dl
+import source_protocol.dl
 
 the UI source analysis delay means: 0.18
-
-class:
-    patterns:
-        UI language work
-    members:
-        step as an integer
-        payload as a pointer to JSON value
-
-class:
-    patterns:
-        UI language client
-    members:
-        root as a string
-        phase as an integer
-        document as a pointer to UI source document
-        desired as a pointer to UI source document
-        uri as a string
-        context as a string
-        profiles as a string
-        snapshot as a string
-        revision as an integer
-        version as an integer
-        token types as a pointer to JSON value
-        query as a pointer to UI source query
-        query generation as an integer
-        query notification as a boolean
-
-to get [a UI language client rooted at] {string:root}:
-    set client to storage for one slot initialized with (a new UI language client)
-    set client's root to root
-    set client's token types to a new JSON-RPC array
-    return client
 
 to get [UI language work] {a pointer to JSON value:payload} [at step] {integer:step} [in] {a pointer to UI language client:client}:
     set client's phase to step
@@ -65,15 +33,20 @@ to get [the UI language opening in] {a pointer to UI language client:client}:
     set parameters to the LSP document opening parameters for URI (client's uri), language (the string form of "dynlex"), version 1 and text (client's snapshot)
     return UI language message "textDocument/didOpen" with parameters requesting false at step 4 in client
 
+to get [the UI language token request in] {a pointer to UI language client:client}:
+    set client's token epoch to client's document's token epoch
+    set parameters to a JSON object containing [JSON child "textDocument" is (an LSP text document identifier for (client's uri))]
+    return UI language message "textDocument/semanticTokens/full" with parameters requesting true at step 6 in client
+
 to get [the next UI language work for] {a pointer to UI language client:client} [analyzing] {a pointer to UI source document:document} [at] {floating-point number:seconds} [seconds]:
     set client's desired to document
     if (client's phase != 0) and (client's phase != 7):
         return a new UI language work
     set query to the next pending UI source query in document
     set pending to query != @intrinsic("construct", a pointer to UI source query)
-    if (document's analyzed revision = document's revision) and (pending = false):
+    if ((document needs UI source analysis) = false) and (pending = false):
         return a new UI language work
-    if (pending = false) and (seconds < (document's edited at + (the UI source analysis delay))):
+    if (pending = false) and ((document's analyzed revision != document's revision) and (seconds < (document's edited at + (the UI source analysis delay)))):
         return a new UI language work
     if client's phase = 0:
         return the UI language project at step 1 in client
@@ -82,6 +55,8 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
     if (client's document != document) or (client's context != document's context):
         return UI language message "textDocument/didClose" with (the LSP document closing parameters for URI (client's uri)) requesting false at step 9 in client
     if (document's analyzed revision = document's revision) and (client has current UI language source):
+        if document's analyzed token epoch != document's token epoch:
+            return the UI language token request in client
         require condition pending reporting "An editor feature has no pending request"
         set client's query to query
         set client's query generation to query's generation
@@ -97,18 +72,6 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
 to get {a pointer to UI language client:client} [has current UI language source]:
     set document to client's document
     return (document's revision = client's revision) and (document's context = client's context)
-
-to get [the UI language result numbered] {integer:id} [in] {a pointer to JSON value:response}:
-    set index to 0
-    loop while index < response's length:
-        set message to the JSON value at index index in response
-        if message has JSON member named "id":
-            if (the JSON number named "id" in message) = (id as a floating-point number):
-                require condition ((message has JSON member named "error") = false) reporting "The language server rejected an editor request"
-                return the JSON member named "result" in message
-        increment index
-    require condition false reporting "The language server did not answer its request"
-    return a new JSON-RPC null
 
 to [receive UI language diagnostics] {a pointer to JSON value:response} [in] {a pointer to UI language client:client}:
     if (client has current UI language source) = false:
@@ -126,8 +89,7 @@ to [receive UI language diagnostics] {a pointer to JSON value:response} [in] {a 
                     set document's diagnostic revision to client's revision
         increment index
 
-to get [the UI language reply] {a pointer to JSON value:response} [at step] {integer:step} [in] {a pointer to UI language client:client}:
-    require condition (client's phase = step) reporting "A language-service reply arrived out of order"
+to get [advance UI language reply] {a pointer to JSON value:response} [at step] {integer:step} [in] {a pointer to UI language client:client}:
     if step = 1:
         set capabilities to the default LSP client capabilities
         parse (client's profiles) as JSON and set parsed to it
@@ -145,19 +107,19 @@ to get [the UI language reply] {a pointer to JSON value:response} [at step] {int
     if (step = 3) or (step = 10):
         return the UI language opening in client
     if (step = 4) or (step = 5):
-        receive UI language diagnostics response in client
-        set parameters to a JSON object containing [JSON child "textDocument" is (an LSP text document identifier for (client's uri))]
-        return UI language message "textDocument/semanticTokens/full" with parameters requesting true at step 6 in client
+        return the UI language token request in client
     if step = 6:
-        receive UI language diagnostics response in client
         set tokens to the UI language result numbered 6 in response
         if client has current UI language source:
             set document to client's document
+            if (UI semantic tokens tokens using (client's token types) match UI source document document) = false:
+                increment document's token generation
             free document's tokens
             free document's token types
             set document's tokens to a copy of JSON-RPC node tokens
             set document's token types to a copy of JSON-RPC node (client's token types)
             set document's token revision to client's revision
+            set document's analyzed token epoch to client's token epoch
             set document's analyzed revision to client's revision
         set client's phase to 7
         return a new UI language work
@@ -168,7 +130,6 @@ to get [the UI language reply] {a pointer to JSON value:response} [at step] {int
     if step = 11:
         return the UI language project at step 1 in client
     if step = 12:
-        receive UI language diagnostics response in client
         set query to client's query
         set result to a new JSON-RPC null
         if client's query notification = false:
@@ -187,7 +148,28 @@ to get [the UI language reply] {a pointer to JSON value:response} [at step] {int
     require condition false reporting "An unknown language-service step completed"
     return a new UI language work
 
-to [free UI language client] {a pointer to UI language client:client}:
-    free client's token types
-    destroy the value at client
-    deallocate client
+to get [the next UI language server reply in] {a pointer to UI language client:client}:
+    if client's reply index < client's replies' length:
+        set message to a copy of JSON-RPC node (the JSON value at index (client's reply index) in (client's replies))
+        increment client's reply index
+        return UI language work (a JSON object containing [JSON text "operation" is "exchange", JSON child "message" is message]) at step 13 in client
+    free client's replies
+    set client's replies to a new JSON-RPC array
+    set client's reply index to 0
+    set work to client's continuation
+    set client's continuation to a new UI language work
+    set client's phase to client's continuation phase
+    return work
+
+to get [the UI language reply] {a pointer to JSON value:response} [at step] {integer:step} [in] {a pointer to UI language client:client}:
+    require condition (client's phase = step) reporting "A language-service reply arrived out of order"
+    receive UI language server messages response in client
+    receive UI language diagnostics response in client
+    if step = 13:
+        return the next UI language server reply in client
+    set work to advance UI language reply response at step step in client
+    if client's reply index < client's replies' length:
+        set client's continuation to work
+        set client's continuation phase to client's phase
+        return the next UI language server reply in client
+    return work

@@ -51,6 +51,16 @@ present UI source workspace workspace using (the default UI source token theme)
 require condition (workspace's palette = {saved palette}) reporting "Comparing a token theme consumed its retained palette."
 present UI source workspace workspace using (the default UI source token theme)
 require condition (instance's revision = revision) reporting "The default token theme repainted unchanged analysis."
+# Inferred-instance choices can change tokens without changing source text.
+set {before colors} to plain value's colors' ink
+free plain's document's token types
+set plain's document's token types to a JSON array containing [a new JSON-RPC text for "string"]
+increment plain's document's token generation
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((plain value's colors' ink's red != before colors' red) or (plain value's colors' ink's green != before colors' green)) reporting "A new semantic result for unchanged text retained its preceding colors."
+set revision to instance's revision
+present UI source workspace workspace using (the default UI source token theme)
+require condition (instance's revision = revision) reporting "A refreshed semantic result was repainted repeatedly."
 free UI source workspace workspace
 close window
 print line "Source themes refresh ordinary and wrapped editors without reanalysis or unchanged redraws."

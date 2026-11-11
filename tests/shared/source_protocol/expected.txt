@@ -1,0 +1,1 @@
+Source language requests are bidirectional, preserve continuations and refresh unchanged semantic colors.

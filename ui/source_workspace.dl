@@ -91,7 +91,7 @@ to get [the next UI source workspace work in] {a pointer to UI source workspace:
     set chosen to @intrinsic("construct", a pointer to UI source editor)
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
-        if (entry's document's revision != entry's document's analyzed revision) or (entry's document has pending UI source queries):
+        if (entry's document needs UI source analysis) or (entry's document has pending UI source queries):
             if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
                 if (chosen = @intrinsic("construct", a pointer to UI source editor)) or (entry's node = focused):
                     set chosen to entry
@@ -126,9 +126,9 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
         set document to entry's document
-        if (document's token revision = document's revision) and (entry's colors revision != document's token revision):
+        if (document's token revision = document's revision) and (entry's colors revision != document's token generation):
             apply UI source colors from document to (entry's node) in instance using theme
-            set entry's colors revision to document's token revision
+            set entry's colors revision to document's token generation
         set active to UI source element (entry's node) is active within (instance's description) in instance
         set complete to document's diagnostic revision = document's revision
         set failed to workspace's client's phase = 8

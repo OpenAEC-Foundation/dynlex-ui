@@ -20,6 +20,9 @@ class:
         analyzed revision as an integer
         diagnostic revision as an integer
         token revision as an integer
+        token generation as an integer
+        token epoch as an integer
+        analyzed token epoch as an integer
         diagnostics as a pointer to JSON value
         tokens as a pointer to JSON value
         token types as a pointer to JSON value
@@ -57,12 +60,16 @@ to get [a UI source document named] {string:filename} [at] {string:uri} [prefixe
     set document's profiles to profiles
     set document's files to a new JSON-RPC object
     set document's revision to 1
+    set document's token generation to 1
     set document's edited at to -1.0
     set document's diagnostics to a new JSON-RPC array
     set document's tokens to a JSON object containing [JSON child "data" is (a new JSON-RPC array)]
     set document's token types to a new JSON-RPC array
     refresh the context of UI source document document
     return document
+
+to get {a pointer to UI source document:document} [needs UI source analysis]:
+    return (document's analyzed revision != document's revision) or (document's analyzed token epoch != document's token epoch)
 
 to [edit UI source document] {a pointer to UI source document:document} [to] {string:source} [at] {floating-point number:seconds} [seconds]:
     if source != document's source:

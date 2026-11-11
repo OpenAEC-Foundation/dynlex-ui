@@ -268,3 +268,11 @@ ordinary `UI source token style` data. Call `free UI source workspace workspace`
 before closing its UI instance. Transport failures should call `fail UI source
 workspace workspace`; shared presentation then reports the failure in each active
 source editor.
+
+The shared client handles both directions of the language protocol. It replies
+to semantic-token refresh requests and reports method-not-found for unsupported
+server requests, preserving numeric and string identifiers. Replies are sent
+before pending editor work resumes. A refresh requests tokens again without
+resending unchanged source. Changed token data advances a separate presentation
+generation, so inferred-instance choices can change colors without an edit.
+Identical data retains cached colors.

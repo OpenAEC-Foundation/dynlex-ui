@@ -1,0 +1,64 @@
+# A language exchange can contain notifications, responses and requests from the
+# server. Request IDs are independent in each direction of the connection.
+import source_language_types.dl
+
+# Semantic data and legends are flat integer/text arrays. Compare their values
+# without allocating serialized copies or treating numeric spelling as a change.
+to get [UI semantic entries] {a pointer to JSON value:first} [match] {a pointer to JSON value:second}:
+    if first's length != second's length:
+        return false
+    set index to 0
+    loop while index < first's length:
+        set left to the JSON value at index index in first
+        set right to the JSON value at index index in second
+        if left's kind != right's kind:
+            return false
+        if left's kind = the JSON number kind:
+            if left's number != right's number:
+                return false
+        else:
+            require condition (left's kind = the JSON text kind) reporting "A semantic list contains an invalid entry"
+            if left's text != right's text:
+                return false
+        increment index
+    return true
+
+to get [UI semantic tokens] {a pointer to JSON value:tokens} [using] {a pointer to JSON value:types} [match UI source document] {a pointer to UI source document:document}:
+    if document's token revision != document's revision:
+        return false
+    return (UI semantic entries (the JSON member named "data" in tokens) match (the JSON member named "data" in (document's tokens))) and (UI semantic entries types match (document's token types))
+
+to [receive UI language server messages] {a pointer to JSON value:response} [in] {a pointer to UI language client:client}:
+    set index to 0
+    loop while index < response's length:
+        set message to the JSON value at index index in response
+        if message has JSON member named "method":
+            set method to the JSON text named "method" in message
+            set refresh to method = "workspace/semanticTokens/refresh"
+            if refresh:
+                increment client's document's token epoch
+            if message has JSON member named "id":
+                set reply to a JSON object containing [
+                    JSON text "jsonrpc" is "2.0",
+                    JSON child "id" is (a copy of JSON-RPC node (the JSON member named "id" in message))
+                ]
+                if refresh:
+                    add JSON-RPC member "result" containing (a new JSON-RPC null) to reply
+                else:
+                    add JSON-RPC member "error" containing (a JSON object containing [JSON number "code" is -32601, JSON text "message" is "Method not found"]) to reply
+                add reply to the JSON array (client's replies)
+        increment index
+
+to get [the UI language result numbered] {integer:id} [in] {a pointer to JSON value:response}:
+    set index to 0
+    loop while index < response's length:
+        set message to the JSON value at index index in response
+        if (message has JSON member named "id") and ((message has JSON member named "method") = false):
+            set identifier to the JSON member named "id" in message
+            if identifier's kind = the JSON number kind:
+                if identifier's number = (id as a floating-point number):
+                    require condition ((message has JSON member named "error") = false) reporting "The language server rejected an editor request"
+                    return the JSON member named "result" in message
+        increment index
+    require condition false reporting "The language server did not answer its request"
+    return a new JSON-RPC null

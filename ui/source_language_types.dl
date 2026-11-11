@@ -1,0 +1,47 @@
+import source_queries.dl
+
+class:
+    patterns:
+        UI language work
+    members:
+        step as an integer
+        payload as a pointer to JSON value
+
+class:
+    patterns:
+        UI language client
+    members:
+        root as a string
+        phase as an integer
+        document as a pointer to UI source document
+        desired as a pointer to UI source document
+        uri as a string
+        context as a string
+        profiles as a string
+        snapshot as a string
+        revision as an integer
+        version as an integer
+        token types as a pointer to JSON value
+        token epoch as an integer
+        query as a pointer to UI source query
+        query generation as an integer
+        query notification as a boolean
+        replies as a pointer to JSON value
+        reply index as an integer
+        continuation as UI language work
+        continuation phase as an integer
+
+to get [a UI language client rooted at] {string:root}:
+    set client to storage for one slot initialized with (a new UI language client)
+    set client's root to root
+    set client's token types to a new JSON-RPC array
+    set client's replies to a new JSON-RPC array
+    return client
+
+to [free UI language client] {a pointer to UI language client:client}:
+    free client's token types
+    free client's replies
+    if client's continuation's payload != @intrinsic("construct", a pointer to JSON value):
+        free client's continuation's payload
+    destroy the value at client
+    deallocate client
