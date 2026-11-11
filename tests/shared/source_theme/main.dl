@@ -44,6 +44,13 @@ require condition (instance's revision = revision) reporting "The replacement to
 set theme to [@intrinsic("construct", UI source token style, "comment", UI ink 40 50 60)]
 present UI source workspace workspace using theme
 require condition ((plain value's colors' ink's red = 245) and (challenge value's colors' ink's red = 245)) reporting "Changing only a token class did not invalidate the palette."
+present UI source workspace workspace using (the default UI source token theme)
+set revision to instance's revision
+set {saved palette} to workspace's palette
+present UI source workspace workspace using (the default UI source token theme)
+require condition (workspace's palette = {saved palette}) reporting "Comparing a token theme consumed its retained palette."
+present UI source workspace workspace using (the default UI source token theme)
+require condition (instance's revision = revision) reporting "The default token theme repainted unchanged analysis."
 free UI source workspace workspace
 close window
 print line "Source themes refresh ordinary and wrapped editors without reanalysis or unchanged redraws."

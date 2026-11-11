@@ -10,16 +10,17 @@ class:
         next as a pointer to UI source palette entry
 
 to get [UI source palette] {a pointer to UI source palette entry:palette} [matches] {an array:theme}:
+    set cursor to palette
     set index to 0
     loop while index < the length of theme:
-        if palette = @intrinsic("construct", a pointer to UI source palette entry):
+        if cursor = @intrinsic("construct", a pointer to UI source palette entry):
             return false
         set style to the item at index in theme
-        if (palette's name != style's name) or (((palette's ink's red != style's ink's red) or (palette's ink's green != style's ink's green)) or (palette's ink's blue != style's ink's blue)):
+        if (cursor's name != style's name) or (((cursor's ink's red != style's ink's red) or (cursor's ink's green != style's ink's green)) or (cursor's ink's blue != style's ink's blue)):
             return false
-        set palette to palette's next
+        set cursor to cursor's next
         increment index
-    return palette = @intrinsic("construct", a pointer to UI source palette entry)
+    return cursor = @intrinsic("construct", a pointer to UI source palette entry)
 
 to get [a UI source palette copying] {an array:theme}:
     set palette to @intrinsic("construct", a pointer to UI source palette entry)

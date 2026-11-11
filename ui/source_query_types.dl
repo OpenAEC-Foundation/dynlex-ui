@@ -23,9 +23,10 @@ to [cancel UI source query] {a pointer to UI source query:query}:
     set query's ready to false
 
 to [cancel UI source queries] {a pointer to UI source query:query}:
-    loop while query != @intrinsic("construct", a pointer to UI source query):
-        cancel UI source query query
-        set query to query's next
+    set cursor to query
+    loop while cursor != @intrinsic("construct", a pointer to UI source query):
+        cancel UI source query cursor
+        set cursor to cursor's next
 
 to [free UI source queries] {a pointer to UI source query:query}:
     loop while query != @intrinsic("construct", a pointer to UI source query):

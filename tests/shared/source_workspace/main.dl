@@ -64,6 +64,20 @@ set game's ready text to "Plan checked"
 set game's document's diagnostic revision to game's document's revision
 present UI source workspace workspace using (the default UI source token theme)
 require condition (((the UI value for (game's diagnostics) in window)'s text = "") and ((the UI value for (game's status) in window)'s text = "Plan checked")) reporting "Embedded editors could not configure shared diagnostic presentation."
+set the text of "Game source" in window to "move upward"
+synchronize UI source workspace workspace at 3.5 seconds
+set diagnostic to a JSON object containing [
+    JSON text "message" is "Unknown direction",
+    JSON child "range" is (a JSON object containing [
+        JSON child "start" is (an LSP position at line 2 and character 5),
+        JSON child "end" is (an LSP position at line 2 and character 11)
+    ])
+]
+free game's document's diagnostics
+set game's document's diagnostics to a JSON array containing [diagnostic]
+set game's document's diagnostic revision to game's document's revision
+present UI source workspace workspace using (the default UI source token theme)
+require condition ((the UI value for (game's status) in window)'s text = "1 problem") reporting "A single editor diagnostic used a plural problem count."
 fail UI source workspace workspace
 present UI source workspace workspace using (the default UI source token theme)
 require condition ((the UI value for (game's status) in window)'s text = "An error occurred. Check the log.") reporting "A language transport failure was not visible in the embedded editor."

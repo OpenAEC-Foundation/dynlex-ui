@@ -145,7 +145,7 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
                         set count to document's diagnostics' length
                         set text to entry's ready text
                         if count > 0:
-                            set text to formatted "{count} problems"
+                            set text to (the string form of "1 problem") if (count = 1), else (formatted "{count} problems")
                     if failed:
                         set text to "An error occurred. Check the log."
                     set the text of (entry's status' text) in instance to text

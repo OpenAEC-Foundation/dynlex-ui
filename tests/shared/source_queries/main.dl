@@ -43,10 +43,12 @@ require condition ((query's ready) and (query's result's text = "current positio
 
 cancel UI source query query
 require condition (query's ready = false) reporting "Cancelling a feature retained its presentation."
+set {saved completion} to query
 set hover to request UI source feature "textDocument/hover" at byte 0 in document
 set work to the next UI language work for client analyzing document at 0.0 seconds
 free work's payload
 edit UI source document document to (the string form of "new text") at 1.0 seconds
+require condition ((document's queries = hover) and (hover's next = {saved completion})) reporting "Cancelling queries while editing discarded their owned slots."
 set response to an editor reply containing "old source"
 set work to the UI language reply response at step 12 in client
 free response
@@ -54,6 +56,7 @@ require condition (hover's ready = false) reporting "A result for preceding sour
 
 # Interactive requests synchronize edits immediately instead of waiting for debounce.
 set query to request UI source feature "textDocument/completion" at byte 8 in document
+require condition (query = {saved completion}) reporting "Editing allocated another slot for an existing source feature."
 set work to the next UI language work for client analyzing document at 1.0 seconds
 require condition (work's step = 5) reporting "A feature request ran before its source was synchronized."
 free work's payload
@@ -94,9 +97,11 @@ require condition ((query's ready) and (query's result's text = "request result"
 
 # Context changes invalidate queued requests even when visible text is unchanged.
 set query to request UI source feature "textDocument/definition" at byte 0 in document
+set {saved queries} to document's queries
 set files to a new JSON-RPC object
 configure UI source document document named "renamed.dl" at "file:///workspace/renamed.dl" prefixed by "" using UI CPU analysis with files files
 free files
+require condition (document's queries = {saved queries}) reporting "Reconfiguring source context discarded its owned query slots."
 require condition ((document has pending UI source queries) = false) reporting "A query retained an obsolete project context."
 require condition (query's queued = false) reporting "An obsolete query stayed in the work queue."
 free UI language client client
