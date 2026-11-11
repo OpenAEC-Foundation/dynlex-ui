@@ -1,0 +1,154 @@
+# Floating text uses ordinary paragraph layout and the shared selection engine.
+# The caller supplies placement, appearance and a borrowed view-owned typeface.
+import text_input.dl
+import overlays.dl
+import document_declarations.dl
+import paragraph_rendering.dl
+import clipping.dl
+import outlines.dl
+
+appearance UI text popover appearance:
+    padding is 12
+    maximum width is 440
+    corner radius is 7
+    line spacing is 1.4
+    border width is 1
+    border is UI ink 210 215 222
+    background is UI ink 255 255 255
+
+the UI text popover paragraph means: paragraph "" using no UI appearance
+
+class:
+    patterns:
+        UI text popover
+    members:
+        layout as UI layout
+        bounds as UI bounds
+        visible as a boolean
+        width as a floating-point number
+        scroll as a floating-point number
+
+to get [a UI text popover containing] {string:content}:
+    set result to a new UI text popover
+    set result's layout's node to the UI text popover paragraph
+    set result's layout's content to content
+    set result's layout's text source's text to content
+    set result's visible to content's length > 0
+    return result
+
+to [dismiss UI text popover] {a pointer to UI text popover:popover} [in] {a pointer to UI view:view}:
+    forget UI text source (the address of (popover's layout's text source)) in view
+    retire UI floating layout (the address of (popover's layout))
+    if popover's visible:
+        set view's damaged to true
+    set popover's visible to false
+    set popover's bounds to UI box at 0 0 sized 0 0
+
+to [set UI text popover] {a pointer to UI text popover:popover} [to] {string:content} [in] {a pointer to UI view:view}:
+    if popover's layout's content != content:
+        forget UI text source (the address of (popover's layout's text source)) in view
+        set popover's layout's content to content
+        set popover's layout's text source's text to content
+        set popover's width and popover's scroll to 0.0
+        set view's damaged to true
+    if popover's visible = false:
+        set view's damaged to true
+    set popover's visible to true
+
+to [clear UI text popover] {a pointer to UI text popover:popover} [in] {a pointer to UI view:view}:
+    dismiss UI text popover popover in view
+    release UI text lines in (the address of (popover's layout))
+    set the value at popover to a UI text popover containing ""
+
+to [paint UI text popover] {a pointer to UI text popover:popover} [anchored at] {UI bounds:anchor} [within] {UI bounds:viewport} [using] {UI font:typeface} [styled] {UI appearance settings:style} [on] {UI frame:frame}:
+    if popover's visible = false:
+        return nothing
+    set popover's bounds to UI box at 0 0 sized 0 0
+    retire UI floating layout (the address of (popover's layout))
+    if (viewport's width <= 16.0) or (viewport's height <= 16.0):
+        return nothing
+    set width to viewport's width - 16.0
+    if style's maximum width > 0.0:
+        set width to the minimum of width and (style's maximum width)
+    if (width <= style's padding * 2.0) or (viewport's height <= (16.0 + style's padding * 2.0)):
+        return nothing
+    set inner to width - style's padding * 2.0
+    set layout to the address of (popover's layout)
+    set changed to ((popover's width != inner) or (layout's typeface's size != typeface's size)) or ((@intrinsic("equal", layout's typeface's resource, typeface's resource) = false) or (layout's typeface's driver != typeface's driver))
+    set changed to changed or (layout's appearance's line spacing != style's line spacing)
+    set layout's typeface to typeface
+    set layout's appearance to style
+    if changed:
+        ignore the number of wrapped UI rows in layout within inner
+        set popover's width to inner
+    set height to the minimum of (viewport's height - 16.0) and (layout's text height + style's padding * 2.0)
+    set left to the maximum of (viewport's x + 8.0) and (the minimum of (anchor's x) and ((viewport's x + viewport's width) - width - 8.0))
+    set top to anchor's y + anchor's height + 4.0
+    if (top + height) > (viewport's y + viewport's height - 8.0):
+        set top to anchor's y - height - 4.0
+    set top to the maximum of (viewport's y + 8.0) and (the minimum of top and ((viewport's y + viewport's height) - height - 8.0))
+    set box to UI box at left top sized width height
+    set popover's bounds to box
+    set view to frame's view
+    record UI floating layout layout in box on frame
+    if style's filled:
+        draw a UI shadow under box with radius (style's radius) softness 8.0 strength 14 in (UI ink 0 0 0) on frame
+        draw a rounded UI box box with radius (style's radius) in (style's background) on frame
+    if style's border width > 0.0:
+        draw a rounded UI outline box with radius (style's radius) width (style's border width) in (style's border ink) on frame
+    set clip to UI box at (left + style's padding) (top + style's padding) sized inner (the maximum of 1.0 and (height - style's padding * 2.0))
+    set popover's scroll to the minimum of (popover's scroll) and (the maximum of 0.0 and (layout's text height - clip's height))
+    set saved to a UI clip restricted to clip in view on frame
+    set {previous selectable} to view's selectable
+    set {previous source} to view's text source
+    set {previous offset} to view's text offset
+    set {previous ending} to view's text end caret
+    set {previous control} to view's text control
+    set view's selectable to true
+    set view's text source to the address of (layout's text source)
+    set line to layout's lines
+    loop while line != @intrinsic("construct", a pointer to UI text line):
+        draw UI row line in layout at (clip's x) (clip's y + line's top + line's ascent - popover's scroll) on frame
+        set line to line's next
+    set view's selectable to previous selectable
+    set view's text source to previous source
+    set view's text offset to previous offset
+    set view's text end caret to previous ending
+    set view's text control to previous control
+    restore UI clip saved in view on frame
+
+to get [read UI text popover] {a pointer to UI text popover:popover} [in] {a pointer to UI view:view}:
+    if popover's visible = false:
+        return false
+    set source to the address of (popover's layout's text source)
+    set selected to view's selection's limit = source
+    if view's key press = 256:
+        dismiss UI text popover popover in view
+        return true
+    set cursor to the UI cursor in view
+    set inside to cursor is inside (popover's bounds)
+    if (view's input kind = 1) or (view's input kind = 2):
+        if inside or (selected and (view's selection's dragging)):
+            set {previous limit} to view's selection's limit
+            set view's selection's limit to source
+            handle UI text pointer at cursor over (@intrinsic("construct", a pointer to UI layout)) in view
+            if view's selection's caret source = source:
+                set view's selection's limit to source
+            else:
+                set view's selection's limit to previous limit
+            return true
+        if (view's input kind = 2) and (view's down):
+            dismiss UI text popover popover in view
+        return false
+    if inside and (view's input kind = 5):
+        set height to popover's bounds' height - (popover's layout's appearance's padding * 2.0)
+        set limit to the maximum of 0.0 and (popover's layout's text height - height)
+        set scroll to the minimum of limit and (the maximum of 0.0 and (popover's scroll + view's scroll y))
+        if popover's scroll != scroll:
+            set popover's scroll to scroll
+            set view's damaged to true
+        return true
+    if selected and (((view's input kind = 3) or (view's input kind = 9)) or ((view's input kind = 4) or (view's input kind = 13))):
+        handle UI text keys in view
+        return true
+    return false

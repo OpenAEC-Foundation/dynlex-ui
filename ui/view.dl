@@ -113,6 +113,15 @@ to get [the UI viewport bounds in] {a pointer to UI view:view}:
         return UI box at 0 0 sized (view's logical width) (view's logical height)
     return UI box at 0 0 sized (view's width) (view's height)
 
+to get the UI cursor in {a pointer to UI view:view}:
+    set position to view's cursor
+    if view's fitted:
+        if (view's content bounds' width <= 0.0) or (view's content bounds' height <= 0.0):
+            return a UI point at -1.0 and -1.0
+        set position's x to (position's x - view's content bounds' x) * ((view's logical width as a floating-point number) / view's content bounds' width)
+        set position's y to (position's y - view's content bounds' y) * ((view's logical height as a floating-point number) / view's content bounds' height)
+    return position
+
 class:
     patterns:
         [a|] UI frame

@@ -1,6 +1,7 @@
 import overlays.dl
 import source_queries.dl
 import source_navigation_types.dl
+import source_hover_types.dl
 
 class:
     patterns:
@@ -27,6 +28,8 @@ class:
         deadline as a floating-point number
         message as a string
         navigation as UI source navigation
+        hover as UI source hover
+        surface as UI layout
 
 to [dismiss UI source tools] {a pointer to UI source tools:tools}:
     if (tools's mode = 0) and (tools's query = @intrinsic("construct", a pointer to UI source query)):
@@ -35,6 +38,7 @@ to [dismiss UI source tools] {a pointer to UI source tools:tools}:
         cancel UI source query (tools's query)
     set tools's query to @intrinsic("construct", a pointer to UI source query)
     set tools's mode to 0
+    retire UI floating layout (the address of (tools's surface))
     free tools's items
     set tools's items to a new JSON-RPC array
     set tools's view's damaged to true
@@ -43,6 +47,8 @@ to [free UI source tools] {a pointer to UI source tools:tools}:
     if tools = @intrinsic("construct", a pointer to UI source tools):
         return nothing
     if tools's view != @intrinsic("construct", a pointer to UI view):
+        dismiss UI source hover (the address of (tools's hover)) in (tools's view)
+        clear UI text popover (the address of (tools's hover's popover)) in (tools's view)
         detach UI overlay (tools's overlay) in (tools's view)
     cancel UI source navigation (the address of (tools's navigation))
     free tools's items

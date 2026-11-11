@@ -28,6 +28,19 @@ to get the UI text boundary at or before {integer:offset} in {string:text}:
 to clear UI selection in {a pointer to UI view:view}:
     set view's selection to a new UI text selection
 
+# A floating surface can disappear between paints. Retained runs must release
+# their borrowed source before its owner is cleared, even before the next paint.
+to [forget UI text source] {a pointer to UI text source:source} [in] {a pointer to UI view:view}:
+    if ((view's selection's anchor source = source) or (view's selection's caret source = source)) or (view's selection's limit = source):
+        clear UI selection in view
+    set run to view's texts
+    loop while run != @intrinsic("construct", a pointer to UI text run):
+        if run's source = source:
+            set run's owned source to a new UI text source
+            set run's source to the address of (run's owned source)
+            set run's generation to 0
+        set run to run's next
+
 to get the UI text prefix of {string:text} ending at {integer:end}:
     return a new string from (the data of text) containing end bytes
 

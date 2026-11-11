@@ -1,18 +1,21 @@
 import text.dl
+import document_layout.dl
 import text_navigation.dl
 import hit_testing.dl
 import lib/unicode.dl
 
 # Selection anchors are byte offsets on Unicode scalar boundaries.
-to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
+to get the UI text hit at {UI point:point} in {a pointer to UI view:view} limited to {a pointer to UI text source:scope}:
     set result to @intrinsic("construct", a pointer to UI text run)
     set distance to 1.0e30
-    set covering to the UI hit at point in (view's layout) during (view's paint count) for (view's instance)
+    set covering to the UI hit at point in view
     set run to view's texts
     loop while run != @intrinsic("construct", a pointer to UI text run):
         set visible to true
         if covering != @intrinsic("construct", a pointer to UI layout):
             set visible to run's paint serial >= covering's paint serial
+        if scope != @intrinsic("construct", a pointer to UI text source):
+            set visible to visible and (run's source = scope)
         if run's source's element != @intrinsic("construct", UI reference):
             set visible to visible and (the UI element (run's source's element) is enabled in (view's instance))
         if visible and ((run's generation = view's paint count) and (point is inside (run's clip))):
@@ -36,6 +39,9 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
         set run to run's next
     return result
 
+to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
+    return the UI text hit at point in view limited to (@intrinsic("construct", a pointer to UI text source))
+
 to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
     set result to @intrinsic("construct", a pointer to UI text run)
     set distance to 1.0e30
@@ -50,6 +56,8 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
                 set allowed to run's source's element = @intrinsic("construct", UI reference)
         if run's source's element != @intrinsic("construct", UI reference):
             set allowed to allowed and (the UI element (run's source's element) is enabled in (view's instance))
+        if view's selection's limit != @intrinsic("construct", a pointer to UI text source):
+            set allowed to allowed and (run's source = view's selection's limit)
         if (run's generation = view's paint count) and allowed:
             set local to UI text position of point in run
             set top to run's origin's y - run's typeface's size
@@ -63,6 +71,10 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
     return result
 
 to select UI text at {UI point:point} in {a pointer to UI text run:run} extending {boolean:extend} in {a pointer to UI view:view}:
+    if view's selection's caret source != run's source:
+        set view's input context's active to false
+        set view's selection's composing to false
+        set view's selection's composition to ""
     set local to UI text position of point in run
     set caret to run's start + (the UI text byte at (local's x - run's origin's x) in run)
     if run's source's element != @intrinsic("construct", UI reference):
@@ -83,7 +95,7 @@ to select UI text at {UI point:point} in {a pointer to UI text run:run} extendin
 
 to handle UI text pointer at {UI point:point} over {a pointer to UI layout:hot} in {a pointer to UI view:view}:
     if (view's down != view's was down) and view's down:
-        set run to the UI text hit at point in view
+        set run to the UI text hit at point in view limited to (view's selection's limit)
         if hot != @intrinsic("construct", a pointer to UI layout):
             if (the UI element (hot's node) is interactive in (view's instance)) and ((hot's node's kind != 39) and (hot's node's kind != 44)):
                 set inline to false
@@ -321,7 +333,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
         if view's key press = 65:
             set first to source
             set last to source
-            if control = false:
+            if (control = false) and (view's selection's limit = @intrinsic("construct", a pointer to UI text source)):
                 set first to view's texts' source
                 set last to view's last text's source
             set view's selection's anchor source to first

@@ -1,0 +1,95 @@
+import ../../helpers/driver.dl
+import ../../../ui/text_popovers.dl
+
+appearance background appearance:
+    height is 280
+
+appearance hint appearance:
+    use UI text popover appearance
+    maximum width is 200
+    background is UI ink 245 247 249
+    text is UI ink 25 30 35
+
+document example:
+    editor "Source" containing "kept" using no UI appearance
+    (button "Behind the popover") wearing background appearance
+
+set activations to 0
+set {test viewport} to UI box at 10 10 sized 230 220
+function [record background action] {a pointer to UI instance:instance}:
+    globals:
+        activations
+    execute:
+        increment activations
+
+to get [read test popover] {a pointer:context} [in] {a pointer to UI view:view}:
+    return read UI text popover (context as a pointer to UI text popover) in view
+
+function [paint test popover] {a pointer:context} [on] {UI frame:frame}:
+    globals:
+        hint appearance
+        test viewport
+    execute:
+        set style to UI appearance hint appearance resolved for (frame's view's width as a floating-point number)
+        paint UI text popover (context as a pointer to UI text popover) anchored at (UI box at 30 15 sized 10 18) within test viewport using (frame's view's typeface) styled style on frame
+
+to [close test popover] {a pointer:context} [in] {a pointer to UI view:view}:
+    clear UI text popover (context as a pointer to UI text popover) in view
+
+set instance to an instance of example
+set window to the address of instance
+bind (the control labeled "Behind the popover" in window) in window to (the function named "record background action $") for event 0
+set view to a UI view of window sized 400 by 300 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+queue UI input of kind 1 key 0 at 5.0 10.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set {editor source} to view's selection's caret source
+set {editor caret} to view's selection's caret
+require condition (view's input context's active) reporting "The popover fixture did not focus its source input."
+set source to the string form of "First β😀 line wraps across this popover.\nSecond line."
+set popover to a UI text popover containing source
+set overlay to a UI overlay in (the address of view) with context ((the address of popover) as a pointer) handling input ((the function named "read test popover $ in $") as a pointer) painting ((the function named "paint test popover $ on $") as a pointer) closing ((the function named "close test popover $ in $") as a pointer)
+set overlay's layout to the address of (popover's layout)
+ignore update UI view (the address of view)
+require condition ((popover's bounds' width = 200.0) and (popover's layout's text height > 30.0)) reporting "A text popover did not wrap its content to its declared width."
+set x to popover's bounds' x + 13.0
+set y to popover's bounds' y + 16.0
+queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's selection's caret source = editor source) and (view's selection's limit = @intrinsic("construct", a pointer to UI text source))) reporting "Hovering a text popover stole the editor's text selection."
+require condition ((view's hot = (the address of (popover's layout))) and (view's cursor shape = 2)) reporting "A text popover exposed its background control to pointer hover."
+queue UI input of kind 3 key 262 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's selection's caret source = editor source) and (view's selection's caret = editor caret + 1)) reporting "Hovering a popover captured the editor's keyboard navigation."
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's selection's caret source = (the address of (popover's layout's text source))) and (view's selection's dragging)) reporting "A popover could not own a text-selection gesture above another control."
+require condition (view's input context's active = false) reporting "Selecting popover text retained the preceding editor input session."
+queue UI input of kind 1 key 0 at -20.0 260.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's selection's caret source = (the address of (popover's layout's text source))) and (activations = 0)) reporting "Dragging beyond a popover selected or activated its background."
+queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's window as a pointer to test UI surface)'s copied = source) reporting "Copying a wrapped popover included background text or changed its Unicode and line breaks."
+dismiss UI text popover (the address of popover) in (the address of view)
+require condition (view's selection's caret source = @intrinsic("construct", a pointer to UI text source)) reporting "Dismissing a popover retained its selection."
+set run to view's texts
+loop while run != @intrinsic("construct", a pointer to UI text run):
+    require condition (run's source != (the address of (popover's layout's text source))) reporting "Dismissing a popover retained a borrowed text source in the preceding paint."
+    set run to run's next
+set UI text popover (the address of popover) to source in (the address of view)
+set test viewport to UI box at 10 10 sized 20 20
+ignore update UI view (the address of view)
+require condition ((popover's bounds' width = 0.0) and (popover's bounds' height = 0.0)) reporting "A popover painted content outside a viewport too small for its padding."
+set test viewport to UI box at 10 10 sized 230 220
+set view's damaged to true
+ignore update UI view (the address of view)
+require condition (popover's bounds' width = 200.0) reporting "A popover did not return when its viewport became usable."
+ignore update UI view (the address of view)
+close the address of view
+close window
+print line "Text popovers share wrapping, Unicode selection, scoped copying, input capture and source lifetime."

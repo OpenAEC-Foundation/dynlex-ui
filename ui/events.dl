@@ -24,7 +24,7 @@ to handle UI input in {a pointer to UI view:view}:
                     set hot to child
                 set child to child's next
         else:
-            set hot to the UI hit at cursor in (view's layout) during (view's paint count) for (view's instance)
+            set hot to the UI hit at cursor in view
             set text to the UI text hit at cursor in view
             if text != @intrinsic("construct", a pointer to UI text run):
                 if text's control != @intrinsic("construct", a pointer to UI layout):

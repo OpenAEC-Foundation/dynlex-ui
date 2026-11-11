@@ -1,4 +1,5 @@
 import source_tools_types.dl
+import source_hover.dl
 import shapes.dl
 import clipping.dl
 import layout_lookup.dl
@@ -20,6 +21,8 @@ to get [the UI source tool anchor in] {a pointer to UI source tools:tools}:
 
 to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     set tools to context as a pointer to UI source tools
+    retire UI floating layout (the address of (tools's surface))
+    paint UI source hover in tools on frame
     if tools's mode = 0:
         return nothing
     set tools's rows to 0
@@ -62,6 +65,8 @@ to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     set top to the maximum of (viewport's y + 8.0) and (the minimum of top and (((viewport's y + viewport's height) - height) - 8.0))
     set box to UI box at left top sized width height
     set tools's bounds to box
+    set tools's overlay's layout to the address of (tools's surface)
+    record UI floating layout (the address of (tools's surface)) in box on frame
     set background to layout's appearance's background
     set foreground to layout's appearance's foreground
     set outline to UI ink between background and foreground at 0.2
@@ -75,6 +80,8 @@ to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     draw a rounded UI box box with radius 7.0 in outline on frame
     draw a rounded UI box (UI box at (left + 1.0) (top + 1.0) sized (width - 2.0) (height - 2.0)) with radius 6.0 in background on frame
     set clip to a UI clip restricted to (UI box at (left + 6.0) (top + 5.0) sized (width - 12.0) (height - 10.0)) in view on frame
+    set {previous selectable} to view's selectable
+    set view's selectable to false
     set baseline to ((tools's row height + typeface's size) / 2.0) - 2.0
     if tools's mode = 2:
         draw UI text (tools's message) at (left + 12.0) ((top + 6.0) + baseline) with typeface in foreground on frame
@@ -92,3 +99,4 @@ to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     set footer to "↑ ↓ choose  ·  Enter insert  ·  Esc close" if (tools's mode = 1), else "Esc close"
     draw UI text footer at (left + 12.0) (top + height - 10.0) with (view's small) in muted on frame
     restore UI clip clip in view on frame
+    set view's selectable to previous selectable

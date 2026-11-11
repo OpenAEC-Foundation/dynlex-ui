@@ -1,0 +1,1 @@
+Hover presentation preserves plain definitions, fenced types, literal code, Unicode and empty results.

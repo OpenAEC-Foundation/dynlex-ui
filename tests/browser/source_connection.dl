@@ -1,6 +1,7 @@
 # The driver supplies only transport. All project/document policy is the shared
 # DynLex client, exercised against the actual shipped language server.
 import ../../ui/source_language.dl
+import ../../ui/source_hover_content.dl
 
 to get [exchange source test work] {UI language work:work}:
     set payload to the compact JSON form of (work's payload)
@@ -59,6 +60,11 @@ set query to request UI source feature "textDocument/hover" at byte (imported's 
 analyze source test document helper in client
 require condition ((query's ready) and (query's result's kind != the JSON null kind)) reporting "The imported hover was lost after editing its main source"
 require condition ((helper's revision = 1) and (helper's analyzed project revision = main's project's revision)) reporting "The imported view was edited instead of refreshing its project context"
+
+edit UI source document main to (lead + "echo \"a`b``c\")") at 2.0 seconds
+set query to request UI source feature "textDocument/hover" at byte (lead's length + 6) in main
+analyze source test document main in client
+require condition ((the UI source hover text of (query's result)) = "type:\n\na pointer to a byte\n\nvalue: \"a`b``c\"") reporting "The real hover connection changed literal backticks in a source value."
 
 free UI language client client
 free UI source project (main's project)

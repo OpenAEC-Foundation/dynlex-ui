@@ -7,4 +7,5 @@ class:
         input as a pointer
         paint as a pointer
         closing as a pointer
+        layout as a pointer to UI layout
         next as a pointer to UI overlay

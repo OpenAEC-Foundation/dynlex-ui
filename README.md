@@ -92,6 +92,9 @@ arrows or the pointer select a suggestion, Enter/Tab accepts it as one undoable
 edit, and Escape dismisses it. Completion commands continue through a pattern's
 next argument. All requests use the document's prefix and Unicode coordinates;
 edits to protected context are rejected together with their other edits.
+Hover inspection uses the same delayed language query and selectable text
+popover in standalone and embedded editors, including read-only imports. Type
+and value text can be selected and copied without including the page behind it.
 Enable tools with `enable UI source tools for workspace in view`, and call
 `update UI source tools in workspace` before scheduling language work each frame.
 Changing the token theme refreshes every editor from its existing analysis; an
@@ -104,7 +107,14 @@ keep the code surface clear, and Ctrl+Space remains available explicitly. Popups
 inherit their editor's font and colors. Multiline editors keep them inside the
 code area; compact fields place them in the available space beside the field.
 The same workspace can contain plain editors and editors with hidden vocabulary
-imports. No application-specific completion handlers are needed.
+imports. No application-specific completion handlers are needed. F12 follows definitions
+into retained read-only imported sources; Alt+Left returns to the preceding file
+and selection. `source pane "Plan" containing text using appearance` composes the
+same editor with scoped Back/Main file controls and a filename. Applications read
+`the UI main source of editor in workspace at seconds seconds` for Run or Save,
+so opening a definition never changes the program they execute. Program loads
+use `load UI main source of editor in view from text at seconds seconds`; this
+starts fresh editing and navigation state without taking another control's focus.
 Host capabilities use `ui/services.dl`. Applications receive a `UI service provider`
 separately from their renderer; immediate calls, asynchronous requests and
 cancellation carry its context and the target view. The browser adapter supplies
@@ -122,6 +132,7 @@ so long fields do not allocate textures as wide as their entire contents.
 
 ```sh
 python3 scripts/test.py --dynlex ../dynlex
+python3 scripts/test.py --dynlex /absolute/path/to/dynlex --case shared/source_hover
 python3 scripts/test.py --dynlex ../dynlex --native --browser
 ```
 

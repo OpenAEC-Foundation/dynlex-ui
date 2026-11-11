@@ -10,12 +10,16 @@ import tempfile
 
 
 def main():
+    project = Path(__file__).resolve().parents[1]
+    cases = {source.parent.relative_to(project / 'tests').as_posix(): source
+             for source in sorted(project.glob('tests/*/*/main.dl'))}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dynlex', type=Path, required=True)
     parser.add_argument('--native', action='store_true')
     parser.add_argument('--browser', action='store_true')
+    parser.add_argument('--case', action='append', choices=list(cases),
+                        help='Run only this shared fixture; repeat to select several (default: all).')
     args = parser.parse_args()
-    project = Path(__file__).resolve().parents[1]
     subprocess.run([sys.executable, 'tests/packaging/runtime_modules.py'], cwd=project, check=True)
     compiler = args.dynlex.resolve() / 'build/dynlex'
     if not compiler.is_file():
@@ -23,7 +27,9 @@ def main():
     subprocess.run(["python3", "scripts/test_external_imports.py", "--dynlex", str(args.dynlex.resolve())], cwd=project, check=True)
     count = 0
     with tempfile.TemporaryDirectory(prefix='dynlex-ui-tests-') as temporary:
-        for source in sorted(project.glob('tests/*/*/main.dl')):
+        for name, source in cases.items():
+            if args.case and name not in args.case:
+                continue
             expected = source.with_name('expected.txt').read_text()
             for optimization in ['-O0', '-O2']:
                 output = Path(temporary) / 'case.out'

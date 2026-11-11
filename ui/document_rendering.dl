@@ -34,12 +34,12 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
     if appearance's border width > 0.0:
         draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
     if ((((kind = 2) or (kind = 42)) or (kind = 43)) or (kind = 44)) or (kind = 46):
-        if ((kind = 2) or (kind = 43)) or (kind = 44):
+        if (kind = 2) or (kind = 43):
             set target to 0.0
             if available and ((view's hot = layout) or ((view's focused = layout) and (view's keyboard focus))):
                 set target to 1.0
             set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
-            if (layout's hover > 0.01) and ((kind = 2) or (kind = 43)):
+            if layout's hover > 0.01:
                 set tint to appearance's foreground
                 draw a rounded UI surface box with radius (appearance's radius) from tint to tint opacity ((layout's hover * 20.4) as an integer) feathered by 0.75 on frame
         set top to box's y + appearance's padding

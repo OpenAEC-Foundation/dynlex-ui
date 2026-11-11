@@ -24,9 +24,7 @@ to get [the UI language project at step] {integer:step} [in] {a pointer to UI la
     set client's context to document's context
     set client's project context to document's project's context
     set client's profiles to the compact JSON form of (document's project's profiles)
-    set files to a copy of JSON-RPC node (document's project's files)
-    require condition ((files has JSON member named (document's filename)) = false) reporting "The active editor source is duplicated in its project files"
-    add JSON-RPC member (document's filename) containing (a new JSON-RPC text for (document's prefix + document's source)) to files
+    set files to the UI source files of project
     return UI language work (a JSON object containing [JSON text "operation" is "project", JSON child "sources" is files]) at step step in client
 
 to get [the UI language opening in] {a pointer to UI language client:client}:

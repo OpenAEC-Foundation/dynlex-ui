@@ -1,0 +1,110 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_tools.dl
+import ../../../ui/source_panes.dl
+import lib/text_scan.dl
+
+appearance source appearance:
+    height is 140
+
+document editors:
+    source pane "Studio" containing "β😀 value" using source appearance
+    source pane "River" containing "β😀 value" using source appearance
+
+set instance to an instance of editors
+set window to the address of instance
+set view to a UI view of window sized 700 by 600 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+enable UI source tools for workspace in (the address of view)
+ignore update UI view (the address of view)
+set labels to ["Studio", "River"]
+set index to 0
+loop while index < the length of labels:
+    set editor to the UI source editor labeled (the item at index in labels) in workspace
+    set prefix to (the string form of "") if (index = 0), else (the string form of "import lib/river_challenge.dl\n\n")
+    set files to a new JSON-RPC object
+    configure UI source document (editor's document) named "main.dl" at "file:///workspace/main.dl" prefixed by prefix using UI CPU analysis with files files
+    free files
+    if index = 1:
+        set UI control (editor's node) read only true in window
+    ignore update UI view (the address of view)
+    set run to view's texts
+    set found to false
+    loop while (run != @intrinsic("construct", a pointer to UI text run)) and (found = false):
+        set found to (run's source's element = editor's node) and (run's generation = view's paint count)
+        if found = false:
+            set run to run's next
+    require condition (run != @intrinsic("construct", a pointer to UI text run)) reporting "The hover fixture did not paint its source control."
+    set point to UI point (a UI point at (run's origin's x + 9.0) and (run's origin's y - 5.0)) transformed by (run's transform)
+    set view's cursor to a UI point at (point's x + 200.0) and (point's y)
+    update UI source tools in workspace
+    require condition (workspace's tools' hover's phase = 0) reporting "Hovering empty editor space requested inspection of the last token."
+    set view's cursor to point
+    set view's seconds to 0.0
+    update UI source tools in workspace
+    set hover to the address of (workspace's tools' hover)
+    require condition ((hover's phase = 1) and (hover's query = @intrinsic("construct", a pointer to UI source query))) reporting "Hover inspection did not wait for its pointer deadline."
+    set view's seconds to 0.2
+    update UI source tools in workspace
+    require condition (hover's query = @intrinsic("construct", a pointer to UI source query)) reporting "Hover inspection requested the compiler before its deadline."
+    set view's seconds to 0.4
+    update UI source tools in workspace
+    set query to hover's query
+    require condition ((query's queued) and (query's method = "textDocument/hover")) reporting "A source control did not use the shared hover query."
+    set position to the JSON member named "position" in (query's parameters)
+    require condition ((the JSON number named "line" in position) = (0 if (index = 0), else 2)) reporting "Hover inspection ignored its source's protected prefix."
+    require condition ((hover's position = 2) and ((the JSON number named "character" in position) = 1)) reporting "Hover inspection confused UTF-8 bytes, Unicode glyphs and UTF-16 coordinates."
+    free query's result
+    set query's result to a JSON object containing [JSON child "contents" is (a JSON object containing [JSON text "kind" is "markdown", JSON text "value" is "type:\n\n```dynlex\na string\n```\n\nvalue: `β😀`"]) ]
+    set query's queued to false
+    set query's ready to true
+    update UI source tools in workspace
+    ignore update UI view (the address of view)
+    require condition ((hover's popover's visible) and (hover's popover's bounds' width > 0.0)) reporting "A source control did not render its shared inspection popover."
+    require condition (hover's popover's layout's content = "type:\n\na string\n\nvalue: β😀") reporting "The hover did not preserve its inspected type and value."
+    ignore update UI view (the address of view)
+    set paints to view's paint count
+    update UI source tools in workspace
+    ignore update UI view (the address of view)
+    require condition (view's paint count = paints) reporting "An unchanged inspection popover kept repainting."
+    set editor's current's caret and editor's current's anchor to 2
+    restore UI source location (editor's current) in editor in (the address of view)
+    ignore update UI view (the address of view)
+    set view's cursor to a UI point at (hover's anchor's x) and (hover's anchor's y + 12.0)
+    update UI source tools in workspace
+    require condition (hover's popover's visible) reporting "The pointer could not cross the gap from inspected source into its popover."
+    queue UI input of kind 1 key 0 at (hover's popover's bounds' x + 13.0) (hover's popover's bounds' y + 16.0) with modifiers 0 containing "" in (the address of view)
+    queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    update UI source tools in workspace
+    require condition (hover's popover's visible) reporting "Selecting hover text dismissed its inspection surface."
+    queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+    queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition ((view's window as a pointer to test UI surface)'s copied = hover's popover's layout's content) reporting "A source hover did not use scoped Unicode selection and copy."
+    require condition ((focus UI source tools (workspace's tools)) = false) reporting "Popover selection was mistaken for an editor caret."
+    queue UI input of kind 3 key 256 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition ((hover's popover's visible = false) and (view's closed = false)) reporting "Escape did not dismiss inspection independently of the application."
+    set layout to the UI layout for element (editor's node) in (view's layout)
+    require condition ((view's selection's caret source = (the address of (layout's text source))) and (view's selection's caret = 2)) reporting "Closing selected hover text did not return to the editor's retained location."
+    set view's cursor to a UI point at -30.0 and -30.0
+    update UI source tools in workspace
+    set view's seconds to 0.7
+    update UI source tools in workspace
+    require condition (hover's phase = 0) reporting "A dismissed hover retained work after its pointer left the source."
+    set view's cursor to point
+    dismiss UI source hover hover in (the address of view)
+    set view's seconds to 1.0
+    update UI source tools in workspace
+    set view's seconds to 1.4
+    update UI source tools in workspace
+    set query to hover's query
+    set UI text of (editor's node) in window to "changed source"
+    update UI source tools in workspace
+    require condition ((query's queued = false) and (hover's popover's visible = false)) reporting "Editing retained a hover request or result for the previous source."
+    increment index
+close the address of view
+free UI source workspace workspace
+close window
+print line "Studio and embedded editors share delayed hover, type/value presentation, Unicode copying, read-only inspection and stale-result isolation."

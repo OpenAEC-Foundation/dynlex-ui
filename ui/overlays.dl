@@ -1,7 +1,7 @@
 import view.dl
 
 to get [a UI overlay in] {a pointer to UI view:view} [with context] {a pointer:context} [handling input] {a pointer:input} [painting] {a pointer:paint} [closing] {a pointer:closing}:
-    set overlay to @intrinsic("construct", UI overlay, context, input, paint, closing, view's overlays)
+    set overlay to @intrinsic("construct", UI overlay, context, input, paint, closing, @intrinsic("construct", a pointer to UI layout), view's overlays)
     set view's overlays to storage for one slot initialized with overlay
     set view's damaged to true
     return view's overlays
@@ -50,3 +50,20 @@ to [close UI overlays in] {a pointer to UI view:view}:
         if overlay's closing != (0 as a pointer):
             @intrinsic("call pointer", overlay's closing, nothing, overlay's context, view)
         deallocate overlay
+
+# Floating descriptions participate in the same retained hit testing as the page.
+to [record UI floating layout] {a pointer to UI layout:layout} [in] {UI bounds:box} [on] {UI frame:frame}:
+    set view to frame's view
+    increment view's paint serial
+    set layout's bounds and layout's painted bounds to box
+    set layout's hit bounds to the UI intersection of box and (view's hit bounds)
+    set layout's paint generation to view's paint count
+    set layout's paint serial to view's paint serial
+
+to [retire UI floating layout] {a pointer to UI layout:layout}:
+    set layout's hit bounds to UI box at 0 0 sized 0 0
+    set layout's paint generation to 0
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        retire UI floating layout child
+        set child to child's next

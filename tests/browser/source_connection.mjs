@@ -57,11 +57,12 @@ try {
       'Viewing imported code closed the main source');
     const hovers=messages.filter(entry=>entry.payload.message.method==='textDocument/hover')
       .map(entry=>entry.response.find(message=>message.id===12 && !message.method)?.result);
-    assert.equal(hovers.length,2);
+    assert.equal(hovers.length,3);
     assert.match(JSON.stringify(hovers[0]),/integer/i,'The imported parameter lost its integer instance');
     assert.match(JSON.stringify(hovers[1]),/a pointer to a byte/i,'The imported parameter retained its preceding main-file instance');
+    assert.equal(hovers[2].contents.value, 'type:\n\n```dynlex\na pointer to a byte\n```\n\nvalue: ```"a`b``c"```');
     const changes=messages.filter(entry=>entry.payload.message.method==='textDocument/didChange');
-    assert.deepEqual(changes.map(entry=>entry.payload.message.params.textDocument.uri),['file:///workspace/main.dl']);
+    assert.deepEqual(changes.map(entry=>entry.payload.message.params.textDocument.uri),['file:///workspace/main.dl','file:///workspace/main.dl']);
     console.log('PASS real shared language connection',optimization);
   }
 } finally {await fs.rm(directory,{recursive:true,force:true});}

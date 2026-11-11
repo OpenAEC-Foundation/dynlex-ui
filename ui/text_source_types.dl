@@ -15,6 +15,7 @@ class:
     members:
         anchor source as a pointer to UI text source
         caret source as a pointer to UI text source
+        limit as a pointer to UI text source
         anchor as an integer
         caret as an integer
         dragging as a boolean

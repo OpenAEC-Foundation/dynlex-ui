@@ -251,6 +251,12 @@ main document and imported document models. Additional files are copied; analysi
 profiles are consumed. Profiles are JSON data, including CPU, fragment, and
 combined vertex/fragment helpers; the client accepts arbitrary profile sets.
 
+`the UI source files of project` returns an owned JSON source map for analysis or
+execution, including the configured main filename, protected prefix and all
+provided files. Free that snapshot after serialization. Synchronize its workspace
+before collecting it so current edits are included. Later edits do not change the
+snapshot, and collecting it does not modify the provided file map.
+
 To retain imported source in the same project, use `a UI source document named
 filename at uri containing source in project`. These models have no hidden prefix
 and start read-only. `the UI source document at uri in project` returns an existing
@@ -263,6 +269,40 @@ outside the provided file map keep their snapshots. Read-only views follow the
 document model, so their preceding control text cannot overwrite a replaced file.
 Free standalone projects with `free UI source project project`; workspace
 cleanup releases the projects belonging to its controls.
+
+Import `ui/source_panes.dl` for `source pane "Plan" containing text using
+appearance`. This is an ordinary immutable description containing an editor,
+filename, Back and Main file buttons. A workspace scopes those controls to their
+pane. Bare editors and panes use identical document and interaction code.
+Enable `ui/source_tools.dl` once per workspace for completion and F12 definition
+navigation; Alt+Left returns through its location history. Visits retain each
+file's independent undo/redo, annotations, Unicode selection and scroll position.
+Imported sources are read-only; the main source's own read-only policy is restored
+on return.
+
+Source tools also provide pointer hover inspection in every registered source
+control. Requests follow the document's protected-prefix/Unicode mapping and are
+rejected when its source or project changes. The popover inherits its editor's
+font and colors. Plain signatures and Markdown code descriptions retain literal
+backticks and source escapes. Its text supports selection and copying; a short
+leave interval allows crossing the gap from the inspected text into the popover.
+Completion menus, composition and source-selection gestures take precedence.
+An unchanged popover becomes idle.
+
+Use `the UI main source of editor in workspace at seconds seconds` for Run, Save
+or Share, rather than reading the currently displayed control. Use `the UI text
+state for document in editor in instance` to apply execution marks to a parked
+main source while an import is displayed.
+
+`replace UI main source of editor in view with text at seconds seconds` starts a
+fresh edit session for the main document without navigating away from an import.
+It clears undo/redo and annotations and retires that control's IME context, even
+when the incoming text is unchanged. `load UI main source of editor in view from
+text at seconds seconds` also returns to the main file and clears navigation
+history. Both accept borrowed source strings and preserve unrelated focus and
+composition in other controls. Explicit `show UI source document document in
+editor in view` focuses a document; `bind UI source document document in editor
+in view` changes its presentation without taking focus.
 
 The language client keeps one open model and version per file while retaining
 its main file's inference context. Moving between files in a project does not
@@ -310,3 +350,25 @@ Refreshes received after closing a document are acknowledged without invalidatin
 its retained results. A closed project stays idle until it needs analysis again.
 The server's diagnostic clearing on close likewise leaves the editor's cached
 results intact.
+
+## Selectable text popovers
+
+`ui/text_popovers.dl` provides `a UI text popover containing text`. Callers supply
+anchor bounds, viewport bounds, a view-owned font, and resolved appearance to
+`paint UI text popover popover anchored at anchor within viewport using font
+styled appearance on frame`. The popover uses the same paragraph layout, wrapping,
+Unicode selection and copy engine as document text. Its overlay input callback
+forwards to `read UI text popover popover in view`. Selection stays inside the
+popover even when dragging outside it or using Select All. Escape or an outside
+click dismisses it. Hovering the surface preserves the current text input;
+clicking its text selects it and retires the preceding input context. A viewport
+too small for its padding hides the surface until it becomes usable. Clear it with `clear UI text popover popover in view` before
+its owner is released; this retires borrowed selection and paint runs immediately.
+
+An overlay can publish its borrowed `layout` for the view's ordinary hit testing.
+`record UI floating layout layout in box on frame` records paint order and clips
+its pointer bounds. `retire UI floating layout layout` removes that geometry,
+including descendants, immediately between paints. This prevents covered controls
+from receiving hover or pointer actions. Text popovers supply this layout; their
+owner assigns it to the overlay. Completion menus use the same hit path and keep
+their captions outside document text selection.

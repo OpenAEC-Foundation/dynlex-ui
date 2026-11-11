@@ -75,7 +75,8 @@ to process UI input in {a pointer to UI view:view}:
             set view's scroll x and view's scroll y to 0.0
             set view's was down to view's down
             set view's pressed to @intrinsic("construct", a pointer to UI layout)
-            set view's selection's dragging to false
+            if view's selection's limit = @intrinsic("construct", a pointer to UI text source):
+                set view's selection's dragging to false
         if consumed = false:
             if view's input action != (0 as a pointer):
                 @intrinsic("call pointer", view's input action, nothing, view)

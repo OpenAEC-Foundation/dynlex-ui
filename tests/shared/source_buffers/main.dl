@@ -50,12 +50,49 @@ loop while index < the length of labels:
     ignore update UI view (the address of view)
     require condition ((the UI value for (editor's node) in window)'s text = (the substring of source from 1 spanning 3 bytes)) reporting "Returning from an import changed the undo operation."
     visit UI source document imported selecting 9 through 11 in editor in (the address of view)
-    replace UI main source of editor in workspace with "new main" at 3.0 seconds
+    replace UI main source of editor in (the address of view) with "new main" at 3.0 seconds
     require condition ((main's source = "new main") and ((the UI value for (editor's node) in window)'s text = imported's source)) reporting "Replacing the main source overwrote the imported view."
     require condition (go back in UI source editor editor in (the address of view)) reporting "Replacing the main source discarded navigation history."
     require condition (((the UI value for (editor's node) in window)'s text = "new main") and ((the UI value for (editor's node) in window)'s undo = @intrinsic("construct", a pointer to UI text edit))) reporting "Replacing an inactive source retained old text or undo history."
     require condition ((go back in UI source editor editor in (the address of view)) = false) reporting "Navigation retained an already-consumed location."
+    queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "private edit" in (the address of view)
+    queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+    ignore update UI view (the address of view)
+    set value to the UI value for (editor's node) in window
+    require condition ((value's text = "new main") and (value's redo != @intrinsic("construct", a pointer to UI text edit))) reporting "The fresh-load fixture did not retain its preceding edit history."
+    set epoch to view's input context's epoch
+    receive UI composition (the string form of "draft") for epoch at phase 1 selecting 0 through 5 in (the address of view)
+    replace UI main source of editor in (the address of view) with "new main" at 4.0 seconds
+    require condition ((value's undo = @intrinsic("construct", a pointer to UI text edit)) and (value's redo = @intrinsic("construct", a pointer to UI text edit))) reporting "Loading identical source retained the preceding program's edit history."
+    require condition ((view's selection's composing = false) and (view's input context's active = false)) reporting "Loading identical source retained the preceding program's input session."
+    queue UI input of kind 13 key epoch at 0.0 0.0 with modifiers 0 containing "late edit" in (the address of view)
+    ignore update UI view (the address of view)
+    require condition (value's text = "new main") reporting "An edit from a preceding source load reached the replacement program."
     increment index
+# Loading a program in one component must not steal another component's IME.
+set studio to the UI source editor labeled "Studio" in workspace
+set river to the UI source editor labeled "River" in workspace
+set main to studio's document's project's entry
+set imported to the UI source document at "file:///lib/helper.dl" in (main's project)
+visit UI source document imported selecting 0 through 0 in studio in (the address of view)
+restore UI source location (river's current) in river in (the address of view)
+ignore update UI view (the address of view)
+set {focused source} to view's selection's caret source
+set epoch to view's input context's epoch
+require condition (view's input context's active) reporting "The other editor did not export its input session."
+receive UI composition (the string form of "draft") for epoch at phase 1 selecting 0 through 5 in (the address of view)
+require condition (view's selection's composing) reporting "The other editor did not start composition."
+set parked to the UI text state for main in studio in window
+load UI main source of studio in (the address of view) from (parked's text) at 5.0 seconds
+require condition ((studio's document = main) and (main's source = "new main")) reporting "A source load lost its borrowed parked text or did not return to the main file."
+require condition (studio's locations = @intrinsic("construct", a pointer to UI source location)) reporting "A new program retained navigation into the preceding program."
+require condition ((view's selection's caret source = focused source) and (view's text focus = river's node)) reporting "A background program load stole another editor's focus."
+require condition (((view's selection's composing) and (view's input context's active)) and (view's input context's epoch = epoch)) reporting "A background program load retired another editor's input session."
+ignore update UI view (the address of view)
+require condition (((view's selection's composing) and (view's input context's active)) and (view's input context's epoch = epoch)) reporting "Painting a background source load retired another editor's input session."
+load UI main source of river in (the address of view) from ((the UI value for (river's node) in window)'s text) at 6.0 seconds
+require condition ((river's document's source = "new main") and ((the UI value for (river's node) in window)'s text = "new main")) reporting "Loading an editor's own borrowed text erased the source."
+require condition ((view's selection's caret source = focused source) and (view's selection's composing = false)) reporting "Loading the focused program lost its focus or retained composition."
 free UI source workspace workspace
 close the address of view
 close window

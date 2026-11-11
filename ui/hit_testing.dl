@@ -20,3 +20,15 @@ to get the UI hit at {UI point:point} in {a pointer to UI layout:layout} during 
         set child to child's next
     return found
 
+
+to get [the UI hit at] {UI point:point} [in] {a pointer to UI view:view}:
+    set found to the UI hit at point in (view's layout) during (view's paint count) for (view's instance)
+    set overlay to view's overlays
+    loop while overlay != @intrinsic("construct", a pointer to UI overlay):
+        if overlay's layout != @intrinsic("construct", a pointer to UI layout):
+            set candidate to the UI hit at point in (overlay's layout) during (view's paint count) for (view's instance)
+            if candidate != @intrinsic("construct", a pointer to UI layout):
+                if (found = @intrinsic("construct", a pointer to UI layout)) or (candidate's paint serial >= found's paint serial):
+                    set found to candidate
+        set overlay to overlay's next
+    return found

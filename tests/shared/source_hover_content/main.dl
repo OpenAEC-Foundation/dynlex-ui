@@ -1,0 +1,18 @@
+import ../../../ui/source_hover_content.dl
+
+set result to a JSON object containing [JSON text "contents" is "a literal `pattern` with 😀"]
+require condition ((the UI source hover text of result) = "a literal `pattern` with 😀") reporting "A plain definition hover was reinterpreted as markup."
+free result
+set result to a JSON object containing [JSON child "contents" is (a JSON object containing [JSON text "kind" is "markdown", JSON text "value" is "type:\n\n```dynlex\na string\n```\n\nvalue: ``β `literal` 😀``"]) ]
+require condition ((the UI source hover text of result) = "type:\n\na string\n\nvalue: β `literal` 😀") reporting "Hover markup changed literal code or exposed code fences."
+free result
+set result to a JSON object containing [JSON child "contents" is (a JSON object containing [JSON text "kind" is "plaintext", JSON text "value" is "literal ```dynlex\n`value`"]) ]
+require condition ((the UI source hover text of result) = "literal ```dynlex\n`value`") reporting "A plaintext hover was reinterpreted as Markdown."
+free result
+require condition ((UI code Markdown as text (the string form of "before `unclosed\n```dl\n`literal`\n```\nafter")) = "before `unclosed\n`literal`\nafter") reporting "Code block content or unmatched inline delimiters were lost."
+require condition ((UI code Markdown as text (the string form of "value: `` `literal` ``")) = "value: `literal`") reporting "A padded Markdown code span exposed its presentation spaces."
+require condition ((UI code Markdown as text (the string form of "`  `")) = "  ") reporting "A code span consisting entirely of spaces was trimmed."
+set result to a new JSON value of kind the JSON null kind
+require condition ((the UI source hover text of result) = "") reporting "An empty hover produced content."
+free result
+print line "Hover presentation preserves plain definitions, fenced types, literal code, Unicode and empty results."

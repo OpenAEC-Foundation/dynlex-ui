@@ -40,15 +40,6 @@ to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} wit
             draw UI layout child at (box's x) (box's y) with cursor cursor in view on frame
             set child to child's next
 
-to get the UI cursor in {a pointer to UI view:view}:
-    set position to view's cursor
-    if view's fitted:
-        if (view's content bounds' width <= 0.0) or (view's content bounds' height <= 0.0):
-            return a UI point at -1.0 and -1.0
-        set position's x to (position's x - view's content bounds' x) * ((view's logical width as a floating-point number) / view's content bounds' width)
-        set position's y to (position's y - view's content bounds' y) * ((view's logical height as a floating-point number) / view's content bounds' height)
-    return position
-
 to update the UI viewport in {a pointer to UI view:view}:
     set width to view's width as a floating-point number
     set height to view's height as a floating-point number

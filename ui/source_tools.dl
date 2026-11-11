@@ -6,6 +6,7 @@ import source_triggers.dl
 import source_tools_rendering.dl
 import source_navigation.dl
 import source_pane_actions.dl
+import source_hover.dl
 
 to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set workspace to tools's workspace as a pointer to UI source workspace
@@ -19,23 +20,26 @@ to get [focus UI source tools] {a pointer to UI source tools:tools}:
     loop while editor != @intrinsic("construct", a pointer to UI source editor):
         if editor's node = view's text focus:
             if ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (editor's document's available)) and (the UI element (editor's node) is enabled in (view's instance)):
-                set value to the UI value for (editor's node) in (view's instance)
-                if editor's document's writable:
-                    edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
-                remember the UI source location of editor in view
-                if (tools's node != editor's node) or (tools's document != editor's document):
-                    dismiss UI source tools tools
-                    set tools's edited to false
-                    set tools's composed to false
-                else if tools's source != value's text:
-                    if value's undo = @intrinsic("construct", a pointer to UI text edit):
+                set layout to the UI layout for element (editor's node) in (view's layout)
+                require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source editor is missing its view layout"
+                if view's selection's caret source = (the address of (layout's text source)):
+                    set value to the UI value for (editor's node) in (view's instance)
+                    if editor's document's writable:
+                        edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
+                    remember the UI source location of editor in view
+                    if (tools's node != editor's node) or (tools's document != editor's document):
+                        dismiss UI source tools tools
                         set tools's edited to false
-                    else if value's undo's after != value's text:
-                        set tools's edited to false
-                set tools's node to editor's node
-                set tools's document to editor's document
-                set tools's source to value's text
-                return true
+                        set tools's composed to false
+                    else if tools's source != value's text:
+                        if value's undo = @intrinsic("construct", a pointer to UI text edit):
+                            set tools's edited to false
+                        else if value's undo's after != value's text:
+                            set tools's edited to false
+                    set tools's node to editor's node
+                    set tools's document to editor's document
+                    set tools's source to value's text
+                    return true
         set editor to editor's next
     dismiss UI source tools tools
     set tools's node to @intrinsic("construct", UI reference)
@@ -92,6 +96,8 @@ to [accept the UI source completion in] {a pointer to UI source tools:tools}:
 
 to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
     set tools to context as a pointer to UI source tools
+    if read UI source hover in tools:
+        return true
     set previous to tools's source
     set owner to tools's node
     if (focus UI source tools tools) = false:
@@ -185,6 +191,8 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
 
 to [close UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
     set tools to context as a pointer to UI source tools
+    dismiss UI source hover (the address of (tools's hover)) in view
+    clear UI text popover (the address of (tools's hover's popover)) in view
     set tools's view to @intrinsic("construct", a pointer to UI view)
     set tools's overlay to @intrinsic("construct", a pointer to UI overlay)
 
@@ -194,6 +202,8 @@ to [enable UI source tools for] {a pointer to UI source workspace:workspace} [in
     set workspace's tools to tools
     set tools's workspace to workspace as a pointer
     set tools's view to view
+    set tools's hover's popover to a UI text popover containing ""
+    set tools's surface's node to a UI container of kind 41 containing no UI children
     set tools's items to a new JSON-RPC array
     set tools's overlay to a UI overlay in view with context (tools as a pointer) handling input ((the function named "read UI source tools $ in $") as a pointer) painting ((the function named "paint UI source tools $ on $") as a pointer) closing ((the function named "close UI source tools $ in $") as a pointer)
     bind UI source panes in workspace
@@ -203,7 +213,9 @@ to [update UI source tools in] {a pointer to UI source workspace:workspace}:
     if tools = @intrinsic("construct", a pointer to UI source tools):
         return nothing
     set view to tools's view
+    synchronize UI source workspace workspace at (view's seconds) seconds
     update UI source navigation in tools
+    update UI source hover in tools
     if (focus UI source tools tools) = false:
         return nothing
     if tools's mode = 1:

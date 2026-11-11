@@ -37,6 +37,15 @@ require condition ((query's queued = false) and ((helper's revision = revision +
 require condition ((the UI source document at "file:///workspace/main.dl" in project) = @intrinsic("construct", a pointer to UI source document)) reporting "Renaming the main file retained its former URI as another model."
 require condition ((the UI source document at "file:///workspace/renamed.dl" in project) = main) reporting "Renaming the main file lost its model identity."
 
+set snapshot to the UI source files of project
+require condition ((the JSON text named "renamed.dl" in snapshot) = (main's prefix + main's source)) reporting "Execution and analysis source snapshots lost the main filename or protected prefix."
+require condition ((the JSON text named "helper.dl" in snapshot) = "helper means: 9") reporting "A source snapshot dropped its additional files."
+require condition ((project's files has JSON member named "renamed.dl") = false) reporting "Packaging sources mutated the provided file map."
+set before to the compact JSON form of snapshot
+edit UI source document main to (the string form of "a new program") at 2.0 seconds
+require condition ((the compact JSON form of snapshot) = before) reporting "A source snapshot changed after its project was edited."
+free snapshot
+
 # Root ownership includes imported models and their retained query slots. The
 # Wasm allocation probe checks that closing this project releases all of them.
 free UI source project (main's project)

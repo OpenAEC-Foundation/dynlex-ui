@@ -1,0 +1,1 @@
+Text popovers share wrapping, Unicode selection, scoped copying, input capture and source lifetime.
