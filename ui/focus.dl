@@ -110,6 +110,12 @@ to reconcile UI editing focus in {a pointer to UI view:view}:
         synchronize editable UI text source in view
 
 to refresh UI focus in {a pointer to UI view:view}:
+    # Ordinals express keyboard navigation, but inserting or removing another
+    # control must preserve the identity of the current focus target.
+    set retained to @intrinsic("construct", a pointer to UI layout)
+    if view's focused != @intrinsic("construct", a pointer to UI layout):
+        if (view's focused's order > 0) and (view's focus order = view's focused's order):
+            set retained to view's focused
     set previous to view's focus first
     loop while previous != @intrinsic("construct", a pointer to UI layout):
         set next to previous's focus next
@@ -120,6 +126,9 @@ to refresh UI focus in {a pointer to UI view:view}:
     set view's focus last to @intrinsic("construct", a pointer to UI layout)
     set view's control count to 0
     collect UI focus from (view's layout) in view
+    if retained != @intrinsic("construct", a pointer to UI layout):
+        if retained's order > 0:
+            set view's focus order to retained's order
     if view's focus order > view's control count:
         set view's focus order to 1
     set view's focused to view's focus first

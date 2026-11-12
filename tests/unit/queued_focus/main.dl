@@ -10,6 +10,11 @@ window queued tabs:
         tab "C":
             ribbon group "Third":
                 tool "Three" with icon "cut"
+
+document changing controls:
+    button "Earlier"
+    editor "Source" containing "abc" using no UI appearance
+    button "Later"
 set state to 0
 set instance to an instance of queued tabs with state (the address of state)
 set view to a UI view of (the address of instance) sized 800 by 480 using font "regular" with the test UI driver
@@ -32,4 +37,38 @@ ignore update UI view (the address of view)
 require condition (view's focused's node's text = "B") reporting "Shift-Tab did not move focus backward"
 close the address of view
 close the address of instance
+
+set instance to an instance of changing controls
+set window to the address of instance
+set earlier to the control labeled "Earlier" in window
+set source to the control labeled "Source" in window
+set later to the control labeled "Later" in window
+set UI control earlier enabled false in window
+set view to a UI view of window sized 600 by 400 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set editor to the UI layout for element source in (view's layout)
+activate UI layout editor in (the address of view)
+set view's selection's anchor and view's selection's caret to 1
+set UI control earlier enabled true in window
+ignore update UI view (the address of view)
+require condition ((view's focused = editor) and (view's text focus = source)) reporting "Enabling an earlier control changed the focused editor."
+require condition (view's selection's caret = 1) reporting "A focus-list update replaced the editor's selection."
+set UI control earlier enabled false in window
+ignore update UI view (the address of view)
+require condition (view's focused = editor) reporting "Disabling an earlier control changed the focused editor."
+set UI control source read only true in window
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (view's focused's node = later) reporting "Preserving focus identity overrode explicit Tab navigation."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (view's focused = editor) reporting "Preserving focus identity overrode explicit Shift-Tab navigation."
+set UI control source enabled false in window
+ignore update UI view (the address of view)
+require condition (view's focused's node = later) reporting "A disabled focused control remained in the focus list."
+set UI control earlier enabled true in window
+ignore update UI view (the address of view)
+require condition (view's focused's node = later) reporting "A later control lost focus when the list grew."
+close the address of view
+close window
 print line "Keyboard focus updates between queued events without a paint."

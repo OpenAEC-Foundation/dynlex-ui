@@ -33,6 +33,14 @@ present UI source workspace workspace using theme
 require condition ((the UI element (studio's back) is enabled in window) and (the UI element (studio's home) is enabled in window)) reporting "Opening an imported source did not enable its navigation actions."
 require condition ((the UI value for (studio's location) in window)'s text = "helper.dl · Read only") reporting "The source pane did not identify its imported read-only file."
 require condition ((the UI value for (river's location) in window)'s text = "main.dl") reporting "Updating one source pane changed another pane's location."
+ignore update UI view (the address of view)
+set {focused editor} to the UI layout for element (studio's node) in (view's layout)
+require condition ((view's focused = focused editor) and (view's text focus = studio's node)) reporting "Enabling the pane's navigation buttons moved keyboard focus out of its source editor."
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 4 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (studio's document = main) reporting "An imported source lost its Back shortcut after painting enabled navigation buttons."
+visit UI source document imported selecting 0 through 1 in studio in (the address of view)
+present UI source workspace workspace using theme
 activate (studio's home) belonging to (studio's home) in window
 require condition (UI source palette (workspace's palette) matches theme) reporting "A source navigation action replaced the application's token theme."
 require condition ((studio's document = main) and (river's document = river's document's project's entry)) reporting "Main file navigation used another pane's context."
