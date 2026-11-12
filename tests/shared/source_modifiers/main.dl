@@ -1,0 +1,113 @@
+import ../../../ui/source_workspace.dl
+import ../../../ui/document_declarations.dl
+
+document editors:
+    editor "Studio" containing "😀 f v #" using no UI appearance
+    editor "River" containing "😀 f v #" using no UI appearance
+
+to [analyse modifier source] {a pointer to UI source document:document} [using] {a pointer to JSON value:modifiers} [in] {a pointer to UI source workspace:workspace}:
+    # A new connection can advertise another modifier order for retained source.
+    free UI language client (workspace's client)
+    set workspace's client to a UI language client rooted at "file:///workspace"
+    set client to workspace's client
+    increment document's token epoch
+    set work to the next UI language work for client analyzing document at 5.0 seconds
+    require condition (work's step = 1) reporting "The modifier fixture did not prepare its project."
+    free work's payload
+    set response to a new JSON-RPC null
+    set work to the UI language reply response at step 1 in client
+    free response
+    free work's payload
+    set legend to a JSON object containing [JSON child "tokenTypes" is (a JSON array containing [a new JSON-RPC text for "function", a new JSON-RPC text for "variable", a new JSON-RPC text for "comment"]), JSON child "tokenModifiers" is (a copy of JSON-RPC node modifiers)]
+    set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is (a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is legend])])])]]
+    set work to the UI language reply response at step 2 in client
+    free response
+    free work's payload
+    set response to a new JSON-RPC array
+    set work to the UI language reply response at step 3 in client
+    free response
+    free work's payload
+    set response to a new JSON-RPC array
+    set work to the UI language reply response at step 4 in client
+    free response
+    free work's payload
+    set position to the UI analysis position for source byte 0 in document
+    set row to (the JSON number named "line" in position) as an integer
+    free position
+    set tokens to a JSON array containing [
+        a new JSON-RPC integer for row, a new JSON-RPC integer for 3, a new JSON-RPC integer for 1, a new JSON-RPC integer for 0, a new JSON-RPC integer for 3,
+        a new JSON-RPC integer for 0, a new JSON-RPC integer for 2, a new JSON-RPC integer for 1, a new JSON-RPC integer for 1, a new JSON-RPC integer for 1,
+        a new JSON-RPC integer for 0, a new JSON-RPC integer for 2, a new JSON-RPC integer for 1, a new JSON-RPC integer for 2, a new JSON-RPC integer for 2
+    ]
+    set response to a JSON array containing [a JSON object containing [JSON number "id" is 6, JSON child "result" is (a JSON object containing [JSON child "data" is tokens])]]
+    set work to the UI language reply response at step 6 in client
+    free response
+    require condition (work's step = 0) reporting "The modifier fixture did not finish its analysis."
+
+set instance to an instance of editors
+set window to the address of instance
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+set studio to the UI source editor labeled "Studio" in workspace
+set river to the UI source editor labeled "River" in workspace
+set files to a new JSON-RPC object
+configure UI source document (river's document) named "river.dl" at "file:///workspace/river.dl" prefixed by "import vocabulary.dl\n\n" using UI CPU analysis with files files
+free files
+set modifiers to a JSON array containing [a new JSON-RPC text for "constant", a new JSON-RPC text for "nested"]
+analyse modifier source (studio's document) using modifiers in workspace
+analyse modifier source (river's document) using modifiers in workspace
+set theme to [
+    @intrinsic("construct", UI source token style, "function", UI ink 10 0 0),
+    @intrinsic("construct", UI source token style, "variable", UI ink 55 0 0),
+    @intrinsic("construct", UI source token style, "comment", UI ink 50 0 0),
+    @intrinsic("construct", UI source token style, "function.nested", UI ink 20 0 0),
+    @intrinsic("construct", UI source token style, "*.constant", UI ink 30 0 0),
+    @intrinsic("construct", UI source token style, "function.constant.nested", UI ink 40 0 0)
+]
+present UI source workspace workspace using theme
+set editor to workspace's editors
+loop while editor != @intrinsic("construct", a pointer to UI source editor):
+    set color to (the UI value for (editor's node) in window)'s colors
+    require condition ((color's start = 5) and (color's ink's red = 40)) reporting "A source ignored its most specific semantic modifiers or Unicode prefix."
+    require condition (color's next's ink's red = 30) reporting "A wildcard modifier style did not apply to another token type."
+    require condition (color's next's next's ink's red = 50) reporting "A modifier style applied to the wrong token type."
+    set editor to editor's next
+set revision to instance's revision
+present UI source workspace workspace using theme
+require condition (instance's revision = revision) reporting "Unchanged modifier styles repainted an unchanged editor."
+set generation to studio's document's token generation
+analyse modifier source (studio's document) using modifiers in workspace
+require condition (studio's document's token generation = generation) reporting "An identical semantic legend invalidated retained colors."
+set revision to instance's revision
+present UI source workspace workspace using theme
+require condition (instance's revision = revision) reporting "An identical semantic refresh repainted retained colors."
+free modifiers
+set modifiers to a JSON array containing [a new JSON-RPC text for "nested", a new JSON-RPC text for "constant"]
+analyse modifier source (studio's document) using modifiers in workspace
+require condition (studio's document's token generation > generation) reporting "Changing only the modifier legend retained obsolete colors."
+present UI source workspace workspace using theme
+set color to (the UI value for (studio's node) in window)'s colors
+require condition ((color's next's ink's red = 55) and (color's next's next's ink's red = 30)) reporting "Modifier bits did not follow the current language legend."
+set color to (the UI value for (river's node) in window)'s colors
+require condition (color's next's ink's red = 30) reporting "One project's modifier legend replaced another project's retained legend."
+set tie to [
+    @intrinsic("construct", UI source token style, "function.constant", UI ink 60 0 0),
+    @intrinsic("construct", UI source token style, "*.constant", UI ink 70 0 0),
+    @intrinsic("construct", UI source token style, "function.constant", UI ink 80 0 0)
+]
+set ink to the UI source token ink for "function" with modifiers 2 from modifiers using tie
+require condition (ink's red = 80) reporting "Exact types and final equally specific rules did not win their style ties."
+set ink to the UI source token ink for "function" with modifiers 1 from modifiers using tie
+require condition (ink's red = 245) reporting "A style matched a modifier absent from the token."
+free modifiers
+set modifiers to a new JSON-RPC array
+set index to 0
+loop while index < 31:
+    add (a new JSON-RPC text for ("flag" + (the string form of index))) to the JSON array modifiers
+    increment index
+set high to [@intrinsic("construct", UI source token style, "function.flag30", UI ink 90 0 0)]
+set ink to the UI source token ink for "function" with modifiers 1073741824 from modifiers using high
+require condition (ink's red = 90) reporting "The highest protocol modifier bit overflowed its style lookup."
+free modifiers
+free UI source workspace workspace
+close window
+print line "Studio and River share semantic modifier styles, Unicode mapping, legend ownership and color caching."

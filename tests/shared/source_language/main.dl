@@ -14,7 +14,7 @@ set work to the UI language reply response at step 1 in client
 free response
 require condition (work's step = 2) reporting "The language service was not initialized."
 free work's payload
-set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is (a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a JSON array containing [a new JSON-RPC text for "string"])])])])])]]
+set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is (a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a JSON array containing [a new JSON-RPC text for "string"]), JSON child "tokenModifiers" is (a new JSON-RPC array)])])])])]]
 set work to the UI language reply response at step 2 in client
 free response
 free work's payload

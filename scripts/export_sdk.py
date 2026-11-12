@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import zipfile
 
 
@@ -47,6 +48,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
+    subprocess.run([sys.executable, str(project / 'scripts/generate_source_colors.py'),
+                    '--dynlex', str(args.dynlex.resolve()), '--check'], check=True)
     manifest = export_sdk(project, args.dynlex.resolve(), args.output.resolve())
     print(f"Exported {len(manifest['files'])} SDK files: {args.output.resolve()}")
 

@@ -283,6 +283,18 @@ Runtime policy updates also survive navigation, including updates made while an
 imported file is visible. Document protection and application policy share the
 same editing gate, without overwriting each other's state.
 
+Token themes also accept modifier selectors, such as `function.callDepth1`,
+`variable.constant`, `*.constant`, or `function.constant.callDepth1`. Modifier
+names and bit positions come from each document's language-server legend. Rules
+with more matching modifiers win; an exact token type wins over a wildcard at
+equal modifier counts. The last rule wins a remaining tie. A rule naming an
+unavailable modifier does not match. Modifier legends are retained per document,
+so changing a connection's legend cannot recolor another retained project.
+The default call colors are generated from DynLex's canonical
+`shared/call-colors.json`. Run `python3 scripts/generate_source_colors.py
+--dynlex <compiler-checkout>` after changing that palette. SDK export and shared
+tests check that the generated declarations match it.
+
 F9 opens an outline of authored sections, including nested declarations. Choosing
 a section visits its selection range through the same Unicode and protected
 context mapping as definition navigation. F8 lists inferred instances at the

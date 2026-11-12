@@ -1,0 +1,51 @@
+# Theme selectors use token types and modifier names supplied by the language.
+import geometry.dl
+import lib/json_builders.dl
+
+to get [the UI semantic bit for] {string:name} [in] {a pointer to JSON value:legend}:
+    require condition (legend's length <= 31) reporting "A semantic modifier legend exceeds its protocol bit mask"
+    set index to 0
+    set bit to 1
+    loop while index < legend's length:
+        if (the JSON value at index index in legend)'s text = name:
+            return bit
+        increment index
+        if index < legend's length:
+            set bit to bit * 2
+    return 0
+
+to get [the UI token selector score of] {string:selector} [for] {string:name} [with modifiers] {integer:bits} [from] {a pointer to JSON value:legend}:
+    set end to 0
+    loop while (end < selector's length) and ((the character at end in selector) != 46):
+        increment end
+    require condition (end > 0) reporting "A token style selector needs a type or wildcard"
+    set kind to the substring of selector from 0 spanning end bytes
+    if (kind != name) and (kind != "*"):
+        return -1
+    set score to 0 if (kind = "*"), else 1
+    set offset to end + 1
+    loop while offset <= selector's length:
+        set end to offset
+        loop while (end < selector's length) and ((the character at end in selector) != 46):
+            increment end
+        require condition (end > offset) reporting "A token style selector has an empty modifier"
+        set modifier to the substring of selector from offset spanning (end - offset) bytes
+        set bit to the UI semantic bit for modifier in legend
+        if (bit = 0) or ((bits bitwise and bit) = 0):
+            return -1
+        set score to score + 2
+        set offset to end + 1
+    return score
+
+to get [the UI source token ink for] {string:name} [with modifiers] {integer:bits} [from] {a pointer to JSON value:legend} [using] {an array:theme}:
+    set selected to -1
+    set ink to UI ink 245 245 244
+    set index to 0
+    loop while index < the length of theme:
+        set entry to the item at index in theme
+        set score to the UI token selector score of (the string form of (entry's name)) for name with modifiers bits from legend
+        if (score >= 0) and (score >= selected):
+            set ink to entry's ink
+            set selected to score
+        increment index
+    return ink

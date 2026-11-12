@@ -20,6 +20,8 @@ def main():
     parser.add_argument('--case', action='append', choices=list(cases),
                         help='Run only this shared fixture; repeat to select several (default: all).')
     args = parser.parse_args()
+    subprocess.run([sys.executable, 'scripts/generate_source_colors.py',
+                    '--dynlex', str(args.dynlex.resolve()), '--check'], cwd=project, check=True)
     subprocess.run([sys.executable, 'tests/packaging/runtime_modules.py'], cwd=project, check=True)
     compiler = args.dynlex.resolve() / 'build/dynlex'
     if not compiler.is_file():

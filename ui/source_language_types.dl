@@ -34,6 +34,7 @@ class:
         project context as a string
         profiles as a string
         token types as a pointer to JSON value
+        token modifiers as a pointer to JSON value
         token epoch as an integer
         query as a pointer to UI source query
         query generation as an integer
@@ -84,12 +85,14 @@ to get [a UI language client rooted at] {string:root}:
     set client to storage for one slot initialized with (a new UI language client)
     set client's root to root
     set client's token types to a new JSON-RPC array
+    set client's token modifiers to a new JSON-RPC array
     set client's replies to a new JSON-RPC array
     return client
 
 to [free UI language client] {a pointer to UI language client:client}:
     forget UI language models in client
     free client's token types
+    free client's token modifiers
     free client's replies
     if client's continuation's payload != @intrinsic("construct", a pointer to JSON value):
         free client's continuation's payload

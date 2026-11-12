@@ -1,0 +1,1 @@
+Studio and River share semantic modifier styles, Unicode mapping, legend ownership and color caching.

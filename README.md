@@ -104,6 +104,11 @@ The same policy can change at runtime with `set UI control node read only true i
 instance`; programmatic `set the text of` updates still work.
 Dynamic read-only changes survive definition visits and returns, including policy
 changes made while viewing an imported source. Imported text stays protected.
+Semantic themes share type and modifier selectors, including combinations and
+wildcards. The default nested-call colors come from the compiler's canonical
+palette; `python3 scripts/generate_source_colors.py --dynlex <compiler-checkout>` updates
+their static declarations. Each document retains its own modifier legend and
+invalidates colors when that legend changes.
 Suggestions follow typed characters and committed IME words. Paste and newlines
 keep the code surface clear, and Ctrl+Space remains available explicitly. Popups
 inherit their editor's font and colors. Multiline editors keep them inside the

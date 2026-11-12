@@ -2,6 +2,7 @@
 # bytes in the visible source. All editor features share this mapping.
 import source_documents.dl
 import text_colors.dl
+import source_token_styles.dl
 import lib/unicode.dl
 
 class:
@@ -30,17 +31,28 @@ the default UI source token theme means: [
     @intrinsic("construct", UI source token style, "function", UI ink 104 211 190),
     @intrinsic("construct", UI source token style, "variable", UI ink 159 199 245),
     @intrinsic("construct", UI source token style, "parameter", UI ink 159 199 245),
-    @intrinsic("construct", UI source token style, "property", UI ink 159 199 245)
+    @intrinsic("construct", UI source token style, "property", UI ink 159 199 245),
+    # Generated call colors begin
+    @intrinsic("construct", UI source token style, "function.callDepth0", UI ink 184 229 255),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth0", UI ink 184 229 255),
+    @intrinsic("construct", UI source token style, "type.callDepth0", UI ink 184 229 255),
+    @intrinsic("construct", UI source token style, "function.callDepth1", UI ink 229 172 243),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth1", UI ink 229 172 243),
+    @intrinsic("construct", UI source token style, "type.callDepth1", UI ink 229 172 243),
+    @intrinsic("construct", UI source token style, "function.callDepth2", UI ink 132 221 181),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth2", UI ink 132 221 181),
+    @intrinsic("construct", UI source token style, "type.callDepth2", UI ink 132 221 181),
+    @intrinsic("construct", UI source token style, "function.callDepth3", UI ink 241 196 119),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth3", UI ink 241 196 119),
+    @intrinsic("construct", UI source token style, "type.callDepth3", UI ink 241 196 119),
+    @intrinsic("construct", UI source token style, "function.callDepth4", UI ink 255 164 180),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth4", UI ink 255 164 180),
+    @intrinsic("construct", UI source token style, "type.callDepth4", UI ink 255 164 180),
+    @intrinsic("construct", UI source token style, "function.callDepth5", UI ink 188 175 255),
+    @intrinsic("construct", UI source token style, "intrinsic.callDepth5", UI ink 188 175 255),
+    @intrinsic("construct", UI source token style, "type.callDepth5", UI ink 188 175 255)
+    # Generated call colors end
 ]
-
-to get [the UI source token ink for] {string:name} [using] {an array:theme}:
-    set index to 0
-    loop while index < the length of theme:
-        set entry to the item at index in theme
-        if name = entry's name:
-            return entry's ink
-        increment index
-    return UI ink 245 245 244
 
 to get [the UI analysis byte at line] {integer:row} [character] {integer:column} [in] {string:source} [indexed by] {a pointer to text line index:lines}:
     set start to the start of line row in lines
@@ -117,13 +129,14 @@ to [apply UI source colors from] {a pointer to UI source document:document} [to]
         set column to column + (((the JSON value at index (index + 1) in data)'s number) as an integer)
         set length to ((the JSON value at index (index + 2) in data)'s number) as an integer
         set kind to ((the JSON value at index (index + 3) in data)'s number) as an integer
+        set modifiers to ((the JSON value at index (index + 4) in data)'s number) as an integer
         set first to the UI analysis byte at line row character column in source indexed by lines
         set last to the UI analysis byte at line row character (column + length) in source indexed by lines
         set span to the UI source span from first to last in document
         require condition (0 <= kind < document's token types' length) reporting "A semantic token class is outside its legend"
         if span's end > span's start:
             set name to (the JSON value at index kind in (document's token types))'s text
-            add UI text color (the UI source token ink for name using theme) from (span's start) to (span's end) in node in instance
+            add UI text color (the UI source token ink for name with modifiers modifiers from (document's token modifiers) using theme) from (span's start) to (span's end) in node in instance
         set index to index + 5
     free lines
 

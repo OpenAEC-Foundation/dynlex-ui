@@ -144,8 +144,11 @@ to get [advance UI language reply] {a pointer to JSON value:response} [at step] 
     if step = 2:
         set result to the UI language result numbered 2 in response
         set provider to the JSON member named "semanticTokensProvider" in (the JSON member named "capabilities" in result)
+        set legend to the JSON member named "legend" in provider
         free client's token types
-        set client's token types to a copy of JSON-RPC node (the JSON member named "tokenTypes" in (the JSON member named "legend" in provider))
+        free client's token modifiers
+        set client's token types to a copy of JSON-RPC node (the JSON member named "tokenTypes" in legend)
+        set client's token modifiers to a copy of JSON-RPC node (the JSON member named "tokenModifiers" in legend)
         return UI language message "initialized" with (a new JSON-RPC object) requesting false at step 3 in client
     if (step = 3) or (step = 10):
         return the UI language opening in client
@@ -155,12 +158,14 @@ to get [advance UI language reply] {a pointer to JSON value:response} [at step] 
         set tokens to the UI language result numbered 6 in response
         if client has current UI language source:
             set document to client's document
-            if (UI semantic tokens tokens using (client's token types) match UI source document document) = false:
+            if (UI semantic tokens tokens using (client's token types) and modifiers (client's token modifiers) match UI source document document) = false:
                 increment document's token generation
             free document's tokens
             free document's token types
+            free document's token modifiers
             set document's tokens to a copy of JSON-RPC node tokens
             set document's token types to a copy of JSON-RPC node (client's token types)
+            set document's token modifiers to a copy of JSON-RPC node (client's token modifiers)
             set document's token revision to client's revision
             set document's analyzed token epoch to client's token epoch
             set document's analyzed revision to client's revision

@@ -46,6 +46,7 @@ class:
         diagnostics as a pointer to JSON value
         tokens as a pointer to JSON value
         token types as a pointer to JSON value
+        token modifiers as a pointer to JSON value
         queries as a pointer to UI source query
 
 # Analysis profiles are ordinary protocol data; clients may supply any supported set.
@@ -153,6 +154,7 @@ local function [allocate UI source document named] {string:filename} [at] {strin
         set document's diagnostics to a new JSON-RPC array
         set document's tokens to a JSON object containing [JSON child "data" is (a new JSON-RPC array)]
         set document's token types to a new JSON-RPC array
+        set document's token modifiers to a new JSON-RPC array
         refresh the context of UI source document document
         if (project's reports complete) and (project's report revision = project's revision):
             apply the UI source report to document
@@ -240,6 +242,7 @@ to [free UI source project] {a pointer to UI source project:project}:
         free document's diagnostics
         free document's tokens
         free document's token types
+        free document's token modifiers
         destroy the value at document
         deallocate document
         set document to next

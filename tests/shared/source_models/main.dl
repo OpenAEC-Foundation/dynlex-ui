@@ -29,7 +29,7 @@ require condition (((the JSON text named "main.dl" in files) = main's source) an
 free work's payload
 set work to deliver source reply (a new JSON-RPC null) at step 1 in client
 free work's payload
-set capabilities to a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a new JSON-RPC array)])])]
+set capabilities to a JSON object containing [JSON child "semanticTokensProvider" is (a JSON object containing [JSON child "legend" is (a JSON object containing [JSON child "tokenTypes" is (a new JSON-RPC array), JSON child "tokenModifiers" is (a new JSON-RPC array)])])]
 set response to a JSON array containing [a JSON object containing [JSON number "id" is 2, JSON child "result" is (a JSON object containing [JSON child "capabilities" is capabilities])]]
 set work to deliver source reply response at step 2 in client
 free work's payload

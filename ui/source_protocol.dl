@@ -23,10 +23,10 @@ to get [UI semantic entries] {a pointer to JSON value:first} [match] {a pointer 
         increment index
     return true
 
-to get [UI semantic tokens] {a pointer to JSON value:tokens} [using] {a pointer to JSON value:types} [match UI source document] {a pointer to UI source document:document}:
+to get [UI semantic tokens] {a pointer to JSON value:tokens} [using] {a pointer to JSON value:types} [and modifiers] {a pointer to JSON value:modifiers} [match UI source document] {a pointer to UI source document:document}:
     if document's token revision != document's revision:
         return false
-    return (UI semantic entries (the JSON member named "data" in tokens) match (the JSON member named "data" in (document's tokens))) and (UI semantic entries types match (document's token types))
+    return ((UI semantic entries (the JSON member named "data" in tokens) match (the JSON member named "data" in (document's tokens))) and (UI semantic entries types match (document's token types))) and (UI semantic entries modifiers match (document's token modifiers))
 
 to [receive UI language server messages] {a pointer to JSON value:response} [in] {a pointer to UI language client:client}:
     set index to 0
