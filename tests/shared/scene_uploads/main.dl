@@ -1,0 +1,66 @@
+import ../../../ui/scene_uploads.dl
+import ../../../ui/scene_surfaces.dl
+
+class:
+    patterns:
+        scene upload recorder
+    members:
+        vertices as an integer
+        indices as an integer
+        draws as an integer
+
+to get [the scene upload recorder in] {a pointer to UI view:view}:
+    return view's instance's state as a pointer to scene upload recorder
+
+to [record scene vertices in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot} [from] {a pointer:data} [counting] {integer:count}:
+    require condition ((shader = (321 as a pointer)) and (pass = 3)) reporting "Scene uploads changed their shader or pass"
+    require condition (0 <= slot <= 2) reporting "Scene uploads used an unknown stream"
+    if slot = 2:
+        require condition (count = 176) reporting "Scene instance uploads must use the portable record stride"
+        set record to the value at (data as a pointer to UI scene shader instance)
+        require condition ((the item at 0 in record's matrix) = 1.0) reporting "Instance bytes were corrupted at the driver boundary"
+    else:
+        set stride to 32 if slot = 0, else 12
+        require condition ((count = (24 * stride)) or (count = (48 * stride))) reporting "Scene geometry bytes disagree with their vertex layouts"
+    increment (the scene upload recorder in view)'s vertices
+
+to [record scene indices in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [from] {a pointer to a 32 bit unsigned integer:data} [counting] {integer:count}:
+    require condition ((count = 36) or (count = 72)) reporting "Scene index uploads changed their count"
+    increment (the scene upload recorder in view)'s indices
+
+to [record scene draws in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [from] {a pointer to UI shader draw:data} [counting] {integer:count}:
+    set draw to the value at data
+    require condition ((count = 1) and ((draw's count = 36) and ((draw's first = 36) and ((draw's vertex offset = 24) and ((draw's instances = 2) and (draw's instance offset = 7)))))) reporting "Scene draws did not preserve mesh-local indices and instance offsets"
+    increment (the scene upload recorder in view)'s draws
+
+set operations to a new UI shader operations
+set operations' vertices to (the function named "record scene vertices in $ holding $ pass $ slot $ from $ counting $") as a pointer
+set operations' indices to (the function named "record scene indices in $ holding $ pass $ from $ counting $") as a pointer
+set operations' draws to (the function named "record scene draws in $ holding $ pass $ from $ counting $") as a pointer
+set driver to a new UI driver
+set driver's shader operations to the address of operations
+set recorder to a new scene upload recorder
+set instance to a new UI instance
+set instance's state to (the address of recorder) as a pointer
+set view to a new UI view
+set view's instance to the address of instance
+set view's driver to the address of driver
+set bank to a UI scene mesh bank
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set first to the span of UI mesh mesh in bank
+set binding to a UI scene geometry binding to bank in (the address of view) shader (321 as a pointer) pass 3
+require condition (refresh UI scene geometry binding (the address of binding)) reporting "The first scene geometry upload was omitted"
+require condition ((refresh UI scene geometry binding (the address of binding)) = false) reporting "Unchanged scene geometry was uploaded again"
+set second to the span of UI mesh (a UI box mesh with 1 by 1 by 1 segments) in bank
+require condition (refresh UI scene geometry binding (the address of binding)) reporting "New scene geometry was not uploaded"
+require condition (((recorder's vertices = 4) and (recorder's indices = 2)) and (binding's revision = 2)) reporting "Scene geometry revision tracking lost or repeated uploads"
+set records to an empty list of UI scene shader instance
+set material to a UI scene material with color (UI ink 255 255 255) roughness 0.5 metalness 0.0
+append (a UI scene shader instance through (a UI scene transform from (an identity graphics matrix)) with material material casting shadow true receiving shadow true) to records
+upload UI scene instances records through binding
+set draw to a UI scene mesh draw from span second in bank counting 2 instances starting at 7
+set UI shader (binding's shader) pass (binding's pass) in (binding's view) to draws (the address of draw) counting 1
+require condition ((recorder's vertices = 5) and (recorder's draws = 1)) reporting "Dynamic scene instances or draws did not reach the driver"
+free records
+close UI scene mesh bank bank
+print line "Scene uploads retain static geometry across frames and transfer portable instance records and indexed draws."

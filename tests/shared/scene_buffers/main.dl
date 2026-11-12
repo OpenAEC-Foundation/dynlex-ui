@@ -1,0 +1,59 @@
+import ../../../ui/scene_buffers.dl
+import ../../../ui/scene_buffer_layouts.dl
+import ../../../ui/scene_surfaces.dl
+import ../../../ui/scene_poses.dl
+
+to [expect scene buffer value] {a number:actual} [near] {a number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "Scene buffer data differs from the scene transform or material"
+
+require condition ((the size of UI scene shader instance) = 176) reporting "Scene instances need a portable forty-four-word GPU record"
+set bank to a UI scene mesh bank
+set box to a UI box mesh with 1 by 1 by 1 segments
+set first to the span of UI mesh box in bank
+set again to the span of UI mesh box in bank
+require condition ((first = again) and (bank's revision = 1)) reporting "Shared mesh storage was uploaded twice"
+set independent to a UI box mesh with 1 by 1 by 1 segments
+set second to the span of UI mesh independent in bank
+require condition ((second != first) and (bank's revision = 2)) reporting "Independent mesh storage was incorrectly aliased"
+set span to the item at second in (bank's spans)
+require condition ((span's first vertex = 24) and ((span's first index = 36) and (span's count = 36))) reporting "Mesh atlas offsets did not preserve local indices"
+require condition (((the length of bank's vertices) = 48) and (((the length of bank's colors) = 48) and ((the length of bank's indices) = 72))) reporting "Mesh atlas streams do not cover both meshes"
+require condition ((the item at 36 in (bank's indices)) = (the item at 0 in box's indices)) reporting "Mesh indices were rebased as well as the draw offset"
+set material to a UI scene material with color (UI ink 128 64 255) roughness 0.82 metalness 0.25
+set material's emission to UI ink 255 128 0
+set material's emission strength to 2.0
+set material's opacity to 0.6
+set material's flags to 4294967295 as a 32 bit unsigned integer
+set material's unlit to true
+set pose to a UI scene pose at (a new vector with x 7.0, y 8.0 and z 9.0) rotated (a new vector with x 0.0, y 0.0 and z 0.0) scaled (a new vector with x -2.0, y 4.0 and z 5.0)
+set transform to a UI scene transform from (the UI scene matrix for pose)
+set record to a UI scene shader instance through transform with material material casting shadow true receiving shadow false
+expect scene buffer value (the item at 0 in record's matrix) near -2.0
+expect scene buffer value (the item at 12 in record's matrix) near 7.0
+expect scene buffer value (the item at 13 in record's matrix) near 8.0
+expect scene buffer value (the item at 14 in record's matrix) near 9.0
+expect scene buffer value (the item at 0 in record's normals) near -0.5
+expect scene buffer value (the item at 5 in record's normals) near 0.25
+expect scene buffer value (the item at 10 in record's normals) near 0.2
+expect scene buffer value (the item at 0 in record's color) near 0.2158605
+expect scene buffer value (the item at 1 in record's color) near 0.05126946
+expect scene buffer value (the item at 2 in record's color) near 1.0
+expect scene buffer value (the item at 3 in record's color) near 0.6
+expect scene buffer value (the item at 0 in record's emission) near 2.0
+expect scene buffer value (the item at 1 in record's emission) near 0.431721
+expect scene buffer value (the item at 0 in record's surface) near 0.82
+expect scene buffer value (the item at 1 in record's surface) near 0.25
+expect scene buffer value (the item at 2 in record's surface) near -1.0
+require condition (((the item at 0 in record's flags) = 4294967295) and (((the item at 1 in record's flags) = 1) and (((the item at 2 in record's flags) = 1) and ((the item at 3 in record's flags) = 0)))) reporting "Unsigned shader flags or shadow flags were lost"
+set layouts to the UI scene shader vertex layouts
+require condition ((the number of JSON items in layouts) = 3) reporting "Scene shaders require mesh, color and instance streams"
+set instances to the JSON value at index 2 in layouts
+require condition (((the JSON number named "arrayStride" in instances) = 176.0) and ((the JSON text named "stepMode" in instances) = "instance")) reporting "The instance vertex layout differs from its record"
+set attributes to the JSON member named "attributes" in instances
+require condition ((the number of JSON items in attributes) = 11) reporting "Scene instances must stay within fifteen vertex attributes in total"
+set flags to the JSON value at index 10 in attributes
+require condition (((the JSON number named "offset" in flags) = 160.0) and ((the JSON text named "format" in flags) = "uint32x4")) reporting "The scene flags were exposed as floating-point data"
+free layouts
+close UI scene mesh bank bank
+require condition ((the length of box's vertices) = 24) reporting "Closing a mesh bank destroyed its source geometry"
+print line "Scene buffers share geometry and pack transforms, linear colors, materials and exact flags for portable GPU streams."

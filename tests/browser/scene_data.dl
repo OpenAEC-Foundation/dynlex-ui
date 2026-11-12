@@ -1,0 +1,72 @@
+import ../../ui/scene_uploads.dl
+import ../../ui/scene_buffer_layouts.dl
+import ../../ui/scene_poses.dl
+
+to get [scene test words from] {a pointer:data} [counting] {integer:count}:
+    set result to a new JSON value of kind the JSON array kind
+    loop index from 0 to count:
+        add (a new JSON number from (the item at index in (data as a pointer to a 32 bit unsigned integer))) to the JSON array result
+    return result
+
+to get [a scene test triangle]:
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set colors to an empty list of linear UI paint
+    set normal to (a new vector with x 1.0, y 2.0 and z 3.0) normalized
+    for each point in [(a new vector with x -0.6, y -0.5 and z 0.0), (a new vector with x 0.6, y -0.5 and z 0.0), (a new vector with x 0.0, y 0.5 and z 0.0)]:
+        append UI mesh vertex at point normal normal uv 0.25 0.75 to vertices
+        append (linear UI ink red 0.5 green 0.75 blue 1.0) to colors
+    append UI mesh triangle 0 1 2 to indices
+    set result to a UI scene mesh taking vertices vertices and indices indices and colors colors
+    free vertices
+    free indices
+    free colors
+    return result
+
+to get [a scene test screen point] {vector:point} [through] {UI scene camera:camera}:
+    set projected to the UI scene projection for point through camera in (UI box at 0.0 0.0 sized 96.0 96.0)
+    require condition (projected's visible) reporting "The scene test point must be in view"
+    return a JSON array containing [a new JSON number from (projected's screen's x), a new JSON number from (projected's screen's y)]
+
+set bank to a UI scene mesh bank
+set first to the span of UI mesh (a scene test triangle) in bank
+set second to the span of UI mesh (a scene test triangle) in bank
+set camera to a UI scene camera at (a new vector with x 0.0, y 0.0 and z 5.0) aimed at (a new vector with x 0.0, y 0.0 and z 0.0) with angle 60.0 aspect 1.0 near 0.1 far 20.0
+set records to an empty list of UI scene shader instance
+set expected to a new JSON value of kind the JSON array kind
+set positions to [(a new vector with x 0.0, y 0.0 and z 100.0), (a new vector with x -0.75, y 0.6 and z 0.4), (a new vector with x 0.75, y -0.6 and z 0.0), (a new vector with x -0.75, y 0.6 and z -0.8)]
+set colors to [UI ink 255 255 255, UI ink 128 0 0, UI ink 0 128 0, UI ink 0 0 255]
+loop index from 0 to 4:
+    set position to the item at index in positions
+    set scale to a new vector with x (-0.8 if index = 2, else 1.2), y 0.7 and z 1.5
+    set pose to a UI scene pose at position rotated (a new vector with x 0.15, y 0.2 and z 0.25) scaled scale
+    set transform to a UI scene transform from (the UI scene matrix for pose)
+    set material to a UI scene material with color (the item at index in colors) roughness 0.25 metalness 0.5
+    set material's unlit to true
+    set material's flags to 4294967295 as a 32 bit unsigned integer
+    set material's emission to UI ink 255 128 0
+    set material's emission strength to 0.25
+    append (a UI scene shader instance through transform with material material casting shadow true receiving shadow false) to records
+    if (index = 1) or (index = 2):
+        set normal to the UI scene normal of (a new vector with x 1.0, y 2.0 and z 3.0) through transform
+        add (a JSON object containing [
+            JSON child "screen" is (a scene test screen point position through camera),
+            JSON child "normal" is (a JSON array containing [a new JSON number from (normal's x * 0.5 + 0.5), a new JSON number from (normal's y * 0.5 + 0.5), a new JSON number from (normal's z * 0.5 + 0.5)]),
+            JSON number "handedness" is (transform's handedness)
+        ]) to the JSON array expected
+set draws to [a UI scene mesh draw from span first in bank counting 2 instances starting at 1, a UI scene mesh draw from span second in bank counting 1 instances starting at 3]
+set {camera input} to a UI shader value from graphics matrix (the UI scene view projection for camera)
+set data to a JSON object containing [
+    JSON child "layouts" is (the UI scene shader vertex layouts),
+    JSON child "vertices" is (scene test words from ((bank's vertices' data) as a pointer) counting ((the length of bank's vertices) * 8)),
+    JSON child "colors" is (scene test words from ((bank's colors' data) as a pointer) counting ((the length of bank's colors) * 3)),
+    JSON child "indices" is (scene test words from ((bank's indices' data) as a pointer) counting (the length of bank's indices)),
+    JSON child "instances" is (scene test words from ((records' data) as a pointer) counting ((the length of records) * 44)),
+    JSON child "draws" is (scene test words from ((draws + 0) as a pointer) counting 12),
+    JSON child "camera" is (scene test words from ((camera input's data + 0) as a pointer) counting 16),
+    JSON child "expected" is expected
+]
+print line the compact JSON form of data
+free data
+free records
+close UI scene mesh bank bank

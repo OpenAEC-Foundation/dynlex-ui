@@ -1,0 +1,30 @@
+# This layout is shared by the renderer and linked shader program descriptors.
+import lib/json_builders.dl
+
+to get [a UI scene shader attribute at] {integer:location} [offset] {integer:offset} [of format] {C string:format}:
+    return a JSON object containing [JSON number "shaderLocation" is location, JSON number "offset" is offset, JSON text "format" is format]
+
+to get [a UI scene shader stream spanning] {integer:stride} [stepping] {C string:step} [with attributes] {a pointer to JSON value:attributes}:
+    return a JSON object containing [JSON number "arrayStride" is stride, JSON text "stepMode" is step, JSON child "source" is (a new JSON value of kind the JSON null kind), JSON child "attributes" is attributes]
+
+to get [the UI scene shader vertex layouts]:
+    set vertices to a JSON array containing [
+        a UI scene shader attribute at 0 offset 0 of format "float32x3",
+        a UI scene shader attribute at 1 offset 12 of format "float32x3",
+        a UI scene shader attribute at 2 offset 24 of format "float32x2"
+    ]
+    set colors to a JSON array containing [a UI scene shader attribute at 3 offset 0 of format "float32x3"]
+    set instances to a new JSON value of kind the JSON array kind
+    loop column from 0 to 4:
+        add (a UI scene shader attribute at (4 + column) offset (column * 16) of format "float32x4") to the JSON array instances
+    loop column from 0 to 3:
+        add (a UI scene shader attribute at (8 + column) offset (64 + column * 16) of format "float32x3") to the JSON array instances
+    add (a UI scene shader attribute at 11 offset 112 of format "float32x4") to the JSON array instances
+    add (a UI scene shader attribute at 12 offset 128 of format "float32x4") to the JSON array instances
+    add (a UI scene shader attribute at 13 offset 144 of format "float32x4") to the JSON array instances
+    add (a UI scene shader attribute at 14 offset 160 of format "uint32x4") to the JSON array instances
+    return a JSON array containing [
+        a UI scene shader stream spanning 32 stepping "vertex" with attributes vertices,
+        a UI scene shader stream spanning 12 stepping "vertex" with attributes colors,
+        a UI scene shader stream spanning 176 stepping "instance" with attributes instances
+    ]

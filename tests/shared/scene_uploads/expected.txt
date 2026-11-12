@@ -1,0 +1,1 @@
+Scene uploads retain static geometry across frames and transfer portable instance records and indexed draws.

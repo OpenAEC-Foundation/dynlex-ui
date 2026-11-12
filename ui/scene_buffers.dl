@@ -1,0 +1,90 @@
+# Immutable mesh storage is shared across models; GPU indices stay mesh-local.
+import scene_mesh.dl
+import scene_materials.dl
+import scene_transforms.dl
+
+class:
+    patterns:
+        UI scene mesh span
+    members:
+        mesh as UI scene mesh
+        first vertex as an integer
+        first index as an integer
+        count as an integer
+
+class:
+    patterns:
+        UI scene mesh bank
+    members:
+        spans as the type of (an empty list of UI scene mesh span)
+        vertices as the type of (an empty list of UI mesh vertex)
+        colors as the type of (an empty list of linear UI paint)
+        indices as the type of (an empty list of a 32 bit unsigned integer)
+        revision as an integer
+
+to get [a UI scene mesh bank]:
+    set result to storage for one slot initialized with (a new UI scene mesh bank)
+    set result's spans to an empty list of UI scene mesh span
+    set result's vertices to an empty list of UI mesh vertex
+    set result's colors to an empty list of linear UI paint
+    set result's indices to an empty list of a 32 bit unsigned integer
+    return result
+
+to get {UI scene mesh:first} [shares UI mesh storage with] {UI scene mesh:second}:
+    return ((first's vertices' data) = (second's vertices' data)) and (((first's indices' data) = (second's indices' data)) and ((first's colors' data) = (second's colors' data)))
+
+to get [the span of UI mesh] {UI scene mesh:mesh} [in] {a pointer to UI scene mesh bank:bank}:
+    set index to 0
+    for each span in (bank's spans):
+        if mesh shares UI mesh storage with (span's mesh):
+            return index
+        increment index
+    set span to @intrinsic("construct", UI scene mesh span, mesh, the length of bank's vertices, the length of bank's indices, the length of mesh's indices)
+    append span to (bank's spans)
+    for each vertex in (mesh's vertices):
+        append vertex to (bank's vertices)
+    for each color in (mesh's colors):
+        append color to (bank's colors)
+    for each value in (mesh's indices):
+        append value to (bank's indices)
+    increment bank's revision
+    return index
+
+to [close UI scene mesh bank] {a pointer to UI scene mesh bank:bank}:
+    free bank's spans
+    free bank's vertices
+    free bank's colors
+    free bank's indices
+    destroy the value at bank
+    deallocate bank
+
+# All records use four-byte scalars on native and Wasm. Matrices are columns;
+# inverse-transpose normal columns have explicit fourth-word padding.
+class:
+    patterns:
+        UI scene shader instance
+    members:
+        matrix as graphics matrix
+        normals as a 32 bit floating-point number array of 12 items
+        color as a 32 bit floating-point number array of 4 items
+        emission as a 32 bit floating-point number array of 4 items
+        surface as a 32 bit floating-point number array of 4 items
+        flags as a 32 bit unsigned integer array of 4 items
+
+UI scene shader instances means: the type of (an empty list of UI scene shader instance)
+
+to get [a UI scene shader instance through] {UI scene transform:transform} [with material] {UI scene material:material} [casting shadow] {boolean:casts} [receiving shadow] {boolean:receives}:
+    require UI scene material material
+    set result to a new UI scene shader instance
+    set result's matrix to transform's matrix
+    loop column from 0 to 3:
+        loop row from 0 to 3:
+            store (the item at (row * 4 + column) in transform's inverse) into result's normals at (column * 4 + row)
+    set color to linear UI ink from (material's color)
+    set result's color to [color's red, color's green, color's blue, material's opacity as a 32 bit floating-point number]
+    set color to linear UI ink from (material's emission)
+    set strength to material's emission strength as a 32 bit floating-point number
+    set result's emission to [color's red * strength, color's green * strength, color's blue * strength, 0.0 as a 32 bit floating-point number]
+    set result's surface to [material's roughness as a 32 bit floating-point number, material's metalness as a 32 bit floating-point number, transform's handedness as a 32 bit floating-point number, 0.0 as a 32 bit floating-point number]
+    set result's flags to [material's flags, (1 if material's unlit, else 0) as a 32 bit unsigned integer, (1 if casts, else 0) as a 32 bit unsigned integer, (1 if receives, else 0) as a 32 bit unsigned integer]
+    return result

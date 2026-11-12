@@ -240,3 +240,67 @@ normalizes finite nonzero inputs and chooses a perpendicular half-turn axis for
 opposite directions. `a UI scene matrix at position oriented rotation scaled
 scale` composes the resulting orientation with translation and nonuniform scale.
 Quaternion inputs must have a finite nonzero magnitude.
+
+## Persistent GPU geometry and instance records
+
+`ui/scene_buffers.dl` collects immutable meshes in an owning mesh bank. Registering
+another copy of the same mesh returns its existing span; independently allocated
+meshes remain independent. The bank retains the source meshes, so temporary
+prototypes can leave their scope. Vertex and color streams are concatenated;
+indices remain local to each mesh. Draws select the correct vertex offset.
+
+```dynlex
+import ui/scene_uploads.dl
+import ui/scene_buffer_layouts.dl
+import ui/scene_surfaces.dl
+
+set bank to a UI scene mesh bank
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set span to the span of UI mesh mesh in bank
+set material to a UI scene material with color (UI ink 199 122 67) roughness 0.78 metalness 0.0
+set transform to a UI scene transform from (an identity graphics matrix)
+set records to an empty list of UI scene shader instance
+append (a UI scene shader instance through transform with material material casting shadow true receiving shadow true) to records
+set draw to a UI scene mesh draw from span span in bank counting 1 instances starting at 0
+set layouts to the UI scene shader vertex layouts
+```
+
+`layouts` is an owning JSON array for a shader pass's `vertexBuffers`. It declares
+three streams: 32-byte mesh vertices, twelve-byte linear RGB colors and 176-byte
+instance records. There are fifteen attributes in total, within the baseline
+WebGPU and WebGL2 limits. The instance layout is identical on native and Wasm:
+
+| Byte offset | Contents | Shader locations |
+| --- | --- | --- |
+| 0 | Four column-major model vectors, float32x4 | 4–7 |
+| 64 | Three inverse-transpose normal columns, float32x3 with four-byte padding | 8–10 |
+| 112 | Linear material RGB and opacity, float32x4 | 11 |
+| 128 | Linear emission RGB multiplied by strength, float32x4 | 12 |
+| 144 | Roughness, metalness, handedness and padding, float32x4 | 13 |
+| 160 | Application flags, unlit, casts shadow and receives shadow, uint32x4 | 14 |
+
+After creating the shader through the view's shader provider, bind its geometry:
+
+```dynlex
+set binding to a UI scene geometry binding to bank in view shader shader pass 0
+ignore (refresh UI scene geometry binding (the address of binding))
+upload UI scene instances records through binding
+set UI shader shader pass 0 in view to draws (the address of draw) counting 1
+```
+
+The binding borrows `bank`, `view` and `shader`. Refresh uploads static geometry
+only when the bank's revision changes; each shader/pass binding tracks its own
+revision. Instance records can change without another geometry upload. Release
+the shader through its provider, free the records and layouts, and close the
+bank once their last use has finished. The binding itself owns no resources.
+
+`ui/scene_shader.dl` reads this vertex ABI in ordinary DynLex shaders. It supplies
+world position, normalized inverse-transpose world normal and camera projection,
+along with vertex colors, material color, emission, surface values, flags and UVs.
+Pass a reflected 4-by-4 camera uniform to `the UI scene shader clip position of
+point through camera`; submit its value with `a UI shader value from graphics
+matrix matrix`. Standard core vector arithmetic and readable coordinates work in
+GPU shaders as well as CPU code. `set the x coordinate of value to component`
+(and the equivalent y/z operations) updates a vector on either target without
+changing a copy. Applications still supply their material
+lighting, effects, face culling, depth-write policy and transparency ordering.

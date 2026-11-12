@@ -7,6 +7,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import { inflateSync } from 'node:zlib';
 import { setTimeout as pause } from 'node:timers/promises';
 import { readPng } from './png.mjs';
+import { prepareScene } from './prepare_scene.mjs';
 
 const directory = path.resolve(process.argv[2] || 'dist/ribbon');
 const example = path.basename(directory);
@@ -17,6 +18,7 @@ const compiler=path.resolve(process.argv[4]);
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'dynlex-ui-chrome-'));
 try {
   execFileSync(process.execPath,[path.join(compiler,'tests/web/shader_uniforms.mjs'),path.join(compiler,'build-web'),path.join(profile,'shader-uniforms.json')],{timeout:60000});
+  await prepareScene(compiler,profile);
 } catch(error) {await fs.rm(profile,{recursive:true,force:true});throw error;}
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
   '.wasm': 'application/wasm', '.ttf': 'font/ttf', '.svg': 'image/svg+xml',
@@ -31,6 +33,14 @@ const server = http.createServer(async (request, response) => {
     if(request.url === '/__tests__/shader-uniforms.json') {
       response.setHeader('Content-Type','application/json');
       response.end(await fs.readFile(path.join(profile,'shader-uniforms.json')));return;
+    }
+    if(request.url === '/__tests__/scene-buffers.json') {
+      response.setHeader('Content-Type','application/json');
+      response.end(await fs.readFile(path.join(profile,'scene-buffers.json')));return;
+    }
+    if(request.url === '/__tests__/scene-rendering.mjs') {
+      response.setHeader('Content-Type','text/javascript');
+      response.end(await fs.readFile(new URL('./scene_rendering.mjs',import.meta.url)));return;
     }
     const filename = path.resolve(directory, '.' + new URL(request.url, 'http://localhost').pathname);
     if (!filename.startsWith(directory + '/') && filename !== directory) throw new Error('Path');
@@ -310,6 +320,7 @@ try {
   await pause(100);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyShaderBuffers(); await module.verifyShaderUniforms(); await module.verifyCompiledShaderUniforms(); await module.verifyFailureBoundaries(); })');
+  await evaluate('import("/__tests__/scene-rendering.mjs").then(module => module.verifySceneBuffers())');
   assert.equal(errors.length, 0, JSON.stringify(errors));
   console.log(JSON.stringify({ example, graphicsMode, before, after, errors }));
 } catch (error) {

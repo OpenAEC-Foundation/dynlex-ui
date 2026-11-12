@@ -14,6 +14,7 @@ const cases=['shared/document_forms','unit/text','shared/disabled_text','unit/co
 cases.push('integration/snake_input','shared/focus_identity','shared/source_search','shared/text_search_model','shared/key_dispatch','shared/text_area','shared/mark_layers','unit/text_marks','shared/control_popups','integration/ui_ribbon_events','unit/disabled_navigation');
 const selected=process.argv.slice(3);
 cases.push('shared/scene_camera','shared/scene_picking','shared/scene_mesh','shared/scene_solids','shared/scene_transforms','shared/scene_models','shared/scene_baking','shared/scene_rotations','shared/color_space','shared/shader_values','shared/shader_api','shared/shader_programs');
+cases.push('shared/scene_buffers','shared/scene_uploads');
 assert(selected.every(name=>cases.includes(name)), 'Unknown shared source fixture');
 const directory=await fs.mkdtemp(path.join(os.tmpdir(),'dynlex-source-features-'));
 try {

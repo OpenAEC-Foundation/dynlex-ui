@@ -1,0 +1,35 @@
+# A binding borrows its bank, view and shader until the caller closes them.
+# Each shader pass tracks its own uploaded revision of the immutable geometry.
+import scene_buffers.dl
+import shaders.dl
+
+class:
+    patterns:
+        UI scene geometry binding
+    members:
+        bank as a pointer to UI scene mesh bank
+        view as a pointer to UI view
+        shader as a pointer
+        pass as an integer
+        revision as an integer
+
+to get [a UI scene geometry binding to] {a pointer to UI scene mesh bank:bank} [in] {a pointer to UI view:view} [shader] {a pointer:shader} [pass] {integer:pass}:
+    set checked to a UI operation integer from pass
+    return @intrinsic("construct", UI scene geometry binding, bank, view, shader, pass, -1)
+
+to get [refresh UI scene geometry binding] {a pointer to UI scene geometry binding:binding}:
+    set bank to binding's bank
+    if binding's revision = bank's revision:
+        return false
+    set UI shader (binding's shader) pass (binding's pass) in (binding's view) vertex buffer 0 from ((bank's vertices' data) as a pointer) spanning (((the length of bank's vertices) as a 64 bit integer) * 32) bytes
+    set UI shader (binding's shader) pass (binding's pass) in (binding's view) vertex buffer 1 from ((bank's colors' data) as a pointer) spanning (((the length of bank's colors) as a 64 bit integer) * 12) bytes
+    set UI shader (binding's shader) pass (binding's pass) in (binding's view) to indices (bank's indices' data) counting (the length of bank's indices)
+    set binding's revision to bank's revision
+    return true
+
+to [upload UI scene instances] {UI scene shader instances:records} [through] {UI scene geometry binding:binding}:
+    set UI shader (binding's shader) pass (binding's pass) in (binding's view) vertex buffer 2 from ((records' data) as a pointer) spanning (((the length of records) as a 64 bit integer) * 176) bytes
+
+to get [a UI scene mesh draw from span] {integer:index} [in] {a pointer to UI scene mesh bank:bank} [counting] {integer:count} [instances starting at] {integer:first}:
+    set span to the item at index in (bank's spans)
+    return a UI shader draw counting (span's count) instanced count starting at (span's first index) with vertex offset (span's first vertex) and instance offset first indexed true

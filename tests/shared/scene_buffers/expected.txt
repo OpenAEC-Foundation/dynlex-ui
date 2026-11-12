@@ -1,0 +1,1 @@
+Scene buffers share geometry and pack transforms, linear colors, materials and exact flags for portable GPU streams.
