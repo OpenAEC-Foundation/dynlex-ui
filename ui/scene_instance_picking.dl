@@ -1,0 +1,26 @@
+import scene_instances.dl
+
+class:
+    patterns:
+        UI scene selection
+    members:
+        part as an integer
+        hit as UI scene hit
+
+to get [the UI scene selection from] {UI scene ray:ray} [in] {a pointer to UI scene instance:instance} [including backfaces] {boolean:backfaces}:
+    refresh UI scene instance instance
+    set result to @intrinsic("construct", UI scene selection, -1, a new UI scene hit)
+    if (instance's extent's present) = false:
+        return result
+    if (ray intersects mesh bounds (instance's extent's bounds)) = false:
+        return result
+    set index to 0
+    for each part in (instance's model's parts):
+        set placement to the item at index in (instance's placements)
+        if (placement's present) and ((placement's visible) and (placement's pickable)):
+            set hit to the UI scene hit from ray on mesh (part's mesh) through (placement's transform) including backfaces backfaces
+            if (hit's hit) and (((result's hit's hit) = false) or (hit's distance < result's hit's distance)):
+                set result's part to index
+                set result's hit to hit
+        increment index
+    return result

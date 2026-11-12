@@ -94,6 +94,10 @@ set copy to sphere
 set sphere to a UI sphere mesh with 10 slices and 8 stacks
 check mesh copy has 12 vertices and 6 triangles
 check mesh sphere has 99 vertices and 140 triangles
+set vertex to the item at 44 in sphere's vertices
+check mesh number (vertex's x) equals -1.0
+check mesh number (vertex's y) equals 0.0
+check mesh number (vertex's z) equals 0.0
 set empty to a new UI scene mesh
 require condition (((the length of empty's vertices) = 0) and ((the length of empty's indices) = 0)) reporting "An empty scene mesh is not a valid owning value."
 print line "Scene meshes own portable indexed vertices with outward normals, UVs, segmented boxes, spheres, tapered cylinders, partial tori and rings."

@@ -1,0 +1,62 @@
+import scene_models.dl
+import scene_placements.dl
+
+UI scene pose list means: the type of (an empty list of UI scene pose)
+UI scene material list means: the type of (an empty list of UI scene material)
+UI scene placement list means: the type of (an empty list of UI scene placement)
+UI scene flag list means: the type of (an empty list of a boolean)
+
+class:
+    patterns:
+        UI scene instance
+    members:
+        model as UI scene model
+        poses as UI scene pose list
+        materials as UI scene material list
+        visibility as UI scene flag list
+        pickability as UI scene flag list
+        dirty as UI scene flag list
+        placements as UI scene placement list
+        root pose as UI scene pose
+        extent as UI scene extent
+        pending as a boolean
+        revision as a 64 bit integer
+
+to [mark UI scene part] {integer:index} [changed in] {a pointer to UI scene instance:instance}:
+    replace item at index index in (instance's dirty) with true
+    set instance's pending to true
+
+to [set UI scene pose of part] {integer:index} [in] {a pointer to UI scene instance:instance} [to] {UI scene pose:pose}:
+    if (the item at index in (instance's poses)) is the same UI scene pose as pose:
+        return nothing
+    replace item at index index in (instance's poses) with pose
+    mark UI scene part index changed in instance
+
+to [set UI scene material of part] {integer:index} [in] {a pointer to UI scene instance:instance} [to] {UI scene material:material}:
+    require UI scene material material
+    if (the item at index in (instance's materials)) is the same UI scene material as material:
+        return nothing
+    replace item at index index in (instance's materials) with material
+    mark UI scene part index changed in instance
+
+to [set UI scene flag] {boolean:value} [at part] {integer:index} [in] {a pointer to a list:flags} [of] {a pointer to UI scene instance:instance}:
+    if (the item at index in flags) = value:
+        return nothing
+    replace item at index index in flags with value
+    mark UI scene part index changed in instance
+
+to [set UI scene visibility of part] {integer:index} [in] {a pointer to UI scene instance:instance} [to] {boolean:visible}:
+    set UI scene flag visible at part index in (instance's visibility) of instance
+
+to [set UI scene pickability of part] {integer:index} [in] {a pointer to UI scene instance:instance} [to] {boolean:pickable}:
+    set UI scene flag pickable at part index in (instance's pickability) of instance
+
+to [set UI scene root pose in] {a pointer to UI scene instance:instance} [to] {UI scene pose:pose}:
+    if instance's root pose is the same UI scene pose as pose:
+        return nothing
+    set instance's root pose to pose
+    set index to 0
+    for each part in (instance's model's parts):
+        if part's parent = -1:
+            mark UI scene part index changed in instance
+        increment index

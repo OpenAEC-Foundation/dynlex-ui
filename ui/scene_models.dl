@@ -1,0 +1,59 @@
+# Model prototypes are immutable owning data; parents precede their children.
+import scene_mesh.dl
+import scene_poses.dl
+import scene_materials.dl
+
+class:
+    patterns:
+        UI scene part
+    members:
+        name as a string
+        parent as an integer
+        mesh as UI scene mesh
+        material as UI scene material
+        pose as UI scene pose
+        visible as a boolean
+        pickable as a boolean
+        casts shadow as a boolean
+        receives shadow as a boolean
+
+UI scene parts means: the type of (an empty sequence of UI scene part)
+
+class:
+    patterns:
+        UI scene model
+    members:
+        parts as UI scene parts
+
+to get [a UI scene mesh part named] {a value:name} [under] {integer:parent} [using] {UI scene mesh:mesh} [with material] {UI scene material:material} [at] {UI scene pose:pose}:
+    return @intrinsic("construct", UI scene part, the string form of name, parent, mesh, material, pose, true, true, true, true)
+
+to get [a UI scene group named] {a value:name} [under] {integer:parent} [at] {UI scene pose:pose}:
+    return a UI scene mesh part named name under parent using (a new UI scene mesh) with material (a new UI scene material) at pose
+
+to [require UI scene parts] {a value:parts}:
+    set index to 0
+    for each part in parts:
+        require condition (-1 <= part's parent < index) reporting "A scene part's parent must precede it, or be -1 for a root"
+        require UI scene material (part's material)
+        set checked to a UI scene transform from (the UI scene matrix for part's pose)
+        increment index
+
+to get [a UI scene model from] {a value:parts}:
+    require UI scene parts parts
+    return @intrinsic("construct", UI scene model, a sequence copying parts)
+
+to get [a UI scene model taking parts] {a pointer to a list:parts}:
+    require UI scene parts parts
+    return @intrinsic("construct", UI scene model, a sequence taking the items from parts)
+
+to get [the index of UI scene part named] {a value:name} [under] {integer:parent} [in] {UI scene model:model}:
+    set found to -1
+    set index to 0
+    for each part in model's parts:
+        if (part's parent = parent) and (part's name = name):
+            require condition (found = -1) reporting "A named scene part is ambiguous within its parent"
+            set found to index
+        increment index
+    require condition (found != -1) reporting "The named scene part does not exist within its parent"
+    return found

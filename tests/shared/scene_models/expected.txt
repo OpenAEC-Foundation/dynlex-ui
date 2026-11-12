@@ -1,0 +1,1 @@
+Scene models share immutable parts, independent articulated instances, incremental placements, materials, inherited visibility, bounds and picking.

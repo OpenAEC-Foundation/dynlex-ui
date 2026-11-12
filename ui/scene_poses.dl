@@ -1,0 +1,68 @@
+# Local XYZ Euler poses keep articulation data separate from world placements.
+import scene_transforms.dl
+
+class:
+    patterns:
+        UI scene pose
+    members:
+        position as UI scene vector
+        rotation as UI scene vector
+        scale as UI scene vector
+
+to get [a UI scene vector from] {a value:components}:
+    require condition ((the length of components) = 3) reporting "Scene vectors require three components"
+    return a new vector with x ((the item at 0 in components) as a 64 bit floating-point number), y ((the item at 1 in components) as a 64 bit floating-point number) and z ((the item at 2 in components) as a 64 bit floating-point number)
+
+to [require finite UI scene vector] {vector:value}:
+    set converted to the UI scene vector form of value
+    require condition (((the x of converted) is finite) and (((the y of converted) is finite) and ((the z of converted) is finite))) reporting "Scene pose components must be finite"
+
+to get [a UI scene pose at] {vector:position} [rotated] {vector:rotation} [scaled] {vector:scale}:
+    require finite UI scene vector position
+    require finite UI scene vector rotation
+    require finite UI scene vector scale
+    require condition (((the x of scale) != 0.0) and (((the y of scale) != 0.0) and ((the z of scale) != 0.0))) reporting "Scene poses require nonzero scales"
+    return @intrinsic("construct", UI scene pose, the UI scene vector form of position, the UI scene vector form of rotation, the UI scene vector form of scale)
+
+to get [an identity UI scene pose]:
+    set origin to a new vector with x 0.0, y 0.0 and z 0.0
+    set scale to a new vector with x 1.0, y 1.0 and z 1.0
+    return a UI scene pose at origin rotated origin scaled scale
+
+to get {UI scene pose:first} [is the same UI scene pose as] {UI scene pose:second}:
+    set left to [first's position's x, first's position's y, first's position's z, first's rotation's x, first's rotation's y, first's rotation's z, first's scale's x, first's scale's y, first's scale's z]
+    set right to [second's position's x, second's position's y, second's position's z, second's rotation's x, second's rotation's y, second's rotation's z, second's scale's x, second's scale's y, second's scale's z]
+    set index to 0
+    loop while index < 9:
+        if (the item at index in left) != (the item at index in right):
+            return false
+        increment index
+    return true
+
+to get [the UI scene matrix for] {UI scene pose:pose}:
+    require finite UI scene vector (pose's position)
+    require finite UI scene vector (pose's rotation)
+    require finite UI scene vector (pose's scale)
+    set x to pose's rotation's x
+    set y to pose's rotation's y
+    set z to pose's rotation's z
+    set a to the cosine of x
+    set b to the sine of x
+    set c to the cosine of y
+    set d to the sine of y
+    set e to the cosine of z
+    set f to the sine of z
+    set matrix to an identity graphics matrix
+    store ((c * e * pose's scale's x) as a 32 bit floating-point number) into matrix at 0
+    store (((a * f + b * e * d) * pose's scale's x) as a 32 bit floating-point number) into matrix at 1
+    store (((b * f - a * e * d) * pose's scale's x) as a 32 bit floating-point number) into matrix at 2
+    store (((0.0 - c * f) * pose's scale's y) as a 32 bit floating-point number) into matrix at 4
+    store (((a * e - b * f * d) * pose's scale's y) as a 32 bit floating-point number) into matrix at 5
+    store (((b * e + a * f * d) * pose's scale's y) as a 32 bit floating-point number) into matrix at 6
+    store ((d * pose's scale's z) as a 32 bit floating-point number) into matrix at 8
+    store (((0.0 - b * c) * pose's scale's z) as a 32 bit floating-point number) into matrix at 9
+    store ((a * c * pose's scale's z) as a 32 bit floating-point number) into matrix at 10
+    store (pose's position's x as a 32 bit floating-point number) into matrix at 12
+    store (pose's position's y as a 32 bit floating-point number) into matrix at 13
+    store (pose's position's z as a 32 bit floating-point number) into matrix at 14
+    return matrix

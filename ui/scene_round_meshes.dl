@@ -17,7 +17,7 @@ to get [a UI sphere mesh with] {integer:slices} [slices and] {integer:stacks} [s
         loop while column <= slices:
             set horizontal to (column as a floating-point number) / (slices as a floating-point number)
             set longitude to 6.2831853071795864769 * horizontal
-            set position to a new vector with x (radius * (the sine of longitude)), y height and z (radius * (the cosine of longitude))
+            set position to a new vector with x (0.0 - radius * (the cosine of longitude)), y height and z (radius * (the sine of longitude))
             append UI mesh vertex at position normal position uv horizontal (1.0 - vertical) to vertices
             increment column
         increment row

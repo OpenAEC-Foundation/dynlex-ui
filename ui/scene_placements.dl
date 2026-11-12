@@ -1,0 +1,40 @@
+# World bounds are derived from the same transforms used for drawing and picking.
+import scene_mesh_picking.dl
+
+class:
+    patterns:
+        UI scene extent
+    members:
+        bounds as UI mesh bounds
+        present as a boolean
+
+class:
+    patterns:
+        UI scene placement
+    members:
+        transform as UI scene transform
+        bounds as UI mesh bounds
+        present as a boolean
+        visible as a boolean
+        pickable as a boolean
+        revision as a 64 bit integer
+
+to [include UI scene bounds] {UI mesh bounds:bounds} [in] {a pointer to UI scene extent:extent}:
+    if (extent's present) = false:
+        set extent's bounds to bounds
+        set extent's present to true
+        return nothing
+    set low to extent's bounds' minimum
+    set high to extent's bounds' maximum
+    set extent's bounds' minimum to a new vector with x (the minimum of (low's x) and (bounds' minimum's x)), y (the minimum of (low's y) and (bounds' minimum's y)) and z (the minimum of (low's z) and (bounds' minimum's z))
+    set extent's bounds' maximum to a new vector with x (the maximum of (high's x) and (bounds' maximum's x)), y (the maximum of (high's y) and (bounds' maximum's y)) and z (the maximum of (high's z) and (bounds' maximum's z))
+
+to get [the UI scene bounds of] {UI mesh bounds:bounds} [through] {UI scene transform:transform}:
+    set extent to a new UI scene extent
+    for each x in [bounds' minimum's x, bounds' maximum's x]:
+        for each y in [bounds' minimum's y, bounds' maximum's y]:
+            for each z in [bounds' minimum's z, bounds' maximum's z]:
+                set point to the UI scene position of (a new vector with x x, y y and z z) through transform
+                set corner to @intrinsic("construct", UI mesh bounds, point, point)
+                include UI scene bounds corner in (the address of extent)
+    return extent's bounds

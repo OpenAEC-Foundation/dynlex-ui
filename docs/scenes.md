@@ -76,8 +76,9 @@ set gable to a UI convex prism mesh from [(a UI point at -0.43 and 0.0), (a UI p
 ```
 
 Planes occupy a unit square in XY and face positive Z. Boxes have unit dimensions
-and independent normals and texture seams on every face. Spheres have unit radius;
-their poles omit degenerate triangles. Cylinder axes follow Y; the height is
+and independent normals and texture seams on every face. Spheres have unit radius
+and start their longitude seam at negative X; their poles omit degenerate
+triangles. Cylinder axes follow Y; the height is
 centered at zero, top and bottom radii can differ, and either radius can be zero
 for a cone. Caps have independent normals. Tori lie in XY and start at positive
 X; a partial arc remains open. Rings lie in XY and face positive Z. Icosahedra
@@ -126,3 +127,70 @@ under mirroring; a renderer culling faces must adjust its front-face convention
 when the transform's `handedness` is negative. Empty meshes and missed triangles
 report `hit = false`. The local ray retains its magnitude so nonuniform scales
 and non-unit input directions do not change which intersection is nearest.
+
+## Articulated models
+
+`ui/scene_models.dl` defines model prototypes as immutable sequences of parts.
+A part carries a name, parent index, mesh, material, local pose, visibility,
+pickability and shadow flags. Groups carry an empty mesh. Every parent precedes
+its children; -1 identifies a root. Multiple roots are allowed. Named lookups
+are scoped to a parent and fail on missing or ambiguous matches.
+
+Local `UI scene pose` data contains float64 `position`, `rotation` and `scale`
+vectors. Rotations are XYZ Euler angles in radians. Matrices use the existing
+column-major graphics convention. Pose construction accepts integer, float32 or
+float64 vectors; `a UI scene vector from [x,y,z]` provides a compact array form.
+Components must be finite and scales nonzero. Model creation also checks that
+the resulting matrix and inverse fit the shared float32 transform format.
+
+`UI scene material` stores sRGB `color` and `emission` paints, `emission strength`,
+`roughness`, `metalness`, `opacity`, `unlit`, `double sided`, `depth write` and an
+application-defined uint32 `flags` value. Colors use channels from zero through
+255. Roughness, metalness and opacity range from zero through one; emission
+strength is a finite nonnegative float32 value. The material constructor starts
+opaque with depth writes enabled and no emission. `UI ink from RGB value` accepts
+a packed twenty-four-bit integer without narrowing wider operands first.
+
+```dynlex
+import ui/scene_instance_picking.dl
+import ui/scene_surfaces.dl
+
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set material to a UI scene material with color (UI ink 199 122 67) roughness 0.78 metalness 0.0
+set pose to an identity UI scene pose
+set parts to [
+    a UI scene group named "actor" under -1 at pose,
+    a UI scene mesh part named "arm" under 0 using mesh with material material at pose
+]
+set model to a UI scene model from parts
+set actor to a UI scene instance of model
+set arm to the index of UI scene part named "arm" under 0 in model
+
+set pose's rotation to a UI scene vector from [0.4,0.0,0.0]
+set UI scene pose of part arm in actor to pose
+set placement to the UI scene placement of part arm in actor
+set UI scene visibility of part arm in actor to false
+refresh UI scene instance actor
+close UI scene instance actor
+```
+
+`ui/scene_instances.dl` creates separate mutable articulation, material and flag
+lists for each instance while retaining the prototype's immutable mesh data.
+The factory returns an owning pointer; close each instance exactly once. Copies
+of that pointer refer to the same instance. Separate factory calls are independent.
+The prototype can leave its caller's scope while instances still retain it.
+
+Setters compare against current values and invalidate changed branches. Refresh
+propagates changes to descendants in parent order, updates only affected world
+placements and derives visible world bounds. Unchanged refreshes do no work.
+The instance and each placement expose a `revision` for resource updates.
+Visibility and pickability propagate through parents. Material overrides never
+modify the prototype. `set UI scene root pose in actor to pose` moves every root
+and its descendants together.
+
+Instance `extent` contains `bounds` and `present`; an empty or entirely hidden
+model has no extent. `ui/scene_instance_picking.dl` first rejects missed instance
+bounds, then picks its nearest visible, pickable mesh. `the UI scene selection
+from ray in actor including backfaces false` returns `part` and `hit`. A miss has
+part -1 and `hit` with its hit flag false. These model and instance APIs prepare
+scene data; they do not replace material shaders or GPU scene submission.

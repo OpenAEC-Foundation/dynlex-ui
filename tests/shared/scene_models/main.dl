@@ -1,0 +1,106 @@
+import ../../../ui/scene_instances.dl
+import ../../../ui/scene_instance_picking.dl
+import ../../../ui/scene_surfaces.dl
+
+to check model number {a number:actual} equals {a number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "A shared scene model component changed."
+
+to check model point {vector:actual} equals {vector:expected}:
+    check model number (the length of (actual - expected)) equals 0.0
+
+set origin to a new vector with x 0.0, y 0.0 and z 0.0
+set one to a new vector with x 1.0, y 1.0 and z 1.0
+set identity to an identity UI scene pose
+set pose to a UI scene pose at (a new vector with x 1.0, y 2.0 and z 3.0) rotated (a new vector with x 0.2, y 0.3 and z 0.4) scaled (a new vector with x 2.0, y 3.0 and z 4.0)
+set transform to a UI scene transform from (the UI scene matrix for pose)
+set point to the UI scene position of (a new vector with x 0.3, y 0.7 and z -0.2) through transform
+check model point point equals (a new vector with x 0.5102840813609375, y 4.260935997598972 and z 2.7584493142368682)
+set {integer vector} to a new vector with x 1, y 2 and z 3
+set pose to a UI scene pose at integer vector rotated origin scaled one
+check model point (pose's position) equals (a new vector with x 1.0, y 2.0 and z 3.0)
+
+set red to a UI scene material with color (UI ink from RGB 13072963) roughness 0.78 metalness 0.2
+check model number (red's color's red) equals 199.0
+check model number (red's color's green) equals 122.0
+check model number (red's color's blue) equals 67.0
+check model number (red's opacity) equals 1.0
+check model number (red's emission strength) equals 0.0
+set {wide color} to UI ink from RGB (16777215 as a 128 bit integer)
+require condition ((wide color's red = 255) and ((wide color's green = 255) and (wide color's blue = 255))) reporting "A valid wide RGB value was narrowed before conversion."
+set blue to a UI scene material with color (UI ink 50 100 200) roughness 0.3 metalness 0.7
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set parts to [
+    a UI scene group named "root" under -1 at (a UI scene pose at (a new vector with x 10.0, y 0.0 and z 0.0) rotated origin scaled one),
+    a UI scene mesh part named "arm" under 0 using mesh with material red at (a UI scene pose at (a new vector with x 0.0, y 2.0 and z 0.0) rotated origin scaled one),
+    a UI scene group named "hand" under 1 at (a UI scene pose at (a new vector with x 1.0, y 0.0 and z 0.0) rotated origin scaled one),
+    a UI scene mesh part named "tip" under 2 using mesh with material red at (a UI scene pose at (a new vector with x 0.5, y 0.0 and z 0.0) rotated origin scaled (one * 0.2)),
+    a UI scene mesh part named "other" under -1 using mesh with material red at (a UI scene pose at (a new vector with x 100.0, y 0.0 and z 0.0) rotated origin scaled one)
+]
+set model to a UI scene model from parts
+require condition ((the index of UI scene part named "hand" under 1 in model) = 2) reporting "A model lost a named articulation pivot."
+set first to a UI scene instance of model
+set second to a UI scene instance of model
+require condition (first's revision = 1) reporting "An initial model instance did not compute its placements once."
+set placement to the UI scene placement of part 3 in first
+check model point (the UI scene position of origin through (placement's transform)) equals (a new vector with x 11.5, y 2.0 and z 0.0)
+require condition (placement's visible) reporting "A visible child was hidden during placement."
+require condition (first's extent's present) reporting "A nonempty instance has no bounds."
+check model number (first's extent's bounds' minimum's x) equals 9.5
+check model number (first's extent's bounds' maximum's x) equals 100.5
+refresh UI scene instance first
+require condition (first's revision = 1) reporting "An unchanged scene instance was recomputed."
+
+set pose to (the item at 1 in parts)'s pose
+set pose's rotation to a new vector with x 0.0, y 0.0 and z 1.5707963267948966
+set UI scene pose of part 1 in first to pose
+set placement to the UI scene placement of part 3 in first
+check model point (the UI scene position of origin through (placement's transform)) equals (a new vector with x 10.0, y 3.5 and z 0.0)
+require condition ((first's revision = 2) and (placement's revision = 2)) reporting "A pivot edit did not update its descendants once."
+require condition ((the UI scene placement of part 4 in first)'s revision = 1) reporting "An unrelated scene branch was recomputed."
+set placement to the UI scene placement of part 3 in second
+check model point (the UI scene position of origin through (placement's transform)) equals (a new vector with x 11.5, y 2.0 and z 0.0)
+set UI scene pose of part 1 in first to pose
+refresh UI scene instance first
+require condition (first's revision = 2) reporting "Assigning an unchanged pose invalidated the scene."
+
+set UI scene material of part 1 in first to blue
+refresh UI scene instance first
+require condition (((the item at 1 in (first's materials))'s color's blue = 200) and ((the item at 1 in (second's materials))'s color's blue = 67)) reporting "A material override changed another instance."
+require condition ((the item at 1 in model's parts)'s material's color's blue = 67) reporting "An instance changed its immutable prototype."
+set UI scene material of part 1 in first to blue
+refresh UI scene instance first
+require condition (first's revision = 3) reporting "Assigning an unchanged material invalidated the scene."
+
+set ray to a new UI scene ray
+set ray's origin to a new vector with x 10.0, y 2.0 and z 10.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -2.0
+set selection to the UI scene selection from ray in first including backfaces false
+require condition ((selection's hit's hit) and (selection's part = 1)) reporting "Instance picking lost the nearest visible part."
+check model number (selection's hit's distance) equals 9.5
+set UI scene pickability of part 1 in first to false
+set selection to the UI scene selection from ray in first including backfaces false
+require condition ((selection's hit's hit) = false) reporting "Picking selected a noninteractive scene branch."
+require condition (((the UI scene placement of part 3 in first)'s pickable) = false) reporting "Pickability did not propagate to descendants."
+set UI scene pickability of part 1 in first to true
+set UI scene visibility of part 1 in first to false
+set placement to the UI scene placement of part 3 in first
+require condition ((placement's visible) = false) reporting "A hidden pivot left a visible descendant."
+set selection to the UI scene selection from ray in first including backfaces false
+require condition ((selection's hit's hit) = false) reporting "Picking selected a hidden scene branch."
+require condition ((the UI scene placement of part 3 in second)'s visible) reporting "Instance visibility changed its sibling instance."
+set UI scene visibility of part 4 in first to false
+refresh UI scene instance first
+require condition ((first's extent's present) = false) reporting "An instance with no visible geometry retained its bounds."
+set UI scene visibility of part 1 in first to true
+set UI scene root pose in first to (a UI scene pose at (a new vector with x 0.0, y 0.0 and z 5.0) rotated origin scaled one)
+set placement to the UI scene placement of part 3 in first
+check model point (the UI scene position of origin through (placement's transform)) equals (a new vector with x 10.0, y 3.5 and z 5.0)
+set model to a new UI scene model
+require condition ((the length of first's model's parts) = 5) reporting "A prototype's storage did not survive its caller."
+require condition ((the index of UI scene part named "hand" under 1 in (first's model)) = 2) reporting "An instance lost its prototype's owned part names."
+close UI scene instance first
+close UI scene instance second
+set empty to a UI scene instance of model
+require condition ((empty's extent's present) = false) reporting "An empty scene prototype produced geometry."
+close UI scene instance empty
+print line "Scene models share immutable parts, independent articulated instances, incremental placements, materials, inherited visibility, bounds and picking."

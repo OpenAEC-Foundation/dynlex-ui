@@ -1,0 +1,79 @@
+# Editable instances share immutable model geometry, never mutable articulation.
+import scene_instance_types.dl
+
+to [refresh UI scene instance] {a pointer to UI scene instance:instance}:
+    if (instance's pending) = false:
+        return nothing
+    set root to the UI scene matrix for (instance's root pose)
+    set index to 0
+    for each part in (instance's model's parts):
+        set parent to part's parent
+        if parent >= 0:
+            if the item at parent in (instance's dirty):
+                replace item at index index in (instance's dirty) with true
+        if the item at index in (instance's dirty):
+            set base to root
+            if parent >= 0:
+                set base to (the item at parent in (instance's placements))'s transform's matrix
+            set local to the UI scene matrix for (the item at index in (instance's poses))
+            set placement to the item at index in (instance's placements)
+            set placement's transform to a UI scene transform from (the graphics product of base and local)
+            set placement's visible to the item at index in (instance's visibility)
+            set placement's pickable to the item at index in (instance's pickability)
+            if parent >= 0:
+                set previous to the item at parent in (instance's placements)
+                set placement's visible to placement's visible and previous's visible
+                set placement's pickable to placement's pickable and previous's pickable
+            set placement's present to (the length of part's mesh's indices) > 0
+            if placement's present:
+                set placement's bounds to the UI scene bounds of (part's mesh's bounds) through (placement's transform)
+            increment placement's revision
+            replace item at index index in (instance's placements) with placement
+        increment index
+    set extent to a new UI scene extent
+    set index to 0
+    for each placement in (instance's placements):
+        if (placement's visible) and (placement's present):
+            include UI scene bounds (placement's bounds) in (the address of extent)
+        replace item at index index in (instance's dirty) with false
+        increment index
+    set instance's extent to extent
+    set instance's pending to false
+    increment instance's revision
+
+to get [a UI scene instance of] {UI scene model:model}:
+    set result to storage for one slot initialized with (a new UI scene instance)
+    set result's model to model
+    set result's poses to an empty list of UI scene pose
+    set result's materials to an empty list of UI scene material
+    set result's visibility to an empty list of a boolean
+    set result's pickability to an empty list of a boolean
+    set result's dirty to an empty list of a boolean
+    set result's placements to an empty list of UI scene placement
+    set result's root pose to an identity UI scene pose
+    set placeholder to a new UI scene placement
+    set placeholder's transform to a UI scene transform from (an identity graphics matrix)
+    for each part in model's parts:
+        append (part's pose) to (result's poses)
+        append (part's material) to (result's materials)
+        append (part's visible) to (result's visibility)
+        append (part's pickable) to (result's pickability)
+        append true to (result's dirty)
+        append placeholder to (result's placements)
+    set result's pending to true
+    refresh UI scene instance result
+    return result
+
+to get [the UI scene placement of part] {integer:index} [in] {a pointer to UI scene instance:instance}:
+    refresh UI scene instance instance
+    return the item at index in (instance's placements)
+
+to [close UI scene instance] {a pointer to UI scene instance:instance}:
+    free instance's poses
+    free instance's materials
+    free instance's visibility
+    free instance's pickability
+    free instance's dirty
+    free instance's placements
+    destroy the value at instance
+    deallocate instance

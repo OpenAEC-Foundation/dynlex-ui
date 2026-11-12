@@ -1,0 +1,49 @@
+# Material data belongs to DynLex; applications supply any custom shader flags.
+import geometry.dl
+import lib/check.dl
+
+class:
+    patterns:
+        UI scene material
+    members:
+        color as UI paint
+        emission as UI paint
+        emission strength as a floating-point number
+        roughness as a floating-point number
+        metalness as a floating-point number
+        opacity as a floating-point number
+        unlit as a boolean
+        double sided as a boolean
+        depth write as a boolean
+        flags as a 32 bit unsigned integer
+
+to get [UI ink from RGB] {integer:encoded}:
+    require condition (0 <= encoded <= 16777215) reporting "An RGB color must fit in twenty-four bits"
+    return UI ink (((encoded >> 16) & 255) as an integer) (((encoded >> 8) & 255) as an integer) ((encoded & 255) as an integer)
+
+to [require UI scene color] {UI paint:color}:
+    require condition ((0 <= color's red <= 255) and ((0 <= color's green <= 255) and (0 <= color's blue <= 255))) reporting "Scene color channels must be between zero and 255"
+
+to [require UI scene material] {UI scene material:material}:
+    require UI scene color (material's color)
+    require UI scene color (material's emission)
+    require condition ((0.0 <= material's roughness <= 1.0) and ((0.0 <= material's metalness <= 1.0) and (0.0 <= material's opacity <= 1.0))) reporting "Scene roughness, metalness and opacity must be between zero and one"
+    require condition ((material's emission strength >= 0.0) and ((material's emission strength as a 32 bit floating-point number) is finite)) reporting "Scene emission strength must be a finite nonnegative float32 value"
+
+to get [a UI scene material with color] {UI paint:color} [roughness] {floating-point number:roughness} [metalness] {floating-point number:metalness}:
+    set result to a new UI scene material
+    set result's color to color
+    set result's roughness to roughness
+    set result's metalness to metalness
+    set result's opacity to 1.0
+    set result's depth write to true
+    require UI scene material result
+    return result
+
+to get {UI paint:first} [is the same UI scene color as] {UI paint:second}:
+    return (first's red = second's red) and ((first's green = second's green) and (first's blue = second's blue))
+
+to get {UI scene material:first} [is the same UI scene material as] {UI scene material:second}:
+    if ((first's color is the same UI scene color as second's color) and (first's emission is the same UI scene color as second's emission)) = false:
+        return false
+    return ((first's emission strength = second's emission strength) and ((first's roughness = second's roughness) and (first's metalness = second's metalness))) and (((first's opacity = second's opacity) and (first's unlit = second's unlit)) and (((first's double sided = second's double sided) and (first's depth write = second's depth write)) and (first's flags = second's flags)))
