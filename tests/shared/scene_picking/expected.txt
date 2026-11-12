@@ -1,0 +1,1 @@
+Scene triangle picking shares precision conversion, front/back faces, edge coverage and world-unit hit distances.

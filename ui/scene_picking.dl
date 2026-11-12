@@ -1,0 +1,31 @@
+# CPU picking consumes the same world-space vertices supplied to scene rendering.
+import scene_camera.dl
+
+to get [the UI scene hit from] {UI scene ray:ray} [on triangle] {vector:first} {vector:second} {vector:third} [including backfaces] {boolean:backfaces}:
+    set result to a new UI scene hit
+    set start to the UI scene vector form of first
+    set edge to (the UI scene vector form of second) - start
+    set side to (the UI scene vector form of third) - start
+    set cross to the cross product of (ray's direction) and side
+    set determinant to the dot product of edge and cross
+    set scale to the square root of (((the squared length of edge) * (the squared length of side)) * (the squared length of (ray's direction)))
+    if (the absolute value of determinant) <= (0.000000000001 * scale):
+        return result
+    if (backfaces = false) and (determinant < 0.0):
+        return result
+    set relative to ray's origin - start
+    set horizontal to (the dot product of relative and cross) / determinant
+    if (horizontal < 0.0) or (horizontal > 1.0):
+        return result
+    set cross to the cross product of relative and edge
+    set vertical to (the dot product of (ray's direction) and cross) / determinant
+    if (vertical < 0.0) or ((horizontal + vertical) > 1.0):
+        return result
+    set distance to (the dot product of side and cross) / determinant
+    if distance < 0.0:
+        return result
+    set displacement to ray's direction * distance
+    set result's point to ray's origin + displacement
+    set result's distance to the length of displacement
+    set result's hit to true
+    return result

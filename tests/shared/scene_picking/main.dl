@@ -1,0 +1,41 @@
+import ../../../ui/scene_picking.dl
+
+to require scene hit {UI scene hit:hit} at distance {floating-point number:distance}:
+    require condition (hit's hit) reporting "The scene ray missed a triangle."
+    require condition ((the absolute value of (hit's distance - distance)) < 0.00001) reporting "Triangle picking reported a parametric value instead of world distance."
+
+set first to a new vector with x 0.0, y 0.0 and z 0.0
+set second to a new vector with x 1, y 0 and z 0
+set third to a new vector with x (0.0 as a 32 bit floating-point number), y (1.0 as a 32 bit floating-point number) and z (0.0 as a 32 bit floating-point number)
+set ray to a new UI scene ray
+set ray's origin to a new vector with x 0.25, y 0.25 and z 1.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -1.0
+set hit to the UI scene hit from ray on triangle first second third including backfaces false
+require scene hit hit at distance 1.0
+require condition ((the z of (hit's point)) = 0.0) reporting "The picked point was not on its triangle."
+set ray's direction to a new vector with x 0.0, y 0.0 and z -2.0
+require scene hit (the UI scene hit from ray on triangle first second third including backfaces false) at distance 1.0
+set ray's origin to a new vector with x 0.75, y 0.75 and z 1.0
+require condition (((the UI scene hit from ray on triangle first second third including backfaces false)'s hit) = false) reporting "A ray outside the triangle hit its plane."
+set ray's origin to a new vector with x 0.5, y 0.5 and z 1.0
+require scene hit (the UI scene hit from ray on triangle first second third including backfaces false) at distance 1.0
+set ray's origin to a new vector with x 0.25, y 0.25 and z -1.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z 1.0
+require condition (((the UI scene hit from ray on triangle first second third including backfaces false)'s hit) = false) reporting "A front-facing pick accepted the back of a triangle."
+require scene hit (the UI scene hit from ray on triangle first second third including backfaces true) at distance 1.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -1.0
+require condition (((the UI scene hit from ray on triangle first second third including backfaces true)'s hit) = false) reporting "A triangle behind the ray was picked."
+set ray's direction to a new vector with x 1.0, y 0.0 and z 0.0
+require condition (((the UI scene hit from ray on triangle first second third including backfaces true)'s hit) = false) reporting "A parallel ray hit a triangle."
+set ray's origin to a new vector with x 0.25, y 0.25 and z 1.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -1.0
+require condition (((the UI scene hit from ray on triangle first first first including backfaces true)'s hit) = false) reporting "A degenerate triangle was picked."
+set corner to a new vector with x 1.0, y 2.0 and z 3.0
+set across to a new vector with x 2.0, y 2.0 and z 3.0
+set above to a new vector with x 1.0, y 3.0 and z 4.0
+set ray's origin to a new vector with x 1.25, y 1.25 and z 4.25
+set ray's direction to a new vector with x 0.0, y 1.0 and z -1.0
+set hit to the UI scene hit from ray on triangle corner across above including backfaces false
+require scene hit hit at distance 1.4142135623730951
+require condition (((the x of (hit's point)) = 1.25) and (((the y of (hit's point)) = 2.25) and ((the z of (hit's point)) = 3.25))) reporting "Picking changed a translated, tilted triangle."
+print line "Scene triangle picking shares precision conversion, front/back faces, edge coverage and world-unit hit distances."

@@ -33,3 +33,15 @@ float32 or float64 components. Camera state stores float64 vectors; use
 Camera position and target must differ. The up direction must be finite and
 nonparallel to the view; the field of view, aspect ratio and clip planes follow
 the core graphics projection contract. Invalid camera geometry fails explicitly.
+
+`ui/scene_picking.dl` adds triangle intersections for entity selection and
+occlusion checks. Supply the same transformed world vertices used for rendering:
+
+```dynlex
+set hit to the UI scene hit from ray on triangle first second third including backfaces false
+```
+
+The result uses the same point, world-unit distance and hit flag as ground picks.
+Triangle winding selects the front face. Enable backfaces for two-sided geometry.
+Parallel rays, degenerate triangles and intersections behind the ray report no
+hit. Integer and floating-point vertex coordinates share the camera conversion.
