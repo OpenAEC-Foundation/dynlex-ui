@@ -1,0 +1,1 @@
+Scene cameras share column-major perspective transforms, clipping, viewport projection and normalized ground-picking rays.

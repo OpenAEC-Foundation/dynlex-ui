@@ -1,0 +1,119 @@
+# Scene cameras use the core vector and column-major graphics transformations.
+import lib/vector.dl
+import lib/graphics_transform.dl
+import geometry.dl
+
+UI scene vector means: the type of (a new vector with x 0.0, y 0.0 and z 0.0)
+
+class:
+    patterns:
+        UI scene camera
+    members:
+        position as UI scene vector
+        target as UI scene vector
+        up as UI scene vector
+        angle as a floating-point number
+        aspect as a floating-point number
+        near as a floating-point number
+        far as a floating-point number
+
+class:
+    patterns:
+        UI scene projection
+    members:
+        screen as UI point
+        depth as a floating-point number
+        visible as a boolean
+
+class:
+    patterns:
+        UI scene ray
+    members:
+        origin as UI scene vector
+        direction as UI scene vector
+
+class:
+    patterns:
+        UI scene hit
+    members:
+        point as UI scene vector
+        distance as a floating-point number
+        hit as a boolean
+
+a UI scene camera at {UI scene vector:position} aimed at {UI scene vector:target} with angle {floating-point number:angle} aspect {floating-point number:aspect} near {floating-point number:near} far {floating-point number:far} means: @intrinsic("construct", UI scene camera, position, target, (a new vector with x 0.0, y 1.0 and z 0.0), angle, aspect, near, far)
+
+to get [the UI scene view matrix for] {UI scene camera:camera}:
+    set forward to camera's target - camera's position
+    set magnitude to the length of forward
+    require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "A scene camera requires a finite position distinct from its target"
+    set forward to forward normalized
+    set right to the cross product of forward and (camera's up)
+    set magnitude to the length of right
+    require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "A scene camera requires a finite up direction not parallel to its view"
+    set right to right normalized
+    set up to the cross product of right and forward
+    set result to an identity graphics matrix
+    store ((the x of right) as a 32 bit floating-point number) into result at 0
+    store ((the x of up) as a 32 bit floating-point number) into result at 1
+    store ((0.0 - the x of forward) as a 32 bit floating-point number) into result at 2
+    store ((the y of right) as a 32 bit floating-point number) into result at 4
+    store ((the y of up) as a 32 bit floating-point number) into result at 5
+    store ((0.0 - the y of forward) as a 32 bit floating-point number) into result at 6
+    store ((the z of right) as a 32 bit floating-point number) into result at 8
+    store ((the z of up) as a 32 bit floating-point number) into result at 9
+    store ((0.0 - the z of forward) as a 32 bit floating-point number) into result at 10
+    store ((0.0 - the dot product of right and (camera's position)) as a 32 bit floating-point number) into result at 12
+    store ((0.0 - the dot product of up and (camera's position)) as a 32 bit floating-point number) into result at 13
+    store ((the dot product of forward and (camera's position)) as a 32 bit floating-point number) into result at 14
+    return result
+
+to get [the UI scene projection matrix for] {UI scene camera:camera}:
+    return a graphics perspective projection with angle (camera's angle) aspect (camera's aspect) near (camera's near) far (camera's far)
+
+to get [the UI scene view projection for] {UI scene camera:camera}:
+    return the graphics product of (the UI scene projection matrix for camera) and (the UI scene view matrix for camera)
+
+to get [the UI scene projection for] {UI scene vector:point} [through] {UI scene camera:camera} [in] {UI bounds:viewport}:
+    require condition ((viewport's width > 0.0) and (viewport's height > 0.0)) reporting "Scene projection requires a nonempty viewport"
+    set matrix to the UI scene view projection for camera
+    set x to the x of point
+    set y to the y of point
+    set z to the z of point
+    set horizontal to ((the item at 0 in matrix) * x + (the item at 4 in matrix) * y) + ((the item at 8 in matrix) * z + the item at 12 in matrix)
+    set vertical to ((the item at 1 in matrix) * x + (the item at 5 in matrix) * y) + ((the item at 9 in matrix) * z + the item at 13 in matrix)
+    set depth to ((the item at 2 in matrix) * x + (the item at 6 in matrix) * y) + ((the item at 10 in matrix) * z + the item at 14 in matrix)
+    set magnitude to ((the item at 3 in matrix) * x + (the item at 7 in matrix) * y) + ((the item at 11 in matrix) * z + the item at 15 in matrix)
+    set result to a new UI scene projection
+    if magnitude <= 0.0:
+        return result
+    set result's screen to a UI point at (viewport's x + (horizontal / magnitude + 1.0) * viewport's width * 0.5) and (viewport's y + (vertical / magnitude + 1.0) * viewport's height * 0.5)
+    set result's depth to depth / magnitude
+    set result's visible to ((0.0 <= result's depth <= 1.0) and ((0.0 - magnitude <= horizontal <= magnitude) and (0.0 - magnitude <= vertical <= magnitude)))
+    return result
+
+to get [the UI scene ray at] {UI point:point} [through] {UI scene camera:camera} [in] {UI bounds:viewport}:
+    require condition ((viewport's width > 0.0) and (viewport's height > 0.0)) reporting "Scene picking requires a nonempty viewport"
+    set view to the UI scene view matrix for camera
+    set projection to the UI scene projection matrix for camera
+    set horizontal to (point's x - viewport's x) / viewport's width
+    set vertical to (point's y - viewport's y) / viewport's height
+    set horizontal to (2.0 * horizontal - 1.0) / (the item at 0 in projection)
+    set vertical to (2.0 * vertical - 1.0) / (the item at 5 in projection)
+    set x to ((the item at 0 in view) * horizontal + (the item at 1 in view) * vertical) - the item at 2 in view
+    set y to ((the item at 4 in view) * horizontal + (the item at 5 in view) * vertical) - the item at 6 in view
+    set z to ((the item at 8 in view) * horizontal + (the item at 9 in view) * vertical) - the item at 10 in view
+    set direction to a new vector with x x, y y and z z
+    return @intrinsic("construct", UI scene ray, camera's position, direction normalized)
+
+to get [the UI scene hit from] {UI scene ray:ray} [on ground at] {floating-point number:height}:
+    set result to a new UI scene hit
+    set vertical to the y of (ray's direction)
+    if vertical = 0.0:
+        return result
+    set distance to (height - the y of (ray's origin)) / vertical
+    if distance < 0.0:
+        return result
+    set result's point to ray's origin + ray's direction * distance
+    set result's distance to the length of (ray's direction * distance)
+    set result's hit to true
+    return result

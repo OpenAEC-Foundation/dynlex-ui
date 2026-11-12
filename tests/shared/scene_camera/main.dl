@@ -1,0 +1,67 @@
+import ../../../ui/scene_camera.dl
+
+to check scene number {floating-point number:actual} equals {floating-point number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.0001) reporting "The shared camera projection or picking ray changed."
+
+set origin to a new vector with x 0.0, y 0.0 and z 0.0
+set eye to a new vector with x 0.0, y 0.0 and z 10.0
+set camera to a UI scene camera at eye aimed at origin with angle 90.0 aspect 2.0 near 1.0 far 11.0
+set viewport to UI box at 20.0 30.0 sized 400.0 200.0
+set projection to the UI scene projection for origin through camera in viewport
+require condition (projection's visible) reporting "The camera clipped its target."
+check scene number (projection's screen's x) equals 220.0
+check scene number (projection's screen's y) equals 130.0
+check scene number (projection's depth) equals 0.99
+set above to a new vector with x 0.0, y 5.0 and z 0.0
+set projection to the UI scene projection for above through camera in viewport
+check scene number (projection's screen's y) equals 80.0
+set right to a new vector with x 10.0, y 0.0 and z 0.0
+set projection to the UI scene projection for right through camera in viewport
+check scene number (projection's screen's x) equals 320.0
+set {near point} to a new vector with x 0.0, y 0.0 and z 9.0
+set {far point} to a new vector with x 0.0, y 0.0 and z -1.0
+check scene number ((the UI scene projection for near point through camera in viewport)'s depth) equals 0.0
+check scene number ((the UI scene projection for far point through camera in viewport)'s depth) equals 1.0
+set behind to a new vector with x 0.0, y 0.0 and z 11.0
+require condition (((the UI scene projection for behind through camera in viewport)'s visible) = false) reporting "A label behind the camera remained visible."
+set beyond to a new vector with x 30.0, y 0.0 and z 0.0
+require condition (((the UI scene projection for beyond through camera in viewport)'s visible) = false) reporting "A label outside the viewport remained visible."
+set wide to UI box at 20.0 30.0 sized 800.0 200.0
+set camera's aspect to 4.0
+check scene number ((the UI scene projection for right through camera in wide)'s screen's x) equals 520.0
+set camera's aspect to 2.0
+
+# Projection and picking use the same basis and top-left viewport convention.
+for each point in [origin, above, right]:
+    set projected to the UI scene projection for point through camera in viewport
+    set ray to the UI scene ray at (projected's screen) through camera in viewport
+    set delta to point - eye
+    set cross to the cross product of delta and (ray's direction)
+    check scene number (the length of cross) equals 0.0
+    check scene number (the length of (ray's direction)) equals 1.0
+
+set side to a new vector with x 10.0, y 0.0 and z 0.0
+set camera to a UI scene camera at side aimed at origin with angle 90.0 aspect 2.0 near 1.0 far 11.0
+set point to a new vector with x 0.0, y 0.0 and z -10.0
+set projection to the UI scene projection for point through camera in viewport
+check scene number (projection's screen's x) equals 320.0
+set ray to the UI scene ray at (a UI point at 220.0 and 130.0) through camera in viewport
+check scene number (the x of (ray's direction)) equals -1.0
+check scene number (the z of (ray's direction)) equals 0.0
+
+set eye to a new vector with x 0.0, y 10.0 and z 10.0
+set camera to a UI scene camera at eye aimed at origin with angle 35.0 aspect 2.0 near 0.1 far 150.0
+set ray to the UI scene ray at (a UI point at 220.0 and 130.0) through camera in viewport
+set hit to the UI scene hit from ray on ground at 0.0
+require condition (hit's hit) reporting "The center ray missed the ground."
+check scene number (the x of (hit's point)) equals 0.0
+check scene number (the y of (hit's point)) equals 0.0
+check scene number (the z of (hit's point)) equals 0.0
+set ray's direction to a new vector with x 1.0, y 0.0 and z 0.0
+require condition (((the UI scene hit from ray on ground at 0.0)'s hit) = false) reporting "A parallel ray reported a ground intersection."
+set ray's direction to a new vector with x 0.0, y 1.0 and z 0.0
+require condition (((the UI scene hit from ray on ground at 0.0)'s hit) = false) reporting "A ray pointing away hit the ground behind it."
+set ray's direction to a new vector with x 0.0, y -2.0 and z 0.0
+set hit to the UI scene hit from ray on ground at 0.0
+check scene number (hit's distance) equals 10.0
+print line "Scene cameras share column-major perspective transforms, clipping, viewport projection and normalized ground-picking rays."
