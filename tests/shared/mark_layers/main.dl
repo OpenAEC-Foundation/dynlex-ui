@@ -1,0 +1,95 @@
+import ../../helpers/driver.dl
+import ../../../ui/text_marks.dl
+
+appearance code appearance:
+    font size is 16
+    height is 80
+
+document layered editor:
+    editor "Source" containing "abc" using code appearance
+
+set {paint order} to the string form of ""
+set {last ink} to 0
+function [record layer triangles] {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    globals:
+        paint order
+        last ink
+    execute:
+        if texture = (0 as a pointer):
+            set index to 0
+            loop while index < count:
+                set vertex to the item at index in vertices
+                set ink to 0
+                if (the absolute value of (vertex's red - 17.0 / 255.0)) < 0.00001:
+                    set ink to 1
+                if (the absolute value of (vertex's red - 41.0 / 255.0)) < 0.00001:
+                    set ink to 2
+                if ((ink > 0) and (vertex's alpha > 0.0)) and (ink != last ink):
+                    set paint order to paint order + (the string form of ink)
+                    set last ink to ink
+                increment index
+
+set driver to the value at the test UI driver
+set driver's triangles to (the function named "record layer triangles $ vertices $ counting $ with $") as a pointer
+set instance to an instance of layered editor
+set window to the address of instance
+set view to a UI view of window sized 400 by 200 using font "regular" with (the address of driver)
+set node to the control labeled "Source" in window
+set state to the address of ((the UI value for node in window)'s text state)
+mark UI text "abc" in layer "search" at priority 20 in state
+add UI text mark (UI ink 41 78 91) from 1 to 2 with opacity 80 in layer "search" in state
+mark UI text "abc" in layer "execution" at priority 10 in state
+add UI text mark (UI ink 17 93 117) from 0 to 3 with opacity 100 in layer "execution" in state
+ignore update UI view (the address of view)
+require condition (paint order = "12") reporting "Text layers did not paint by priority independent of creation order."
+set paint order to ""
+set last ink to 0
+mark UI text "edited" in layer "search" at priority 20 in state
+add UI text mark (UI ink 41 78 91) from 0 to 1 with opacity 80 in layer "search" in state
+set view's damaged to true
+ignore update UI view (the address of view)
+require condition (paint order = "1") reporting "An independently stale search layer replaced or concealed execution marks."
+set paint order to ""
+set last ink to 0
+set the text of "Source" in window to "edited"
+ignore update UI view (the address of view)
+require condition (paint order = "2") reporting "Text layers did not retain independent source snapshots."
+mark UI text "edited" in layer "execution" at priority 10 in state
+add UI text mark (UI ink 17 93 117) from 0 to 6 with opacity 100 in layer "execution" in state
+require condition (clear UI text marks in layer "search" in state) reporting "An existing mark layer was not cleared."
+require condition ((clear UI text marks in layer "search" in state) = false) reporting "An absent mark layer claimed a change."
+set paint order to ""
+set last ink to 0
+set view's damaged to true
+ignore update UI view (the address of view)
+require condition (paint order = "1") reporting "Clearing search marks also cleared another feature's marks."
+require condition ((the UI text mark layer named "search" in state) = @intrinsic("construct", a pointer to UI text mark layer)) reporting "A cleared mark layer retained its state."
+set layer to the UI text mark layer named "execution" in state
+mark UI text (layer's text) in layer (layer's name) at priority 10 in state
+add UI text mark (UI ink 17 93 117) from 1 to 2 with opacity 100 in layer "execution" in state
+set layout to the UI layout for element node in (view's layout)
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+set paint order to ""
+set last ink to 0
+draw UI text marks in "edited" from 0 through 6 in layout at 0.0 20.0 on frame
+set last ink to 0
+draw UI text marks in "edited" from 0 through 6 in layout at 0.0 20.0 on frame
+require condition (paint order = "11") reporting "A repeated row paint lost marks after advancing the layer cursor."
+close the address of view
+close window
+window marked field:
+    text field "Query" containing "abc"
+
+set {field instance} to an instance of marked field
+set {field window} to the address of field instance
+set {field view} to a UI view of field window sized 400 by 200 using font "regular" with (the address of driver)
+set field to the control labeled "Query" in field window
+mark UI text "abc" in layer "search" at priority 20 in field in field window
+add UI text mark (UI ink 17 93 117) from 0 to 3 with opacity 100 in layer "search" in field in field window
+set paint order to ""
+set last ink to 0
+ignore update UI view (the address of field view)
+require condition (paint order = "1") reporting "A classic field bypassed the shared mark painter."
+close the address of field view
+close field window
+print line "Named text layers retain independent snapshots, ordered painting and ownership when another feature updates or clears its marks."

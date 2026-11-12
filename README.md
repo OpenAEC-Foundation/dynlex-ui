@@ -81,7 +81,7 @@ including a press/release pair received before the next paint.
 Text selection and editing use UTF-8 scalar boundaries and measured advances on
 both platforms. Clipboard copy/cut/paste and browser IME composition are supported.
 The shared renderer positions native text input at the active caret. Browser IME
-composition works in single-line fields and multiline editors, with commit,
+composition works in single-line fields, plain multiline text areas and source editors, with commit,
 cancellation and undo; read-only content does not activate the text input bridge.
 Documents also support responsive fields, switches, choice lists, rich paragraphs,
 source-anchored selection, multiline editing and undo/redo.

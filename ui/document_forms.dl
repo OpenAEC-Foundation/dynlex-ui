@@ -28,7 +28,7 @@ to [draw UI form decoration for] {a pointer to UI layout:layout} [in] {UI bounds
         set knob to the UI ink (UI ink 255 255 255) displayed for node over (appearance's background) in (view's instance)
         set shade to the UI ink (UI ink 232 236 240) displayed for node over (appearance's background) in (view's instance)
         draw a UI disc at (a UI point at ((track's x + 12.0) + (position * 20.0)) and (track's y + 12.0)) with radius 9.0 from knob to shade opacity 255 on frame
-    if (node's kind = 39) or (node's kind = 34):
+    if ((node's kind = 39) or (node's kind = 50)) or (node's kind = 34):
         set target to 0.0
         if available and ((view's hot = layout) or ((view's focused = layout) and view's keyboard focus)):
             set target to 1.0

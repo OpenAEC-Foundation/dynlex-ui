@@ -43,7 +43,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             if layout's hover > 0.01:
                 set tint to appearance's foreground
                 draw a rounded UI surface box with radius (appearance's radius) from tint to tint opacity ((layout's hover * 20.4) as an integer) feathered by 0.75 on frame
-        if ((kind = 17) or (kind = 34)) or (kind = 39):
+        if (((kind = 17) or (kind = 34)) or (kind = 39)) or (kind = 50):
             draw UI form decoration for layout in box on frame
         set top to box's y + appearance's padding
         set view's selectable to (((kind != 2) and (kind != 17)) and (kind != 34)) and (kind != 43)

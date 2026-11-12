@@ -34,6 +34,22 @@ class:
 
 class:
     patterns:
+        UI text mark layer
+    members:
+        name as a string
+        text as a string
+        priority as an integer
+        marks as a pointer to UI text mark
+        last mark as a pointer to UI text mark
+        next as a pointer to UI text mark layer
+        paint generation as an integer
+        painted text as a string
+        painted matches as a boolean
+        painted start as an integer
+        painted cursor as a pointer to UI text mark
+
+class:
+    patterns:
         UI text state
     members:
         text as a string
@@ -42,9 +58,7 @@ class:
         colored text as a string
         colors as a pointer to UI text color span
         last color as a pointer to UI text color span
-        marked text as a string
-        marks as a pointer to UI text mark
-        last mark as a pointer to UI text mark
+        mark layers as a pointer to UI text mark layer
 
 to [exchange UI text states between] {a pointer to UI text state:left} [and] {a pointer to UI text state:right}:
     set previous to the value at left
@@ -79,15 +93,22 @@ to release UI text colors {a pointer to UI text state:state}:
     set state's last color to @intrinsic("construct", a pointer to UI text color span)
     set state's colored text to ""
 
-to release UI text marks {a pointer to UI text state:state}:
-    set mark to state's marks
+to [release UI text mark layer] {a pointer to UI text mark layer:layer}:
+    set mark to layer's marks
     loop while mark != @intrinsic("construct", a pointer to UI text mark):
         set next to mark's next
         deallocate mark
         set mark to next
-    set state's marks to @intrinsic("construct", a pointer to UI text mark)
-    set state's last mark to @intrinsic("construct", a pointer to UI text mark)
-    set state's marked text to ""
+    destroy the value at layer
+    deallocate layer
+
+to release UI text marks {a pointer to UI text state:state}:
+    set layer to state's mark layers
+    loop while layer != @intrinsic("construct", a pointer to UI text mark layer):
+        set next to layer's next
+        release UI text mark layer layer
+        set layer to next
+    set state's mark layers to @intrinsic("construct", a pointer to UI text mark layer)
 
 to [clear UI text state] {a pointer to UI text state:state}:
     release UI text edits state's undo

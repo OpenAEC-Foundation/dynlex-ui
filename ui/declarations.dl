@@ -128,12 +128,8 @@ class:
 {a pointer to UI value:entry}'s colors means: entry's text state's colors
 {UI value:entry}'s last color means: entry's text state's last color
 {a pointer to UI value:entry}'s last color means: entry's text state's last color
-{UI value:entry}'s marked text means: entry's text state's marked text
-{a pointer to UI value:entry}'s marked text means: entry's text state's marked text
-{UI value:entry}'s marks means: entry's text state's marks
-{a pointer to UI value:entry}'s marks means: entry's text state's marks
-{UI value:entry}'s last mark means: entry's text state's last mark
-{a pointer to UI value:entry}'s last mark means: entry's text state's last mark
+{UI value:entry}'s mark layers means: entry's text state's mark layers
+{a pointer to UI value:entry}'s mark layers means: entry's text state's mark layers
 
 class:
     patterns:

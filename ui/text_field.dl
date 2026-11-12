@@ -28,8 +28,7 @@ to draw UI text field {a pointer to UI layout:layout} in {UI bounds:box} focused
     if view's selection's composing and (view's selection's caret source = (the address of (layout's text source))):
         ignore draw composing UI row (layout's lines) in layout at left baseline starting with (@intrinsic("construct", a pointer to UI text color span)) on frame
     else:
-        set ink to the UI ink (view's theme's text) displayed for (layout's node) over (view's theme's surface) in (view's instance)
-        draw UI text (value's text) at left baseline with (view's typeface) in ink on frame
+        ignore draw colored UI row (layout's lines) in layout at left baseline starting with (@intrinsic("construct", a pointer to UI text color span)) on frame
     set view's text source to @intrinsic("construct", a pointer to UI text source)
     set view's selectable to false
     restore UI clip saved in view on frame

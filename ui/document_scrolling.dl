@@ -27,7 +27,7 @@ to scroll the UI document in {a pointer to UI view:view}:
     set layout to view's layout
     set height to view's height as a floating-point number
     if view's hot != @intrinsic("construct", a pointer to UI layout):
-        if view's hot's node's kind = 44:
+        if the UI element (view's hot's node) is multiline:
             set editor to view's hot
             set height to editor's bounds' height - editor's appearance's padding * 2.0
             set limit to the maximum of 0.0 and (editor's text height - height)

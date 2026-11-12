@@ -99,5 +99,26 @@ export async function verifyEditor({ click, key, evaluate, command, waitFor, set
   await click(70, 90); await settled();
   assert.equal(await value(), 'alXpha 東京 omega\nnext line', 'Read-only input leaked into the writable source');
   assert(!(await evaluate('document.querySelector("textarea").readOnly')), 'Returning to a writable source kept editing locked');
+  await click(70, 570); await settled();
+  assert.equal(await value(), 'plain query\nsecond line', 'A plain text area did not activate shared native input');
+  await key('a', 'KeyA', 65, 2);
+  await command('Input.insertText', {text:'alpha\nβeta'});
+  await key('End', 'End', 35, 2);
+  await key('Enter', 'Enter', 13);
+  await key('Tab', 'Tab', 9);
+  await command('Input.insertText', {text:'tail'});
+  await waitFor('document.querySelector("textarea").value==="alpha\\nβeta\\n    tail"');
+  await key('z', 'KeyZ', 90, 2);
+  await waitFor('document.querySelector("textarea").value==="alpha\\nβeta\\n    "');
+  await key('a', 'KeyA', 65, 2);
+  await command('Input.imeSetComposition', {text:'とうきょう', selectionStart:5, selectionEnd:5});
+  await waitFor('window.uiTest.drawn().some(text=>text.includes("とうきょう"))');
+  await command('Input.insertText', {text:'東京'});
+  await waitFor('document.querySelector("textarea").value==="東京"');
+  await key('z', 'KeyZ', 90, 2);
+  await waitFor('document.querySelector("textarea").value==="alpha\\nβeta\\n    "');
+  await screenshot('editor-plain-text-area');
+  await click(70, 90); await settled();
+  assert.equal(await value(), 'alXpha 東京 omega\nnext line', 'Plain text input changed the source editor');
   await click(40, 32); await settled();
 }

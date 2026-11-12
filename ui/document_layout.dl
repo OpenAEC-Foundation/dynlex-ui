@@ -35,7 +35,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     set appearance's font path to inherited's font path
     set appearance's bold to inherited's bold
     set appearance's line spacing to inherited's line spacing
-    if (node's kind = 39) or (node's kind = 34):
+    if ((node's kind = 39) or (node's kind = 50)) or (node's kind = 34):
         set appearance's padding to 8.0
         set appearance's minimum height to 36.0
         set appearance's radius to 6.0

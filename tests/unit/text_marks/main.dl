@@ -30,8 +30,8 @@ set driver's triangles to (the function named "record marked triangles $ vertice
 set instance to an instance of marks test
 set view to a UI view of (the address of instance) sized 316 by 180 using font "regular" with (the address of driver)
 set node to the control labeled "Source" in (the address of instance)
-mark UI text (the string form of "a😀b\nend") in node in (the address of instance)
-add UI text mark (UI ink 17 93 117) from 1 to 10 with opacity 120 in node in (the address of instance)
+mark UI text (the string form of "a😀b\nend") in layer "execution" at priority 10 in node in (the address of instance)
+add UI text mark (UI ink 17 93 117) from 1 to 10 with opacity 120 in layer "execution" in node in (the address of instance)
 ignore update UI view the address of view
 require condition ((painted > 0) and (lowest > 30.0)) reporting "A Unicode mark did not cover its later source line"
 require condition ((view's texts' start = 0) and (view's texts' text's length = 6)) reporting "A mark changed the original source text coordinates"
@@ -43,8 +43,8 @@ require condition (painted = 0) reporting "A stale source mark painted an edited
 set the text of "Source" in (the address of instance) to "a😀b\nend"
 ignore update UI view the address of view
 require condition (painted > 0) reporting "Restoring a snapshot lost its mark"
-mark UI text (the string form of "a😀b\nend") in node in (the address of instance)
-require condition ((the UI value for node in (the address of instance))'s marks = @intrinsic("construct", a pointer to UI text mark)) reporting "Replacing marks retained the old spans"
+mark UI text (the string form of "a😀b\nend") in layer "execution" at priority 10 in node in (the address of instance)
+require condition ((the UI text mark layer named "execution" in node in (the address of instance))'s marks = @intrinsic("construct", a pointer to UI text mark)) reporting "Replacing marks retained the old spans"
 close the address of view
 close the address of instance
 print line "Editor marks retain Unicode source ranges, span lines, ignore stale snapshots and release replaced annotations."

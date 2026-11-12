@@ -40,6 +40,8 @@ section paragraph {C string:name} using {UI appearance reference:appearance}:
 link {C string:text} to {C string:destination} using {UI appearance reference:appearance} means: ((a UI text component 43 labeled text styled "") leading to destination) wearing appearance
 editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 44 labeled name styled "") with initial text initial) wearing appearance
 read only editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (editor name containing initial using appearance) with read only text
+text area {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 50 labeled name styled "") with initial text initial) wearing appearance
+read only text area {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text area name containing initial using appearance) with read only text
 text field {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text field name containing initial) wearing appearance
 read only text field {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text field name containing initial using appearance) with read only text
 switch {C string:name} using {UI appearance reference:appearance} means: (switch name) wearing appearance

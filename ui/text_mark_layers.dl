@@ -1,0 +1,86 @@
+# Named layers own independent snapshots and paint in ascending priority.
+import text_colors.dl
+
+to get [the UI text mark layer named] {string:name} [in] {a pointer to UI text state:state}:
+    set layer to state's mark layers
+    loop while layer != @intrinsic("construct", a pointer to UI text mark layer):
+        if layer's name = name:
+            return layer
+        set layer to layer's next
+    return layer
+
+to get [clear UI text marks in layer] {string:name} [in] {a pointer to UI text state:state}:
+    set previous to @intrinsic("construct", a pointer to UI text mark layer)
+    set layer to state's mark layers
+    loop while layer != @intrinsic("construct", a pointer to UI text mark layer):
+        if layer's name = name:
+            if previous = @intrinsic("construct", a pointer to UI text mark layer):
+                set state's mark layers to layer's next
+            else:
+                set previous's next to layer's next
+            release UI text mark layer layer
+            return true
+        set previous to layer
+        set layer to layer's next
+    return false
+
+to [mark UI text] {string:source} [in layer] {string:name} [at priority] {integer:priority} [in] {a pointer to UI text state:state}:
+    # Inputs may borrow strings from the layer being replaced.
+    set content to source
+    set key to name
+    ignore clear UI text marks in layer key in state
+    set layer to storage for one slot initialized with (a new UI text mark layer)
+    set layer's name to key
+    set layer's text to content
+    set layer's priority to priority
+    set layer's paint generation to -1
+    set previous to @intrinsic("construct", a pointer to UI text mark layer)
+    set current to state's mark layers
+    set searching to true
+    loop while (current != @intrinsic("construct", a pointer to UI text mark layer)) and searching:
+        if current's priority > priority:
+            set searching to false
+        else:
+            set previous to current
+            set current to current's next
+    set layer's next to current
+    if previous = @intrinsic("construct", a pointer to UI text mark layer):
+        set state's mark layers to layer
+    else:
+        set previous's next to layer
+
+to [add UI text mark] {UI paint:ink} [from] {integer:start} [to] {integer:end} [with opacity] {integer:opacity} [in layer] {string:name} [in] {a pointer to UI text state:state}:
+    set layer to the UI text mark layer named name in state
+    require condition (layer != @intrinsic("construct", a pointer to UI text mark layer)) reporting "The text mark layer does not exist"
+    require UI text range from start to end in (layer's text)
+    require condition (0 <= opacity <= 255) reporting "Text mark opacity must be between zero and 255"
+    set mark to storage for one slot initialized with @intrinsic("construct", UI text mark, start, end, ink, opacity, @intrinsic("construct", a pointer to UI text mark))
+    if layer's last mark = @intrinsic("construct", a pointer to UI text mark):
+        set layer's marks to mark
+    else:
+        require condition (start >= layer's last mark's end) reporting "Text marks in one layer must be ordered without overlap"
+        set layer's last mark's next to mark
+    set layer's last mark to mark
+    set layer's paint generation to -1
+
+to [mark UI text] {string:source} [in layer] {string:name} [at priority] {integer:priority} [in] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    require condition (the UI element node is a text control) reporting "Text marks require a text control"
+    set value to the UI value for node in instance
+    mark UI text source in layer name at priority priority in (the address of (value's text state))
+    invalidate instance
+
+to [add UI text mark] {UI paint:ink} [from] {integer:start} [to] {integer:end} [with opacity] {integer:opacity} [in layer] {string:name} [in] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    set value to the UI value for node in instance
+    add UI text mark ink from start to end with opacity opacity in layer name in (the address of (value's text state))
+    invalidate instance
+
+to get [clear UI text marks in layer] {string:name} [in] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    set value to the UI value for node in instance
+    set changed to clear UI text marks in layer name in (the address of (value's text state))
+    if changed:
+        invalidate instance
+    return changed
+
+to get [the UI text mark layer named] {string:name} [in] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    set value to the UI value for node in instance
+    return the UI text mark layer named name in (the address of (value's text state))

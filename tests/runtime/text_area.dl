@@ -1,0 +1,20 @@
+import ../../ui/native.dl
+
+appearance query appearance:
+    padding is 16
+    font size is 20
+    height is 220
+    background is UI ink 245 247 249
+
+appearance page appearance:
+    padding is 24
+
+document query room using page appearance:
+    text area "Query" containing "alpha\nβeta" using query appearance
+
+set instance to an instance of query room
+set view to a desktop view of (the address of instance) sized 960 by 640 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf"
+run the address of view
+print line (the UI value for (the control labeled "Query" in (the address of instance)) in (the address of instance))'s text
+close the address of view
+close the address of instance

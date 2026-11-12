@@ -213,16 +213,22 @@ Editors also accept source-bound background marks independently of token colors:
 ```dynlex
 import ui/text_marks.dl
 
-mark UI text source in editor in (the address of instance)
-add UI text mark (UI ink 104 153 178) from firstByte to lastByte with opacity 100 in editor in (the address of instance)
+mark UI text source in layer "execution" at priority 10 in editor in (the address of instance)
+add UI text mark (UI ink 104 153 178) from firstByte to lastByte with opacity 100 in layer "execution" in editor in (the address of instance)
 ```
 
 Ranges use UTF-8 byte offsets and character boundaries, like token colors.
 They may span lines and remain attached to their original source snapshot.
 Drawing a mark preserves the content, selection, caret, undo history and semantic
 colors. Composing text preserves the marks on its unchanged prefix and suffix;
-a committed edit stops matching the previous snapshot. Starting a new mark set
-releases its previous spans; closing the instance releases all remaining marks.
+a committed edit stops matching the previous snapshot. Each named layer has its
+own snapshot and ordered, non-overlapping spans. Different layers may overlap;
+lower priorities paint first. Replacing or clearing one layer preserves the
+others, so search results can coexist with execution feedback. Use
+`clear UI text marks in layer "execution" in editor in instance` to remove just
+that layer; its boolean result reports whether anything changed. Closing the
+instance releases every layer. The state-based variants work on parked document
+buffers without switching the editor's visible file.
 
 Canvas painters can request `a cached UI font from path sized size in view`.
 The view owns this font and releases it when closed. Use the uncached font
@@ -478,3 +484,10 @@ including descendants, immediately between paints. This prevents covered control
 from receiving hover or pointer actions. Text popovers supply this layout; their
 owner assigns it to the overlay. Completion menus use the same hit path and keep
 their captions outside document text selection.
+
+Plain multiline input uses `text area "Query" containing "first\nsecond" using appearance`
+(or `read only text area ...`). It shares selection, input methods, wrapping, scrolling
+and undo with source editors, while source workspace discovery registers only
+`editor` controls for language analysis. A plain text area is suitable for multiline
+search and replace queries without creating a second language document. Named
+background marks also work in plain text controls through the same layer API.

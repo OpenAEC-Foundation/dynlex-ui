@@ -19,10 +19,10 @@ require condition (entry's text = "abc!") reporting "The initial document did no
 set history to entry's undo
 color UI text (entry's text) in node in window
 add UI text color (UI ink 100 160 220) from 0 to 3 in node in window
-mark UI text (entry's text) in node in window
-add UI text mark (UI ink 190 120 80) from 3 to 4 with opacity 100 in node in window
+mark UI text (entry's text) in layer "execution" at priority 10 in node in window
+add UI text mark (UI ink 190 120 80) from 3 to 4 with opacity 100 in layer "execution" in node in window
 set colors to entry's colors
-set marks to entry's marks
+set marks to entry's mark layers
 
 set parked to a new UI text state
 set parked's text to "other"
@@ -30,7 +30,7 @@ exchange UI text state for node in (the address of view) with (the address of pa
 ignore update UI view (the address of view)
 require condition ((entry's text = "other") and (parked's text = "abc!")) reporting "Exchanging documents did not transfer their text."
 require condition ((entry's undo = @intrinsic("construct", a pointer to UI text edit)) and (parked's undo = history)) reporting "The inactive document lost its own undo history."
-require condition ((parked's colors = colors) and (parked's marks = marks)) reporting "Inactive document annotations lost their ownership."
+require condition ((parked's colors = colors) and (parked's mark layers = marks)) reporting "Inactive document annotations lost their ownership."
 require condition ((entry's target = node) and ((entry's next = next) and (caption's text = "Keep this caption"))) reporting "Moving text changed the control identity or its value registry."
 
 queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
@@ -44,7 +44,7 @@ require condition ((entry's text = "Zother") and (parked's text = "abc!")) repor
 exchange UI text state for node in (the address of view) with (the address of parked)
 ignore update UI view (the address of view)
 require condition ((entry's text = "abc!") and (entry's undo = history)) reporting "Returning to the first document lost its retained history."
-require condition ((entry's colors = colors) and (entry's marks = marks)) reporting "Returning to the first document lost its annotations."
+require condition ((entry's colors = colors) and (entry's mark layers = marks)) reporting "Returning to the first document lost its annotations."
 queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
 ignore update UI view (the address of view)
 require condition ((entry's text = "abc") and (parked's text = "Zother")) reporting "The restored document could not undo independently."

@@ -14,8 +14,8 @@ document marked workspace:
 set instance to an instance of marked workspace
 set view to a desktop view of (the address of instance) sized 800 by 600 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf"
 set node to the control labeled "Source" in (the address of instance)
-mark UI text (the string form of "alpha βeta\nlast") in node in (the address of instance)
-add UI text mark (UI ink 17 93 117) from 6 to 11 with opacity 120 in node in (the address of instance)
+mark UI text (the string form of "alpha βeta\nlast") in layer "execution" at priority 10 in node in (the address of instance)
+add UI text mark (UI ink 17 93 117) from 6 to 11 with opacity 120 in layer "execution" in node in (the address of instance)
 set layout to view's layout's first
 set x to 16.0 + (the width of "alpha " using (layout's typeface)) + (the width of "βeta" using (layout's typeface)) / 2.0
 print line formatted "{x} 44"

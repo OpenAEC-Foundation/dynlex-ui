@@ -12,6 +12,7 @@ to refresh UI text geometry for {a pointer to UI text source:source} in {a point
         set layout's typeface to view's typeface
         set layout's appearance to default UI appearance settings
         set layout's appearance's foreground to view's theme's text
+        set layout's appearance's background to view's theme's surface
     if ((layout's content = content) and (layout's lines != @intrinsic("construct", a pointer to UI text line))) and (changed = false):
         return nothing
     set layout's content to content

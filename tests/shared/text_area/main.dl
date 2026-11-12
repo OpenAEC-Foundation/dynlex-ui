@@ -1,0 +1,52 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_workspace.dl
+import ../../../ui/text_marks.dl
+
+appearance field appearance:
+    height is 100
+    padding is 10
+    font size is 18
+    background is UI ink 245 247 249
+
+document text entry:
+    text area "Query" containing "alpha\nβeta" using field appearance
+    editor "Source" containing "# code" using field appearance
+    read only text area "Public query" containing "public\ntext" using field appearance
+
+set instance to an instance of text entry
+set window to the address of instance
+set view to a UI view of window sized 500 by 400 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+set source to the control labeled "Source" in window
+require condition ((workspace's editors' node = source) and (workspace's editors' next = @intrinsic("construct", a pointer to UI source editor))) reporting "A plain text area was registered as a language source editor."
+ignore update UI view (the address of view)
+set node to the control labeled "Query" in window
+set layout to the UI layout for element node in (view's layout)
+require condition ((layout's lines != @intrinsic("construct", a pointer to UI text line)) and (layout's lines' next != @intrinsic("construct", a pointer to UI text line))) reporting "A text area did not lay out its authored lines."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's text focus = node) and (view's input context's active)) reporting "A text area did not use the shared input bridge."
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "tail" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for node in window)'s text = "alpha\nβeta\ntail") reporting "A text area did not share multiline insertion."
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for node in window)'s text = "alpha\nβeta\n") reporting "A text area lost shared undo."
+require condition ((layout's typeface's size = 18) and (layout's appearance's padding = 10.0)) reporting "A text area discarded its authored appearance."
+require condition ((the UI value for source in window)'s text = "# code") reporting "Editing plain text changed another editor's source."
+mark UI text (the string form of "alpha\nβeta\n") in layer "query" at priority 10 in node in window
+add UI text mark (UI ink 40 90 150) from 6 to 11 with opacity 80 in layer "query" in node in window
+require condition ((the UI text mark layer named "query" in node in window)'s marks' start = 6) reporting "A plain text area lost the shared text annotation API."
+set public to the UI layout labeled "Public query" in (view's layout)
+activate UI layout public in (the address of view)
+queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "changed" in (the address of view)
+queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (public's node) in window)'s text = "public\ntext") reporting "A read-only text area accepted editing."
+require condition (((view's window as a pointer to test UI surface)'s copied = "public\ntext") and (view's input context's active = false)) reporting "A read-only text area lost shared copying or activated input."
+free UI source workspace workspace
+close the address of view
+close window
+print line "Plain text areas share multiline editing, undo, typography and native input without becoming language source editors."

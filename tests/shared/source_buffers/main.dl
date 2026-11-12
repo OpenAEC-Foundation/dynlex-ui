@@ -35,15 +35,15 @@ loop while index < the length of labels:
     require condition ((the UI element (editor's node) accepts edits in window) = false) reporting "An imported source became editable."
     require condition ((the UI main source of editor in workspace at 2.0 seconds) = source) reporting "Running while viewing an import selected the imported source."
     set state to the UI text state for main in editor in window
-    mark UI text source in state
-    add UI text mark (UI ink 80 150 100) from 0 to 1 with opacity 100 in state
-    require condition ((the UI value for (editor's node) in window)'s marks = @intrinsic("construct", a pointer to UI text mark)) reporting "An execution mark for the main source appeared in an imported view."
+    mark UI text source in layer "execution" at priority 10 in state
+    add UI text mark (UI ink 80 150 100) from 0 to 1 with opacity 100 in layer "execution" in state
+    require condition ((the UI value for (editor's node) in window)'s mark layers = @intrinsic("construct", a pointer to UI text mark layer)) reporting "An execution mark for the main source appeared in an imported view."
     queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "bad" in (the address of view)
     ignore update UI view (the address of view)
     require condition ((the UI value for (editor's node) in window)'s text = imported's source) reporting "Text input modified a read-only imported source."
     require condition (go back in UI source editor editor in (the address of view)) reporting "The definition visit did not retain its origin."
     require condition ((editor's document = main) and ((the UI value for (editor's node) in window)'s undo = history)) reporting "Returning from an import lost the main source history."
-    require condition ((the UI value for (editor's node) in window)'s marks != @intrinsic("construct", a pointer to UI text mark)) reporting "Returning from an import lost execution marks applied to the main source."
+    require condition ((the UI value for (editor's node) in window)'s mark layers != @intrinsic("construct", a pointer to UI text mark layer)) reporting "Returning from an import lost execution marks applied to the main source."
     require condition ((view's selection's anchor = 1) and (view's selection's caret = 3)) reporting "Returning from an import lost the main source selection."
     require condition ((layout's text scroll = 12.0) and (layout's scroll position = 35.0)) reporting "Returning from an import lost the main source scroll."
     queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)

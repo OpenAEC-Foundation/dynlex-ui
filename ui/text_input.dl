@@ -329,7 +329,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
             replace UI text selection with (view's typed text) in view
             set view's typed text to ""
         set key to view's key press
-        if source's element's kind = 44:
+        if the UI element (source's element) is multiline:
             if key = 257:
                 replace UI text selection with (the string form of "\n") in view
             if key = 258:
