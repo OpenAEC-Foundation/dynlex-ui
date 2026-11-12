@@ -142,13 +142,7 @@ to commit UI text {string:updated} selecting {integer:anchor} through {integer:c
     set source to view's selection's caret source
     require condition (the UI element (source's element) accepts edits in (view's instance)) reporting "Only writable UI text can be committed"
     set entry to the UI value for (source's element) in (view's instance)
-    set changed to updated != entry's text
-    if changed:
-        release UI text edits entry's redo
-        set entry's redo to @intrinsic("construct", a pointer to UI text edit)
-        set edit to @intrinsic("construct", UI text edit, entry's text, updated, view's selection's anchor, view's selection's caret, anchor, caret, entry's undo)
-        set entry's undo to storage for one slot initialized with edit
-        set entry's text to updated
+    set changed to record UI text edit in (the address of (entry's text state)) replacing with updated from (view's selection's anchor) through (view's selection's caret) selecting anchor through caret
     set view's selection's anchor to anchor
     set view's selection's caret to caret
     set source's text to entry's text

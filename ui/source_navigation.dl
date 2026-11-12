@@ -1,12 +1,10 @@
 # Definitions and imported documents use the same project, transport and view
 # state in standalone editors and embedded source controls.
 import source_buffers.dl
+import source_tool_focus.dl
 
 to [request a UI source definition in] {a pointer to UI source tools:tools}:
-    set workspace to tools's workspace as a pointer to UI source workspace
-    set editor to workspace's editors
-    loop while editor's node != tools's node:
-        set editor to editor's next
+    set editor to the UI source editor in tools
     set navigation to the address of (tools's navigation)
     begin UI source interaction in tools
     set navigation's editor to editor
@@ -46,8 +44,7 @@ to [update UI source navigation in] {a pointer to UI source tools:tools}:
     set result to query's result
     if result's kind = the JSON null kind:
         if navigation's phase = 2:
-            set tools's mode to 2
-            show UI choice popover (the address of (tools's choices)) reporting "Source unavailable." with hint "Esc close" in (tools's view)
+            report UI source tools tools saying "Source unavailable."
         cancel UI source navigation navigation
         return nothing
     if navigation's phase = 1:
@@ -65,8 +62,7 @@ to [update UI source navigation in] {a pointer to UI source tools:tools}:
                 finish UI source navigation in tools to document
             else:
                 cancel UI source navigation navigation
-                set tools's mode to 2
-                show UI choice popover (the address of (tools's choices)) reporting "Source unavailable." with hint "Esc close" in (tools's view)
+                report UI source tools tools saying "Source unavailable."
             return nothing
         set parameters to an LSP text document identifier for (navigation's uri)
         set navigation's query to request UI source feature "dynlex/readDocument" with parameters parameters in (navigation's document)

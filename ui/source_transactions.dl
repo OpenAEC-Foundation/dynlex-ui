@@ -1,0 +1,173 @@
+# Atomic text changes over the source project's owned document models.
+# Protocol parsing, Unicode ranges and edit ordering belong to the standard planner.
+import source_buffers.dl
+import source_edits.dl
+import text_input.dl
+
+class:
+    patterns:
+        UI source patch
+    members:
+        document as a pointer to UI source document
+        buffer as a pointer to UI source buffer
+        change as UI source change
+        anchor as an integer
+        caret as an integer
+        version as an integer
+        next as a pointer to UI source patch
+
+class:
+    patterns:
+        UI source transaction
+    members:
+        succeeded as a boolean
+        reason as a string
+        editor as a pointer to UI source editor
+        project as a pointer to UI source project
+        revision as an integer
+        first as a pointer to UI source patch
+        last as a pointer to UI source patch
+
+to [reject UI source transaction] {a pointer to UI source transaction:transaction} [reporting] {string:reason}:
+    set transaction's succeeded to false
+    set transaction's reason to reason
+
+to [free UI source transaction] {a pointer to UI source transaction:transaction}:
+    set patch to transaction's first
+    loop while patch != @intrinsic("construct", a pointer to UI source patch):
+        set next to patch's next
+        destroy the value at patch
+        deallocate patch
+        set patch to next
+    set the value at transaction to a new UI source transaction
+
+to get [the UI source version of] {a pointer to UI source document:document} [in] {a pointer to UI source workspace:workspace}:
+    set model to workspace's client's models
+    loop while model != @intrinsic("construct", a pointer to UI language document):
+        if model's document = document:
+            if ((model's opened) and (model's uri = document's uri)) and (model's snapshot = (document's prefix + document's source)):
+                return model's version
+            return -1
+        set model to model's next
+    return -1
+
+to get [the UI source patch for] {a pointer to UI source document:document} [in] {a pointer to UI source transaction:transaction}:
+    set patch to transaction's first
+    loop while patch != @intrinsic("construct", a pointer to UI source patch):
+        if patch's document = document:
+            return patch
+        set patch to patch's next
+    set editor to transaction's editor
+    set buffer to the UI source buffer for document in editor
+    set patch to storage for one slot initialized with (a new UI source patch)
+    set patch's document to document
+    set patch's buffer to buffer
+    set patch's anchor to the UI text boundary at or before (buffer's anchor) in (document's source)
+    set patch's caret to the UI text boundary at or before (buffer's caret) in (document's source)
+    set patch's change's text to document's source
+    set patch's change's caret to patch's caret
+    set patch's version to the UI source version of document in (editor's workspace)
+    if transaction's first = @intrinsic("construct", a pointer to UI source patch):
+        set transaction's first to patch
+    else:
+        set transaction's last's next to patch
+    set transaction's last to patch
+    return patch
+
+to [stage UI source change] {a pointer to a workspace edit change:request} [in] {a pointer to UI source transaction:transaction}:
+    if request's kind != the workspace text change kind:
+        reject UI source transaction transaction reporting "Source editor actions can change text, not project files."
+        return nothing
+    set document to the UI source document at (request's uri) in (transaction's project)
+    if document = @intrinsic("construct", a pointer to UI source document):
+        reject UI source transaction transaction reporting "This edit targets a source outside the current project."
+        return nothing
+    if (document's available = false) or (document's writable = false):
+        reject UI source transaction transaction reporting "This edit targets an unavailable or read-only source."
+        return nothing
+    set patch to the UI source patch for document in transaction
+    if request's version presence:
+        if patch's version < 0:
+            reject UI source transaction transaction reporting "A versioned edit requires an open, current source."
+            return nothing
+        if request's version != patch's version:
+            reject UI source transaction transaction reporting "The source version no longer matches this edit."
+            return nothing
+    set change to a UI source change for document applying (request's edits) to (patch's change's text) with caret (patch's change's caret)
+    if change's succeeded = false:
+        reject UI source transaction transaction reporting (change's reason)
+        return nothing
+    set patch's change to change
+    if (request's edits' length > 0) and (patch's version >= 0):
+        increment patch's version
+
+to get [a UI source transaction applying] {a pointer to JSON value:payload} [for] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    require condition (view's instance = editor's workspace's instance) reporting "The source transaction belongs to another UI instance"
+    synchronize UI source workspace (editor's workspace) at (view's seconds) seconds
+    remember the UI source location of editor in view
+    set result to a new UI source transaction
+    set result's editor to editor
+    set result's project to editor's document's project
+    set result's revision to result's project's revision
+    set result's succeeded to true
+    set value to the UI value for (editor's node) in (view's instance)
+    if (value's enabled = false) or (value's read only):
+        reject UI source transaction (the address of result) reporting "This editor is disabled or read only."
+        return result
+    set parsed to the result of parsing payload as a workspace edit
+    require condition (parsed succeeded) reporting "The language service supplied an invalid workspace edit"
+    set index to 0
+    loop while (index < parsed's edit's changes' length) and (result's succeeded):
+        stage UI source change (the workspace change at index index in (parsed's edit's changes)) in (the address of result)
+        increment index
+    free parsed
+    return result
+
+to get [commit UI source transaction] {a pointer to UI source transaction:transaction} [in] {a pointer to UI view:view}:
+    if transaction's succeeded = false:
+        return false
+    set editor to transaction's editor
+    require condition (view's instance = editor's workspace's instance) reporting "The source transaction belongs to another UI instance"
+    synchronize UI source workspace (editor's workspace) at (view's seconds) seconds
+    set value to the UI value for (editor's node) in (view's instance)
+    if (value's enabled = false) or (value's read only):
+        reject UI source transaction transaction reporting "This editor is disabled or read only."
+        return false
+    if transaction's project != editor's document's project:
+        reject UI source transaction transaction reporting "The source project changed before this edit was applied."
+        return false
+    if transaction's revision != transaction's project's revision:
+        reject UI source transaction transaction reporting "The source changed before this edit was applied."
+        return false
+    set patch to transaction's first
+    loop while patch != @intrinsic("construct", a pointer to UI source patch):
+        if ((patch's document's available = false) or (patch's document's writable = false)) or ((patch's change is current for UI source document (patch's document)) = false):
+            reject UI source transaction transaction reporting "A source changed or became read only before this edit was applied."
+            return false
+        set patch to patch's next
+    # Commit all buffers and models before notifying application callbacks.
+    set changed to false
+    set patch to transaction's first
+    loop while patch != @intrinsic("construct", a pointer to UI source patch):
+        set document to patch's document
+        set state to the UI text state for document in editor in (view's instance)
+        set caret to patch's change's caret
+        if record UI text edit in state replacing with (patch's change's text) from (patch's anchor) through (patch's caret) selecting caret through caret:
+            set changed to true
+        set patch's buffer's anchor and patch's buffer's caret to caret
+        edit UI source document document to (patch's change's text) at (view's seconds) seconds
+        if document = editor's document:
+            set layout to the UI layout for element (editor's node) in (view's layout)
+            set focused to view's selection's caret source = (the address of (layout's text source))
+            forget UI text source (the address of (layout's text source)) in view
+            set layout's text source's text to state's text
+            if focused:
+                restore UI source location (patch's buffer) in editor in view
+                set view's reveal caret to true
+            set editor's colors revision to 0
+            set editor's shown to false
+        set patch to patch's next
+    if changed:
+        activate (editor's node) belonging to (editor's node) in (view's instance)
+    set view's damaged to true
+    return true

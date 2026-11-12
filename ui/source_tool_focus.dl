@@ -1,5 +1,14 @@
 import source_buffers.dl
 
+to get [the UI source editor in] {a pointer to UI source tools:tools}:
+    set editor to (tools's workspace as a pointer to UI source workspace)'s editors
+    loop while editor != @intrinsic("construct", a pointer to UI source editor):
+        if editor's node = tools's node:
+            return editor
+        set editor to editor's next
+    require condition false reporting "The source tools have no registered editor"
+    return editor
+
 to get [focus UI source tools] {a pointer to UI source tools:tools}:
     set workspace to tools's workspace as a pointer to UI source workspace
     set view to tools's view

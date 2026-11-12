@@ -108,6 +108,8 @@ to get [the next UI language work for] {a pointer to UI language client:client} 
     if document needs UI source analysis:
         return the UI language token request in client
     require condition pending reporting "An editor feature has no pending request"
+    if (@intrinsic("equal", query's parameters factory, 0 as a pointer)) = false:
+        @intrinsic("call pointer", query's parameters factory, nothing, query, document)
     set client's query to query
     set client's query generation to query's generation
     set client's query notification to query's notification

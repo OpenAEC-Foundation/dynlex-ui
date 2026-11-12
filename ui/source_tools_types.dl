@@ -49,6 +49,14 @@ to [begin UI source interaction in] {a pointer to UI source tools:tools}:
     set tools's edited to false
     set tools's composed to false
 
+to [report UI source tools] {a pointer to UI source tools:tools} [saying] {string:message}:
+    set content to message
+    dismiss UI source tools tools
+    dismiss UI source hover (the address of (tools's hover)) in (tools's view)
+    set tools's edited to false
+    set tools's mode to 2
+    show UI choice popover (the address of (tools's choices)) reporting content with hint "Esc close" in (tools's view)
+
 to [free UI source tools] {a pointer to UI source tools:tools}:
     if tools = @intrinsic("construct", a pointer to UI source tools):
         return nothing

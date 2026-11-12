@@ -272,7 +272,7 @@ cleanup releases the projects belonging to its controls.
 
 Import `ui/source_panes.dl` for `source pane "Plan" containing text using
 appearance`. This is an ordinary immutable description containing an editor,
-filename, Back, Main file, Outline and Instances buttons. A workspace scopes those controls to their
+filename, Back, Main file, Outline, Instances and Fixes buttons. A workspace scopes those controls to their
 pane. Bare editors and panes use identical document and interaction code.
 Enable `ui/source_tools.dl` once per workspace for completion and F12 definition
 navigation; Alt+Left returns through its location history. Visits retain each
@@ -290,6 +290,27 @@ caret and initially selects the compiler's current instance. Choosing another
 instance notifies the language service, then refreshes semantic colors and hover
 facts after acknowledgement. Both tools support read-only imports. Stale results
 and acknowledgements are discarded when their source or project changes.
+
+F7 opens diagnostic quick fixes for the selection. The request retains opaque
+compiler diagnostic data, maps Unicode and hidden context through the shared
+source model, and refreshes diagnostics immediately before dispatch. Opening
+Fixes while analysis is pending therefore uses the completed analysis. Disabled
+actions cannot be selected. Edits are staged and committed through the standard
+text-edit planner, with one undo operation per changed source. A command following
+an action uses the same command handler as completion.
+
+`ui/source_transactions.dl` adapts workspace text edits to project-owned source
+models. Prepare with `a UI source transaction applying edit for editor in view`,
+then call `commit UI source transaction transaction in view` and free its owned
+data with `free UI source transaction transaction`. Pass the transaction's address
+to the latter two operations. Preparation synchronizes existing control edits,
+then stages the requested changes. Commit rechecks source snapshots and access
+policy before modifying any text. It updates all models and buffers before
+notifying application handlers. Parked sources retain their own undo and caret;
+updating one does not replace the visible imported source. Ordered versioned text
+changes use the preceding staged snapshot. Invalid, stale, protected or read-only
+targets reject the whole proposed edit. Resource operations such as creating,
+renaming or deleting files belong to project storage and are not text edits.
 
 `ui/choice_popovers.dl` supplies the same choice surface for completion and
 inspection, without a JSON or language-service dependency. Callers add labels and
@@ -347,6 +368,14 @@ that returns the next work item. Synchronize the workspace before delivering
 replies so programmatic edits also invalidate outstanding results. The platform
 implements `project`, `exchange`, and `reset`; document policy stays in DynLex.
 A zero step has no payload. Free each sent payload after serializing it.
+
+A query may set `parameters factory` to a DynLex function pointer receiving
+`a pointer to UI source query` and `a pointer to UI source document`, returning
+`nothing`. It refreshes the query's owned `parameters` in place after source
+analysis and immediately before serialization. Preparing parameters preserves the
+request's generation and cancellation rules. Each new request clears the slot's
+previous callback. The complete `source_query_preparation` fixture exercises
+dispatch and slot reuse; quick fixes use the hook for diagnostic context.
 
 `present UI source workspace workspace using (the default UI source token theme)`
 applies results to their source controls. Each binding may point `diagnostics`

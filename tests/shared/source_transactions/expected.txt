@@ -1,0 +1,1 @@
+Source transactions stage Unicode edits atomically, protect context and imports, preserve parked undo, and validate source versions.

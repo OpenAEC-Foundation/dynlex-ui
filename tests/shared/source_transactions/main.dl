@@ -1,0 +1,119 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_transactions.dl
+
+document example:
+    editor "Source" containing "😀 alpha\nbeta" using no UI appearance
+
+to get [a transaction test edit at row] {integer:row} [from] {integer:first} [through] {integer:last} [inserting] {string:text}:
+    return a JSON object containing [JSON child "range" is (an LSP range from line row and character first to line row and character last), JSON text "newText" is text]
+
+to get [transaction test changes for] {string:uri}:
+    return a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child uri is (a JSON array containing [a transaction test edit at row 2 from 0 through 4 inserting "B", a transaction test edit at row 1 from 3 through 8 inserting "A"])])]
+
+set instance to an instance of example
+set window to the address of instance
+set view to a UI view of window sized 700 by 500 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+ignore update UI view (the address of view)
+set editor to the UI source editor labeled "Source" in workspace
+set main to editor's document
+set files to a new JSON-RPC object
+configure UI source document main named "main.dl" at "file:///workspace/main.dl" prefixed by "# hidden\n" using UI CPU analysis with files files
+free files
+restore UI source location (editor's current) in editor in (the address of view)
+set view's selection's anchor to 5
+set view's selection's caret to 15
+set original to main's source
+set payload to transaction test changes for (main's uri)
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition ((transaction's succeeded) and (main's source = original)) reporting "Preparing a source transaction changed its model."
+require condition (commit UI source transaction (the address of transaction) in (the address of view)) reporting "A valid source transaction was rejected."
+require condition (main's source = "😀 A\nB") reporting "A source transaction lost Unicode or unordered edits."
+require condition (view's selection's caret = 8) reporting "A source transaction did not map its caret through all edits."
+set value to the UI value for (editor's node) in window
+require condition ((value's undo != @intrinsic("construct", a pointer to UI text edit)) and (value's undo's next = @intrinsic("construct", a pointer to UI text edit))) reporting "A source transaction was split into several undo operations."
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+synchronize UI source workspace workspace at 1.0 seconds
+require condition ((main's source = original) and ((view's selection's anchor = 5) and (view's selection's caret = 15))) reporting "Undo did not restore the source transaction's original text and selection."
+free UI source transaction (the address of transaction)
+
+set imported to a UI source document named "helper.dl" at "file:///lib/helper.dl" containing "# helper" in (main's project)
+set view's selection's anchor and view's selection's caret to 7
+visit UI source document imported selecting 0 through 0 in editor in (the address of view)
+set source to view's selection's caret source
+set payload to transaction test changes for (main's uri)
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition (commit UI source transaction (the address of transaction) in (the address of view)) reporting "A parked writable source could not receive a transaction."
+require condition ((editor's document = imported) and ((view's selection's caret source = source) and (view's selection's caret = 0))) reporting "Editing a parked source moved the imported view's selection."
+require condition ((the UI value for (editor's node) in window)'s text = "# helper") reporting "A parked source transaction replaced its imported view."
+show UI source document main in editor in (the address of view)
+require condition ((main's source = "😀 A\nB") and (view's selection's caret = 6)) reporting "A parked source lost its committed text or mapped caret."
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+synchronize UI source workspace workspace at 2.0 seconds
+require condition (main's source = original) reporting "A parked source transaction could not be undone after returning."
+free UI source transaction (the address of transaction)
+
+set payload to transaction test changes for (main's uri)
+set changes to the JSON member named "changes" in payload
+add JSON-RPC member (imported's uri) containing (a JSON array containing [a transaction test edit at row 0 from 0 through 1 inserting "changed"]) to changes
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition ((transaction's succeeded = false) and (main's source = original)) reporting "A read-only target partially applied its other source edits."
+require condition ((commit UI source transaction (the address of transaction) in (the address of view)) = false) reporting "An invalid source transaction was committed."
+free UI source transaction (the address of transaction)
+
+set payload to a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child (main's uri) is (a JSON array containing [a transaction test edit at row 2 from 0 through 4 inserting "B", a transaction test edit at row 0 from 0 through 8 inserting "protected"])])]
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition ((transaction's succeeded = false) and (main's source = original)) reporting "An edit of hidden context partially changed the visible source."
+free UI source transaction (the address of transaction)
+
+set payload to transaction test changes for (main's uri)
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+set UI text of (editor's node) in window to "new source"
+require condition ((commit UI source transaction (the address of transaction) in (the address of view)) = false) reporting "An obsolete transaction overwrote newer control text."
+require condition ((the UI value for (editor's node) in window)'s text = "new source") reporting "Rejecting an obsolete transaction discarded the user's edit."
+free UI source transaction (the address of transaction)
+load UI main source of editor in (the address of view) from original at 3.0 seconds
+
+set model to the UI language model for main in (workspace's client)
+set model's opened to true
+set model's version to 3
+set model's snapshot to main's prefix + main's source
+set first to a JSON object containing [JSON child "textDocument" is (a JSON object containing [JSON text "uri" is (main's uri), JSON number "version" is 3]), JSON child "edits" is (a JSON array containing [a transaction test edit at row 1 from 3 through 8 inserting "A"])]
+set second to a JSON object containing [JSON child "textDocument" is (a JSON object containing [JSON text "uri" is (main's uri), JSON number "version" is 4]), JSON child "edits" is (a JSON array containing [a transaction test edit at row 2 from 0 through 4 inserting "B"])]
+set payload to a JSON object containing [JSON child "documentChanges" is (a JSON array containing [first, second])]
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition (commit UI source transaction (the address of transaction) in (the address of view)) reporting "Ordered versioned source edits did not advance their virtual document version."
+require condition (main's source = "😀 A\nB") reporting "Ordered source edits did not use the preceding text snapshot."
+require condition (value's undo's next = @intrinsic("construct", a pointer to UI text edit)) reporting "Ordered changes for one source created separate undo records."
+free UI source transaction (the address of transaction)
+set model's version to 8
+set model's snapshot to main's prefix + main's source
+set request to a JSON object containing [JSON child "textDocument" is (a JSON object containing [JSON text "uri" is (main's uri), JSON number "version" is 7]), JSON child "edits" is (a JSON array containing [a transaction test edit at row 2 from 0 through 1 inserting "old version"])]
+set payload to a JSON object containing [JSON child "documentChanges" is (a JSON array containing [request])]
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition ((transaction's succeeded = false) and (main's source = "😀 A\nB")) reporting "An obsolete document version was accepted."
+free UI source transaction (the address of transaction)
+set payload to a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child (main's uri) is (a JSON array containing [a transaction test edit at row 2 from 0 through 1 inserting "locked"])])]
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+set UI control (editor's node) read only true in window
+require condition ((commit UI source transaction (the address of transaction) in (the address of view)) = false) reporting "Committing a prepared transaction bypassed a newer read-only policy."
+free UI source transaction (the address of transaction)
+set payload to a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child (main's uri) is (a JSON array containing [a transaction test edit at row 2 from 0 through 1 inserting "locked"])])]
+set transaction to a UI source transaction applying payload for editor in (the address of view)
+free payload
+require condition ((transaction's succeeded = false) and (main's source = "😀 A\nB")) reporting "A source transaction bypassed the application's read-only policy."
+free UI source transaction (the address of transaction)
+free UI source workspace workspace
+close the address of view
+close window
+print line "Source transactions stage Unicode edits atomically, protect context and imports, preserve parked undo, and validate source versions."

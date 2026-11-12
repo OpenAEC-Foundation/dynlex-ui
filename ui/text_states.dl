@@ -58,6 +58,17 @@ to release UI text edits {a pointer to UI text edit:edit}:
         deallocate edit
         set edit to next
 
+to get [record UI text edit in] {a pointer to UI text state:state} [replacing with] {string:text} [from] {integer:anchor} [through] {integer:caret} [selecting] {integer:after anchor} [through] {integer:after caret}:
+    set content to text
+    if content = state's text:
+        return false
+    release UI text edits state's redo
+    set state's redo to @intrinsic("construct", a pointer to UI text edit)
+    set edit to @intrinsic("construct", UI text edit, state's text, content, anchor, caret, after anchor, after caret, state's undo)
+    set state's undo to storage for one slot initialized with edit
+    set state's text to content
+    return true
+
 to release UI text colors {a pointer to UI text state:state}:
     set span to state's colors
     loop while span != @intrinsic("construct", a pointer to UI text color span):

@@ -35,6 +35,7 @@ class:
         location as UI reference
         outline as UI reference
         instances as UI reference
+        fixes as UI reference
 
 class:
     patterns:
@@ -61,6 +62,7 @@ to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI
             set entry's location to the UI element labeled "Location" in scope
             set entry's outline to the UI element labeled "Outline" in scope
             set entry's instances to the UI element labeled "Instances" in scope
+            set entry's fixes to the UI element labeled "Fixes" in scope
         set entry's clean text to "No problems found."
         set entry's ready text to "0 problems"
         set entry's document to a UI source document named "main.dl" at (workspace's client's root + "/main.dl") prefixed by "" containing ((the UI value for node in (workspace's instance))'s text) using UI CPU analysis
@@ -158,6 +160,7 @@ to [present UI source pane] {a pointer to UI source editor:editor} [in] {a point
     set available to document's available and (editor's workspace's client's phase != 8)
     set UI control (editor's outline) enabled available in instance
     set UI control (editor's instances) enabled available in instance
+    set UI control (editor's fixes) enabled (available and ((the UI value for (editor's node) in instance)'s read only = false)) in instance
 
 to [present UI source workspace] {a pointer to UI source workspace:workspace} [using] {an array:theme}:
     set instance to workspace's instance

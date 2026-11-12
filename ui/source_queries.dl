@@ -34,6 +34,7 @@ to get [request UI source feature] {string:method} [with parameters] {a pointer 
     set copied to a copy of JSON-RPC node parameters
     free query's parameters
     set query's parameters to copied
+    set query's parameters factory to 0 as a pointer
     free query's result
     set query's result to a new JSON-RPC null
     set query's context to document's context

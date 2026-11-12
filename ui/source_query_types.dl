@@ -8,6 +8,7 @@ class:
     members:
         method as a string
         parameters as a pointer to JSON value
+        parameters factory as a pointer
         result as a pointer to JSON value
         context as a string
         project as a pointer to UI source project

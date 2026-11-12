@@ -81,10 +81,7 @@ to [accept UI source inspection in] {a pointer to UI source tools:tools}:
         return nothing
     set item to the JSON value at index (tools's choices' selected) in (tools's items)
     if tools's mode = 3:
-        set workspace to tools's workspace as a pointer to UI source workspace
-        set editor to workspace's editors
-        loop while editor's node != tools's node:
-            set editor to editor's next
+        set editor to the UI source editor in tools
         set span to the UI source range of item in (tools's document)
         visit UI source document (tools's document) selecting (span's start) through (span's end) in editor in (tools's view)
     else:

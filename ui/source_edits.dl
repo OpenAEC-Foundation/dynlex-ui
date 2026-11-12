@@ -22,24 +22,28 @@ to get {UI source change:change} [is current for UI source document] {a pointer 
 
 to get [a UI source change for] {a pointer to UI source document:document} [applying] {a pointer to JSON value:edits} [with caret] {integer:caret}:
     require condition (edits's kind = the JSON array kind) reporting "Source edits must be an array"
-    require condition (0 <= caret <= document's source's length) reporting "An edit caret is outside the source"
-    set boundary to the UTF-16 position of UTF-8 byte offset caret in (document's source)
-    require condition (boundary succeeded) reporting "An edit caret splits a Unicode character"
-    set result to a new UI source change
-    set result's succeeded to true
-    set result's text to document's source
-    set result's caret to caret
-    set result's revision to document's revision
-    set result's context to document's context
-    set result's project to document's project
-    set result's project revision to document's project's revision
     set payload to a JSON object containing [JSON child "changes" is (a JSON object containing [JSON child (document's uri) is (a copy of JSON-RPC node edits)])]
     set parsed to the result of parsing payload as a workspace edit
     free payload
     require condition (parsed succeeded) reporting "The language service supplied an invalid text edit"
     set change to the workspace change at index 0 in (parsed's edit's changes)
-    set plan to the workspace text edit plan for (change's edits) against (document's prefix + document's source) using the workspace UTF-16 position encoding
+    set result to a UI source change for document applying (change's edits) to (document's source) with caret caret
     free parsed
+    return result
+
+to get [a UI source change for] {a pointer to UI source document:document} [applying] {a pointer to a workspace text edit collection:edits} [to] {string:source} [with caret] {integer:caret}:
+    require condition (0 <= caret <= source's length) reporting "An edit caret is outside the source"
+    set boundary to the UTF-16 position of UTF-8 byte offset caret in source
+    require condition (boundary succeeded) reporting "An edit caret splits a Unicode character"
+    set result to a new UI source change
+    set result's succeeded to true
+    set result's text to source
+    set result's caret to caret
+    set result's revision to document's revision
+    set result's context to document's context
+    set result's project to document's project
+    set result's project revision to document's project's revision
+    set plan to the workspace text edit plan for edits against (document's prefix + source) using the workspace UTF-16 position encoding
     if plan's success = false:
         set result's succeeded to false
         set result's reason to plan's failure reason
@@ -49,7 +53,7 @@ to get [a UI source change for] {a pointer to UI source document:document} [appl
         set start to (the start byte of workspace edit index in plan) - document's prefix's length
         set end to (the end byte of workspace edit index in plan) - document's prefix's length
         set text to the replacement text of workspace edit index in plan
-        if (start < 0) or (end > document's source's length):
+        if (start < 0) or (end > source's length):
             set result's succeeded to false
             set result's reason to "This edit changes protected project context."
         set difference to text's length - (end - start)

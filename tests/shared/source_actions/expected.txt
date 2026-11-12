@@ -1,0 +1,1 @@
+Studio and River share diagnostic quick fixes, protected Unicode ranges, disabled actions, undo and stale-result rejection.
