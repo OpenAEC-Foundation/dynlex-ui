@@ -1,12 +1,13 @@
 import shapes.dl
 import animation.dl
+import control_presentation.dl
 
 to draw UI fragment from {integer:start} to {integer:end} at {floating-point number:x} {floating-point number:baseline} using {a pointer to UI layout:span} in {a pointer to UI layout:paragraph} on {UI frame:frame} ending {boolean:ending}:
     set view to frame's view
     set content to the substring of (paragraph's content) from start spanning (end - start) bytes
     set width to the width of content using (span's typeface)
     set box to UI box at x (baseline - span's typeface's size) sized width (span's typeface's size + 4)
-    set appearance to span's appearance
+    set appearance to the UI appearance of span displayed in view
     set view's text control to @intrinsic("construct", a pointer to UI layout)
     if span != paragraph:
         if appearance's filled:
@@ -23,7 +24,7 @@ to draw UI fragment from {integer:start} to {integer:end} at {floating-point num
                 set right to the maximum of (span's painted bounds' x + span's painted bounds' width) and (box's x + box's width)
                 set bottom to the maximum of (span's painted bounds' y + span's painted bounds' height) and (box's y + box's height)
                 set span's painted bounds to UI box at left top sized (right - left) (bottom - top)
-            if (view's hot = span) or ((view's focused = span) and (view's keyboard focus)):
+            if (the UI element (span's node) is enabled in (view's instance)) and ((view's hot = span) or ((view's focused = span) and (view's keyboard focus))):
                 draw a rectangle at x x and y (baseline + 3.0) with width width and height 1.0 in color red appearance's foreground's red, green appearance's foreground's green and blue appearance's foreground's blue in frame
     set view's text offset to start
     set view's text end caret to ending

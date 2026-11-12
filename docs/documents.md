@@ -282,6 +282,10 @@ on return.
 Runtime policy updates also survive navigation, including updates made while an
 imported file is visible. Document protection and application policy share the
 same editing gate, without overwriting each other's state.
+Disabled controls use the shared foreground presentation rule for captions,
+inline links and semantic text. Drawing retains authored appearances and token
+colors, so enabling a control restores them. Read-only text keeps its colors.
+Disabled inline links retire their hover underline immediately.
 
 Token themes also accept modifier selectors, such as `function.callDepth1`,
 `variable.constant`, `*.constant`, or `function.constant.callDepth1`. Modifier

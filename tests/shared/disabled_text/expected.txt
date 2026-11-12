@@ -1,0 +1,1 @@
+Document and desktop controls share disabled text presentation without changing retained styles or semantic colors.

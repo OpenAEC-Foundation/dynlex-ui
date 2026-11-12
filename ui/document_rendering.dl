@@ -7,13 +7,12 @@ import paragraph_rendering.dl
 import document_tabs_rendering.dl
 import editor_rendering.dl
 import composition_rendering.dl
+import control_presentation.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
-    set appearance to layout's appearance
+    set appearance to the UI appearance of layout displayed in view
     set available to the UI element (layout's node) is enabled in (view's instance)
     if available = false:
-        set appearance's foreground to UI ink between (appearance's foreground) and (appearance's background) at 0.6
-        set appearance's background to UI ink between (appearance's background) and (view's theme's background) at 0.35
         set layout's hover to 0.0
     if appearance's hidden:
         return nothing

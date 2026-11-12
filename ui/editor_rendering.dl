@@ -29,6 +29,7 @@ to get draw colored UI text {string:text} from {integer:start} through {integer:
                 set ink to span's ink
                 set end to the minimum of end and (span's end)
         set content to the substring of text from offset spanning (end - offset) bytes
+        set ink to the UI ink ink displayed for (layout's node) over (layout's appearance's background) in (frame's view's instance)
         set frame's view's text offset to offset
         set frame's view's text end caret to ending and (end = finish)
         draw UI text content at x baseline with (layout's typeface) in ink on frame

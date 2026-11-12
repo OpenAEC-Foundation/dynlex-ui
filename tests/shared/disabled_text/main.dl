@@ -1,0 +1,129 @@
+import ../../helpers/driver.dl
+
+appearance control appearance:
+    background is UI ink 0 0 0
+    text is UI ink 240 240 240
+    padding is 8
+    height is 48
+
+document controls:
+    (button "Action") wearing control appearance
+    paragraph "Rich" using control appearance:
+        link "Inline" to "example" using no UI appearance
+    editor "Plain" containing "plain" using control appearance
+    editor "Code" containing "code" using control appearance
+
+window desktop controls:
+    group at 0 0 sized 600 by 520:
+        button "Desktop action"
+        switch "Desktop switch"
+        text field "Desktop field" containing "Field value"
+        tool field "First choice" sized 140:
+            menu item "First choice"
+            menu item "Second choice"
+
+set target to the string form of "Action"
+set observed to UI ink 0 0 0
+set seen to 0
+set {shape vertices} to 0
+
+function [record disabled text geometry in] {a pointer to UI view:view} [vertices] {a pointer to UI vertex:vertices} [counting] {integer:count} [with] {a pointer:texture}:
+    globals:
+        shape vertices
+    execute:
+        if @intrinsic("equal", texture, 0 as a pointer):
+            set shape vertices to shape vertices + count
+        submit test UI view vertices vertices counting count with texture
+
+function [record text ink in] {a pointer to UI view:view} [using] {a pointer:font} [containing] {C string:text} [counting] {integer:count} [at] {floating-point number:x} {floating-point number:y} [in] {a pointer to UI paint:ink}:
+    globals:
+        target, observed, seen
+    execute:
+        set caption to a new string from text containing count bytes
+        if caption = target:
+            set observed to the value at ink
+            increment seen
+        draw test UI text in view using font containing text counting count at x y in ink
+
+set instance to an instance of controls
+set window to the address of instance
+set driver to the value at (the test UI driver)
+set driver's draw text to (the function named "record text ink in $ using $ containing $ counting $ at $ $ in $") as a pointer
+set driver's triangles to (the function named "record disabled text geometry in $ vertices $ counting $ with $") as a pointer
+set view to a UI view of window sized 600 by 500 using font "regular" with (the address of driver)
+set code to the control labeled "Code" in window
+color UI text (the string form of "code") in code in window
+add UI text color (UI ink 240 160 80) from 0 to 4 in code in window
+set nodes to [the control labeled "Action" in window, the control labeled "Inline" in window, the control labeled "Plain" in window, code]
+set captions to ["Action", "Inline", "plain", "code"]
+set index to 0
+loop while index < the length of nodes:
+    set node to the item at index in nodes
+    set target to the item at index in captions
+    set seen to 0
+    set view's damaged to true
+    ignore update UI view (the address of view)
+    require condition (seen > 0) reporting "A control's text was not drawn."
+    set original to observed
+    set layout to the UI layout for element node in (view's layout)
+    set foreground to layout's appearance's foreground
+    set underlined to 0
+    if index = 1:
+        set point to a UI point at (layout's painted bounds' x + (layout's painted bounds' width / 2.0)) and (layout's painted bounds' y + (layout's painted bounds' height / 2.0))
+        queue UI input of kind 1 key 0 at (point's x) (point's y) with modifiers 0 containing "" in (the address of view)
+        ignore update UI view (the address of view)
+        require condition (view's hot = layout) reporting "The inline-link regression did not hover its link."
+        set shape vertices to 0
+        set view's damaged to true
+        ignore update UI view (the address of view)
+        set underlined to shape vertices
+    set UI control node enabled false in window
+    set seen to 0
+    set shape vertices to 0
+    ignore update UI view (the address of view)
+    require condition (seen > 0) reporting "Disabling a control hid its text."
+    require condition (((observed's red < original's red) and (observed's green < original's green)) and (observed's blue < original's blue)) reporting "A disabled control kept its enabled text ink."
+    require condition (((layout's appearance's foreground's red = foreground's red) and (layout's appearance's foreground's green = foreground's green)) and (layout's appearance's foreground's blue = foreground's blue)) reporting "Drawing a disabled control mutated its retained appearance."
+    if index = 1:
+        require condition (shape vertices < underlined) reporting "A disabled inline link kept its hover underline."
+    set UI control node enabled true in window
+    set seen to 0
+    set shape vertices to 0
+    ignore update UI view (the address of view)
+    require condition (((observed's red = original's red) and (observed's green = original's green)) and (observed's blue = original's blue)) reporting "Enabling a control did not restore its text ink."
+    if index = 1:
+        require condition (shape vertices = underlined) reporting "Enabling a hovered link did not restore its underline."
+    increment index
+set target to "code"
+set UI control code read only true in window
+ignore update UI view (the address of view)
+require condition (((observed's red = 240) and (observed's green = 160)) and (observed's blue = 80)) reporting "Read-only source was dimmed as if it were disabled."
+require condition ((the UI value for code in window)'s colors' ink's green = 160) reporting "Disabled presentation changed retained semantic colors."
+close the address of view
+close window
+set instance to an instance of desktop controls
+set window to the address of instance
+set view to a UI view of window sized 800 by 800 using font "regular" with (the address of driver)
+set labels to ["Desktop action", "Desktop switch", "Desktop field", "First choice"]
+set captions to ["Desktop action", "Desktop switch", "Field value", "First choice"]
+set index to 0
+loop while index < the length of labels:
+    set node to the control labeled (the item at index in labels) in window
+    set target to the item at index in captions
+    set seen to 0
+    set view's damaged to true
+    ignore update UI view (the address of view)
+    require condition (seen > 0) reporting "A desktop control's text was not drawn."
+    set original to observed
+    set UI control node enabled false in window
+    set seen to 0
+    ignore update UI view (the address of view)
+    require condition (seen > 0) reporting "Disabling a desktop control hid its caption."
+    require condition (((observed's red != original's red) or (observed's green != original's green)) or (observed's blue != original's blue)) reporting "A desktop control ignored disabled text presentation."
+    set UI control node enabled true in window
+    ignore update UI view (the address of view)
+    require condition (((observed's red = original's red) and (observed's green = original's green)) and (observed's blue = original's blue)) reporting "Enabling a desktop control retained its disabled text ink."
+    increment index
+close the address of view
+close window
+print line "Document and desktop controls share disabled text presentation without changing retained styles or semantic colors."

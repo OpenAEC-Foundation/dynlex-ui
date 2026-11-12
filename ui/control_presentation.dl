@@ -1,0 +1,12 @@
+# Disabled presentation never changes authored appearances or semantic colors.
+import view.dl
+
+to get [the UI ink] {UI paint:ink} [displayed for] {UI reference:node} [over] {UI paint:background} [in] {a pointer to UI instance:instance}:
+    if the UI element node is enabled in instance:
+        return ink
+    return UI ink between ink and background at 0.6
+
+to get [the UI appearance of] {a pointer to UI layout:layout} [displayed in] {a pointer to UI view:view}:
+    set appearance to layout's appearance
+    set appearance's foreground to the UI ink (appearance's foreground) displayed for (layout's node) over (appearance's background) in (view's instance)
+    return appearance
