@@ -114,6 +114,7 @@ class:
         destination as a string
         enabled as a boolean
         read only as a boolean
+        text protected as a boolean
 
 {UI value:entry}'s text means: entry's text state's text
 {a pointer to UI value:entry}'s text means: entry's text state's text

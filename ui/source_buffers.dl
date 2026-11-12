@@ -71,7 +71,7 @@ to [bind UI source document] {a pointer to UI source document:document} [in] {a 
         set editor's document to document
         set editor's colors revision to 0
         set editor's shown to false
-        set UI control (editor's node) read only (editor's read only or (document's writable = false)) in (view's instance)
+        set UI control (editor's node) text protected (document's writable = false) in (view's instance)
         set layout to the UI layout for element (editor's node) in (view's layout)
         require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
         forget UI text source (the address of (layout's text source)) in view

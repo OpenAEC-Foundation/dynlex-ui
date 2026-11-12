@@ -279,6 +279,9 @@ navigation; Alt+Left returns through its location history. Visits retain each
 file's independent undo/redo, annotations, Unicode selection and scroll position.
 Imported sources are read-only; the main source's own read-only policy is restored
 on return.
+Runtime policy updates also survive navigation, including updates made while an
+imported file is visible. Document protection and application policy share the
+same editing gate, without overwriting each other's state.
 
 F9 opens an outline of authored sections, including nested declarations. Choosing
 a section visits its selection range through the same Unicode and protected

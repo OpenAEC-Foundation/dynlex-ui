@@ -102,6 +102,8 @@ unchanged theme preserves cached colors. `read only editor` and `read only text
 field` retain selection, copying and navigation while excluding editing and IME.
 The same policy can change at runtime with `set UI control node read only true in
 instance`; programmatic `set the text of` updates still work.
+Dynamic read-only changes survive definition visits and returns, including policy
+changes made while viewing an imported source. Imported text stays protected.
 Suggestions follow typed characters and committed IME words. Paste and newlines
 keep the code surface clear, and Ctrl+Space remains available explicitly. Popups
 inherit their editor's font and colors. Multiline editors keep them inside the

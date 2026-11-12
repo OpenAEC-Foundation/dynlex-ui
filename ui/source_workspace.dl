@@ -18,7 +18,6 @@ class:
         buffers as a pointer to UI source buffer
         current as a pointer to UI source buffer
         locations as a pointer to UI source location
-        read only as a boolean
         next as a pointer to UI source editor
         colors revision as an integer
         diagnostics generation as an integer
@@ -65,7 +64,6 @@ to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI
         set entry's clean text to "No problems found."
         set entry's ready text to "0 problems"
         set entry's document to a UI source document named "main.dl" at (workspace's client's root + "/main.dl") prefixed by "" containing ((the UI value for node in (workspace's instance))'s text) using UI CPU analysis
-        set entry's read only to (the UI value for node in (workspace's instance))'s read only
         set entry's current to storage for one slot initialized with (a new UI source buffer)
         set entry's current's document to entry's document
         set entry's buffers to entry's current
@@ -109,6 +107,7 @@ to get [UI source element] {UI reference:target} [is active within] {UI referenc
 to [synchronize UI source workspace] {a pointer to UI source workspace:workspace} [at] {floating-point number:seconds} [seconds]:
     set entry to workspace's editors
     loop while entry != @intrinsic("construct", a pointer to UI source editor):
+        set UI control (entry's node) text protected (entry's document's writable = false) in (workspace's instance)
         set source to (the UI value for (entry's node) in (workspace's instance))'s text
         if entry's document's writable:
             edit UI source document (entry's document) to source at seconds seconds
@@ -149,7 +148,7 @@ to [present UI source pane] {a pointer to UI source editor:editor} [in] {a point
         return nothing
     set document to editor's document
     set caption to document's filename
-    if (document's writable = false) or (editor's read only):
+    if (document's writable = false) or ((the UI value for (editor's node) in instance)'s read only):
         set caption to caption + " · Read only"
     if document's available = false:
         set caption to caption + " · Unavailable"

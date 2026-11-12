@@ -195,13 +195,20 @@ to get [the UI element] {UI reference:node} [accepts edits in] {a pointer to UI 
     if ((node's kind = 39) or (node's kind = 44)) = false:
         return false
     set value to the UI value for node in instance
-    return value's enabled and (value's read only = false)
+    return value's enabled and ((value's read only = false) and (value's text protected = false))
 
 to [set UI control] {UI reference:node} [read only] {boolean:locked} [in] {a pointer to UI instance:instance}:
     require condition ((node's kind = 39) or (node's kind = 44)) reporting "Only text controls have a read-only policy"
     set value to the UI value for node in instance
     if value's read only != locked:
         set value's read only to locked
+        invalidate instance
+
+to [set UI control] {UI reference:node} [text protected] {boolean:locked} [in] {a pointer to UI instance:instance}:
+    require condition ((node's kind = 39) or (node's kind = 44)) reporting "Only text controls have content protection"
+    set value to the UI value for node in instance
+    if value's text protected != locked:
+        set value's text protected to locked
         invalidate instance
 
 to activate {UI reference:node} belonging to {UI reference:parent} in {a pointer to UI instance:instance}:
