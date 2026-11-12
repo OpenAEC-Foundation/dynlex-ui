@@ -26,6 +26,9 @@ column-major float32 values for shader submission. A projection exposes `screen`
 have normalized directions. Ground intersections expose `point`, `distance` in
 world units and `hit`; parallel rays and intersections behind the ray report no
 hit. A ray supplied by application code can use a non-unit direction.
+Camera construction and point projection accept core vectors with integer,
+float32 or float64 components. Camera state stores float64 vectors; use
+`the UI scene vector form of value` when assigning a vector directly to that state.
 
 Camera position and target must differ. The up direction must be finite and
 nonparallel to the view; the field of view, aspect ratio and clip planes follow

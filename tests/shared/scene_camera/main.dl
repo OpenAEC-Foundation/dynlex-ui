@@ -30,6 +30,10 @@ set wide to UI box at 20.0 30.0 sized 800.0 200.0
 set camera's aspect to 4.0
 check scene number ((the UI scene projection for right through camera in wide)'s screen's x) equals 520.0
 set camera's aspect to 2.0
+set single to a new vector with x (0.0 as a 32 bit floating-point number), y (0.0 as a 32 bit floating-point number) and z (10.0 as a 32 bit floating-point number)
+set camera to a UI scene camera at single aimed at origin with angle 90.0 aspect 2.0 near 1.0 far 11.0
+set grid to a new vector with x 10, y 0 and z 0
+check scene number ((the UI scene projection for grid through camera in viewport)'s screen's x) equals 320.0
 
 # Projection and picking use the same basis and top-left viewport convention.
 for each point in [origin, above, right]:

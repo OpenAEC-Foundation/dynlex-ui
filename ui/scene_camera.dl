@@ -5,6 +5,9 @@ import geometry.dl
 
 UI scene vector means: the type of (a new vector with x 0.0, y 0.0 and z 0.0)
 
+to get [the UI scene vector form of] {vector:value}:
+    return a new vector with x ((the x of value) as a 64 bit floating-point number), y ((the y of value) as a 64 bit floating-point number) and z ((the z of value) as a 64 bit floating-point number)
+
 class:
     patterns:
         UI scene camera
@@ -40,7 +43,7 @@ class:
         distance as a floating-point number
         hit as a boolean
 
-a UI scene camera at {UI scene vector:position} aimed at {UI scene vector:target} with angle {floating-point number:angle} aspect {floating-point number:aspect} near {floating-point number:near} far {floating-point number:far} means: @intrinsic("construct", UI scene camera, position, target, (a new vector with x 0.0, y 1.0 and z 0.0), angle, aspect, near, far)
+a UI scene camera at {vector:position} aimed at {vector:target} with angle {floating-point number:angle} aspect {floating-point number:aspect} near {floating-point number:near} far {floating-point number:far} means: @intrinsic("construct", UI scene camera, (the UI scene vector form of position), (the UI scene vector form of target), (a new vector with x 0.0, y 1.0 and z 0.0), angle, aspect, near, far)
 
 to get [the UI scene view matrix for] {UI scene camera:camera}:
     set forward to camera's target - camera's position
@@ -73,12 +76,13 @@ to get [the UI scene projection matrix for] {UI scene camera:camera}:
 to get [the UI scene view projection for] {UI scene camera:camera}:
     return the graphics product of (the UI scene projection matrix for camera) and (the UI scene view matrix for camera)
 
-to get [the UI scene projection for] {UI scene vector:point} [through] {UI scene camera:camera} [in] {UI bounds:viewport}:
+to get [the UI scene projection for] {vector:point} [through] {UI scene camera:camera} [in] {UI bounds:viewport}:
     require condition ((viewport's width > 0.0) and (viewport's height > 0.0)) reporting "Scene projection requires a nonempty viewport"
     set matrix to the UI scene view projection for camera
-    set x to the x of point
-    set y to the y of point
-    set z to the z of point
+    set position to the UI scene vector form of point
+    set x to the x of position
+    set y to the y of position
+    set z to the z of position
     set horizontal to ((the item at 0 in matrix) * x + (the item at 4 in matrix) * y) + ((the item at 8 in matrix) * z + the item at 12 in matrix)
     set vertical to ((the item at 1 in matrix) * x + (the item at 5 in matrix) * y) + ((the item at 9 in matrix) * z + the item at 13 in matrix)
     set depth to ((the item at 2 in matrix) * x + (the item at 6 in matrix) * y) + ((the item at 10 in matrix) * z + the item at 14 in matrix)
