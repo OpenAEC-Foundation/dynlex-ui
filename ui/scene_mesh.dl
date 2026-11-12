@@ -1,0 +1,76 @@
+# Immutable, indexed geometry shared by renderers, scene instances and CPU picking.
+import lib/sequence.dl
+import scene_camera.dl
+
+class:
+    patterns:
+        UI mesh vertex
+    members:
+        x as a 32 bit floating-point number
+        y as a 32 bit floating-point number
+        z as a 32 bit floating-point number
+        nx as a 32 bit floating-point number
+        ny as a 32 bit floating-point number
+        nz as a 32 bit floating-point number
+        u as a 32 bit floating-point number
+        v as a 32 bit floating-point number
+
+UI mesh vertices means: the type of (an empty sequence of UI mesh vertex)
+UI mesh indices means: the type of (an empty sequence of a 32 bit unsigned integer)
+
+class:
+    patterns:
+        UI mesh bounds
+    members:
+        minimum as UI scene vector
+        maximum as UI scene vector
+
+class:
+    patterns:
+        UI scene mesh
+    members:
+        vertices as UI mesh vertices
+        indices as UI mesh indices
+        bounds as UI mesh bounds
+
+to get [the UI mesh position of] {UI mesh vertex:vertex}:
+    return a new vector with x (vertex's x as a 64 bit floating-point number), y (vertex's y as a 64 bit floating-point number) and z (vertex's z as a 64 bit floating-point number)
+
+to get [the UI mesh normal of] {UI mesh vertex:vertex}:
+    return a new vector with x (vertex's nx as a 64 bit floating-point number), y (vertex's ny as a 64 bit floating-point number) and z (vertex's nz as a 64 bit floating-point number)
+
+to [append UI mesh vertex at] {vector:position} [normal] {vector:normal} [uv] {floating-point number:u} {floating-point number:v} [to] {a pointer to a list:vertices}:
+    set vertex to a new UI mesh vertex
+    set vertex's x to (the x of position) as a 32 bit floating-point number
+    set vertex's y to (the y of position) as a 32 bit floating-point number
+    set vertex's z to (the z of position) as a 32 bit floating-point number
+    set vertex's nx to (the x of normal) as a 32 bit floating-point number
+    set vertex's ny to (the y of normal) as a 32 bit floating-point number
+    set vertex's nz to (the z of normal) as a 32 bit floating-point number
+    set vertex's u to u as a 32 bit floating-point number
+    set vertex's v to v as a 32 bit floating-point number
+    require condition (((vertex's x is finite) and ((vertex's y is finite) and (vertex's z is finite))) and (((vertex's nx is finite) and ((vertex's ny is finite) and (vertex's nz is finite))) and ((vertex's u is finite) and (vertex's v is finite)))) reporting "Scene mesh components must be finite float32 values"
+    append vertex to vertices
+
+to [append UI mesh triangle] {integer:first} {integer:second} {integer:third} [to] {a pointer to a list:indices}:
+    require condition ((0 <= first <= 4294967295) and ((0 <= second <= 4294967295) and (0 <= third <= 4294967295))) reporting "Scene mesh indices must fit in uint32"
+    append (first as a 32 bit unsigned integer) to indices
+    append (second as a 32 bit unsigned integer) to indices
+    append (third as a 32 bit unsigned integer) to indices
+
+# Transfer storage from reusable builders, leaving both builders valid and empty.
+to get [a UI scene mesh taking vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+    require condition (((the length of indices) % 3) = 0) reporting "Scene mesh triangles require three indices"
+    for each index in indices:
+        require condition (index < (the length of vertices)) reporting "A scene mesh index does not reference a vertex"
+    set bounds to a new UI mesh bounds
+    if (the length of vertices) > 0:
+        set first to the UI mesh position of (the item at 0 in vertices)
+        set bounds' minimum to first
+        set bounds' maximum to first
+        for each vertex in vertices:
+            set low to bounds' minimum
+            set high to bounds' maximum
+            set bounds' minimum to a new vector with x (the minimum of (the x of low) and (vertex's x)), y (the minimum of (the y of low) and (vertex's y)) and z (the minimum of (the z of low) and (vertex's z))
+            set bounds' maximum to a new vector with x (the maximum of (the x of high) and (vertex's x)), y (the maximum of (the y of high) and (vertex's y)) and z (the maximum of (the z of high) and (vertex's z))
+    return @intrinsic("construct", UI scene mesh, (a sequence taking the items from vertices), (a sequence taking the items from indices), bounds)

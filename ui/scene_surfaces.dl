@@ -1,0 +1,86 @@
+# Unit planes and boxes use independent face normals and texture seams.
+import scene_mesh.dl
+
+to [append UI mesh grid at] {vector:center} [across] {vector:across} [up] {vector:up} [with] {integer:columns} [by] {integer:rows} [segments to vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+    set base to the length of vertices
+    set normal to (the cross product of across and up) normalized
+    set row to 0
+    loop while row <= rows:
+        set vertical to (row as a floating-point number) / (rows as a floating-point number)
+        set column to 0
+        loop while column <= columns:
+            set horizontal to (column as a floating-point number) / (columns as a floating-point number)
+            set position to center + across * (horizontal - 0.5) + up * (vertical - 0.5)
+            append UI mesh vertex at position normal normal uv horizontal vertical to vertices
+            increment column
+        increment row
+    set row to 0
+    loop while row < rows:
+        set column to 0
+        loop while column < columns:
+            set first to base + row * (columns + 1) + column
+            set next to first + columns + 1
+            append UI mesh triangle first (first + 1) next to indices
+            append UI mesh triangle (first + 1) (next + 1) next to indices
+            increment column
+        increment row
+
+to get [a UI plane mesh with] {integer:columns} [by] {integer:rows} [segments]:
+    require condition ((columns > 0) and (rows > 0)) reporting "Plane mesh segments must be positive"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set center to a new vector with x 0.0, y 0.0 and z 0.0
+    set across to a new vector with x 1.0, y 0.0 and z 0.0
+    set up to a new vector with x 0.0, y 1.0 and z 0.0
+    append UI mesh grid at center across across up up with columns by rows segments to vertices vertices and indices indices
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result
+
+to get [a UI box mesh with] {integer:columns} [by] {integer:rows} [by] {integer:layers} [segments]:
+    require condition ((columns > 0) and ((rows > 0) and (layers > 0))) reporting "Box mesh segments must be positive"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set right to a new vector with x 1.0, y 0.0 and z 0.0
+    set left to a new vector with x -1.0, y 0.0 and z 0.0
+    set up to a new vector with x 0.0, y 1.0 and z 0.0
+    set down to a new vector with x 0.0, y -1.0 and z 0.0
+    set front to a new vector with x 0.0, y 0.0 and z 1.0
+    set back to a new vector with x 0.0, y 0.0 and z -1.0
+    append UI mesh grid at (front * 0.5) across right up up with columns by rows segments to vertices vertices and indices indices
+    append UI mesh grid at (back * 0.5) across left up up with columns by rows segments to vertices vertices and indices indices
+    append UI mesh grid at (right * 0.5) across back up up with layers by rows segments to vertices vertices and indices indices
+    append UI mesh grid at (left * 0.5) across front up up with layers by rows segments to vertices vertices and indices indices
+    append UI mesh grid at (up * 0.5) across right up back with columns by layers segments to vertices vertices and indices indices
+    append UI mesh grid at (down * 0.5) across right up front with columns by layers segments to vertices vertices and indices indices
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result
+
+to get [a UI ring mesh with inner] {floating-point number:inner} [outer] {floating-point number:outer} [around] {integer:sides} [sides]:
+    require condition (((inner is finite) and (outer is finite)) and ((0.0 <= inner < outer) and (sides >= 3))) reporting "Ring meshes require finite ordered radii and at least three sides"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set normal to a new vector with x 0.0, y 0.0 and z 1.0
+    for each radius in [inner, outer]:
+        set side to 0
+        loop while side <= sides:
+            set angle to 6.2831853071795864769 * ((side as a floating-point number) / (sides as a floating-point number))
+            set x to radius * (the cosine of angle)
+            set y to radius * (the sine of angle)
+            set position to a new vector with x x, y y and z 0.0
+            append UI mesh vertex at position normal normal uv ((x / outer) * 0.5 + 0.5) ((y / outer) * 0.5 + 0.5) to vertices
+            increment side
+    set side to 0
+    loop while side < sides:
+        set next to side + sides + 1
+        if inner > 0.0:
+            append UI mesh triangle side next (side + 1) to indices
+        append UI mesh triangle (side + 1) next (next + 1) to indices
+        increment side
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result

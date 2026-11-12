@@ -1,0 +1,139 @@
+# Y-up spheres and tapered cylinders; XY tori retain an arbitrary open arc.
+import scene_mesh.dl
+
+to get [a UI sphere mesh with] {integer:slices} [slices and] {integer:stacks} [stacks]:
+    require condition ((slices >= 3) and (stacks >= 2)) reporting "Sphere meshes require at least three slices and two stacks"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set row to 0
+    loop while row <= stacks:
+        set vertical to (row as a floating-point number) / (stacks as a floating-point number)
+        set latitude to 3.1415926535897932385 * vertical
+        set radius to the sine of latitude
+        set height to the cosine of latitude
+        if (row = 0) or (row = stacks):
+            set radius to 0.0
+        set column to 0
+        loop while column <= slices:
+            set horizontal to (column as a floating-point number) / (slices as a floating-point number)
+            set longitude to 6.2831853071795864769 * horizontal
+            set position to a new vector with x (radius * (the sine of longitude)), y height and z (radius * (the cosine of longitude))
+            append UI mesh vertex at position normal position uv horizontal (1.0 - vertical) to vertices
+            increment column
+        increment row
+    set row to 0
+    loop while row < stacks:
+        set column to 0
+        loop while column < slices:
+            set first to row * (slices + 1) + column
+            set next to first + slices + 1
+            if row > 0:
+                append UI mesh triangle first next (first + 1) to indices
+            if row < (stacks - 1):
+                append UI mesh triangle (first + 1) next (next + 1) to indices
+            increment column
+        increment row
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result
+
+to [append UI cylinder cap with radius] {floating-point number:radius} [at height] {floating-point number:height} [facing] {floating-point number:direction} [around] {integer:sides} [sides to vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+    set base to the length of vertices
+    set center to a new vector with x 0.0, y height and z 0.0
+    set normal to a new vector with x 0.0, y direction and z 0.0
+    append UI mesh vertex at center normal normal uv 0.5 0.5 to vertices
+    set side to 0
+    loop while side <= sides:
+        set angle to 6.2831853071795864769 * ((side as a floating-point number) / (sides as a floating-point number))
+        set horizontal to the sine of angle
+        set vertical to the cosine of angle
+        set position to a new vector with x (radius * horizontal), y height and z (radius * vertical)
+        append UI mesh vertex at position normal normal uv (horizontal * 0.5 + 0.5) (vertical * direction * 0.5 + 0.5) to vertices
+        increment side
+    set side to 0
+    loop while side < sides:
+        if direction > 0.0:
+            append UI mesh triangle base (base + side + 1) (base + side + 2) to indices
+        else:
+            append UI mesh triangle base (base + side + 2) (base + side + 1) to indices
+        increment side
+
+to get [a UI cylinder mesh with top] {floating-point number:top} [bottom] {floating-point number:bottom} [height] {floating-point number:height} [around] {integer:sides} [sides capped] {boolean:capped}:
+    require condition (((top is finite) and ((bottom is finite) and (height is finite))) and (((top >= 0.0) and (bottom >= 0.0)) and ((top + bottom > 0.0) and ((height > 0.0) and (sides >= 3))))) reporting "Cylinder meshes require finite nonnegative radii, positive height and at least three sides"
+    require condition (((height * 0.5) as a 32 bit floating-point number) > 0.0) reporting "Cylinder mesh height must remain positive in float32 vertices"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set slope to (bottom - top) / height
+    set row to 0
+    loop while row < 2:
+        set radius to bottom
+        set vertical to -0.5 * height
+        if row = 1:
+            set radius to top
+            set vertical to 0.5 * height
+        set side to 0
+        loop while side <= sides:
+            set horizontal to (side as a floating-point number) / (sides as a floating-point number)
+            set angle to 6.2831853071795864769 * horizontal
+            set x to the sine of angle
+            set z to the cosine of angle
+            set position to a new vector with x (radius * x), y vertical and z (radius * z)
+            set normal to (a new vector with x x, y slope and z z) normalized
+            append UI mesh vertex at position normal normal uv horizontal (row as a floating-point number) to vertices
+            increment side
+        increment row
+    set side to 0
+    loop while side < sides:
+        set next to side + sides + 1
+        if bottom > 0.0:
+            append UI mesh triangle side (side + 1) next to indices
+        if top > 0.0:
+            append UI mesh triangle (side + 1) (next + 1) next to indices
+        increment side
+    if capped:
+        if top > 0.0:
+            append UI cylinder cap with radius top at height (height * 0.5) facing 1.0 around sides sides to vertices vertices and indices indices
+        if bottom > 0.0:
+            append UI cylinder cap with radius bottom at height (height * -0.5) facing -1.0 around sides sides to vertices vertices and indices indices
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result
+
+to get [a UI torus mesh with radius] {floating-point number:radius} [tube] {floating-point number:tube} [around] {integer:slices} [slices and] {integer:sides} [sides swept through] {floating-point number:degrees} [degrees]:
+    require condition (((radius is finite) and ((tube is finite) and (degrees is finite))) and ((0.0 < tube < radius) and ((0.0 < degrees <= 360.0) and ((slices >= 3) and (sides >= 3))))) reporting "Torus meshes require ordered positive radii, a finite arc up to 360 degrees and at least three segments per direction"
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set sweep to degrees * 0.017453292519943295769
+    set row to 0
+    loop while row <= sides:
+        set vertical to (row as a floating-point number) / (sides as a floating-point number)
+        set around to 6.2831853071795864769 * vertical
+        set cosine to the cosine of around
+        set sine to the sine of around
+        set column to 0
+        loop while column <= slices:
+            set horizontal to (column as a floating-point number) / (slices as a floating-point number)
+            set angle to sweep * horizontal
+            set x to the cosine of angle
+            set y to the sine of angle
+            set position to a new vector with x ((radius + tube * cosine) * x), y ((radius + tube * cosine) * y) and z (tube * sine)
+            set normal to a new vector with x (cosine * x), y (cosine * y) and z sine
+            append UI mesh vertex at position normal normal uv horizontal vertical to vertices
+            increment column
+        increment row
+    set row to 0
+    loop while row < sides:
+        set column to 0
+        loop while column < slices:
+            set first to row * (slices + 1) + column
+            set next to first + slices + 1
+            append UI mesh triangle first (first + 1) next to indices
+            append UI mesh triangle (first + 1) (next + 1) next to indices
+            increment column
+        increment row
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result

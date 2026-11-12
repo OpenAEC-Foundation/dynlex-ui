@@ -1,0 +1,99 @@
+import ../../../ui/scene_surfaces.dl
+import ../../../ui/scene_round_meshes.dl
+
+to check mesh number {floating-point number:actual} equals {floating-point number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "A shared scene mesh component changed."
+
+to check mesh {UI scene mesh:mesh} has {integer:vertex count} vertices and {integer:triangle count} triangles:
+    require condition ((the length of mesh's vertices) = vertex count) reporting "A scene mesh has the wrong vertex count."
+    require condition ((the length of mesh's indices) = (triangle count * 3)) reporting "A scene mesh has the wrong triangle count."
+    for each vertex in mesh's vertices:
+        set position to the UI mesh position of vertex
+        set normal to the UI mesh normal of vertex
+        require condition (((the x of position) is finite) and (((the y of position) is finite) and ((the z of position) is finite))) reporting "A mesh position is not finite."
+        check mesh number (the length of normal) equals 1.0
+        require condition ((0.0 <= vertex's u <= 1.0) and (0.0 <= vertex's v <= 1.0)) reporting "A generated mesh texture coordinate is outside its surface."
+    set index to 0
+    loop while index < the length of mesh's indices:
+        set first to the item at (the item at index in mesh's indices) in mesh's vertices
+        set second to the item at (the item at (index + 1) in mesh's indices) in mesh's vertices
+        set third to the item at (the item at (index + 2) in mesh's indices) in mesh's vertices
+        set edge to (the UI mesh position of second) - (the UI mesh position of first)
+        set side to (the UI mesh position of third) - (the UI mesh position of first)
+        set area to the cross product of edge and side
+        require condition ((the length of area) > 0.00000001) reporting "A generated mesh contains a degenerate triangle."
+        set normal to (the UI mesh normal of first) + (the UI mesh normal of second) + (the UI mesh normal of third)
+        require condition ((the dot product of area and normal) > 0.0) reporting "A mesh triangle faces away from its vertex normals."
+        set index to index + 3
+
+to check mesh {UI scene mesh:mesh} fits x {floating-point number:x} y {floating-point number:y} z {floating-point number:z}:
+    for each vertex in mesh's vertices:
+        require condition ((the absolute value of vertex's x) <= (x + 0.00001)) reporting "A mesh exceeded its horizontal extent."
+        require condition ((the absolute value of vertex's y) <= (y + 0.00001)) reporting "A mesh exceeded its vertical extent."
+        require condition ((the absolute value of vertex's z) <= (z + 0.00001)) reporting "A mesh exceeded its depth extent."
+
+require condition ((the size of UI mesh vertex) = 32) reporting "Scene vertices must use the portable position/normal/UV float32 layout."
+set plane to a UI plane mesh with 2 by 3 segments
+check mesh plane has 12 vertices and 12 triangles
+check mesh plane fits x 0.5 y 0.5 z 0.0
+for each vertex in plane's vertices:
+    check mesh number (vertex's x) equals (vertex's u - 0.5)
+    check mesh number (vertex's y) equals (vertex's v - 0.5)
+    check mesh number (vertex's nz) equals 1.0
+
+set box to a UI box mesh with 1 by 1 by 1 segments
+check mesh box has 24 vertices and 12 triangles
+check mesh box fits x 0.5 y 0.5 z 0.5
+set water to a UI box mesh with 5 by 1 by 5 segments
+check mesh water has 120 vertices and 140 triangles
+check mesh water fits x 0.5 y 0.5 z 0.5
+
+set sphere to a UI sphere mesh with 10 slices and 7 stacks
+check mesh sphere has 88 vertices and 120 triangles
+check mesh sphere fits x 1.0 y 1.0 z 1.0
+for each vertex in sphere's vertices:
+    check mesh number (the length of (the UI mesh position of vertex)) equals 1.0
+    check mesh number (the length of ((the UI mesh position of vertex) - (the UI mesh normal of vertex))) equals 0.0
+set sphere to a UI sphere mesh with 3 slices and 2 stacks
+check mesh sphere has 12 vertices and 6 triangles
+
+set cylinder to a UI cylinder mesh with top 1.0 bottom 1.0 height 1.0 around 10 sides capped true
+check mesh cylinder has 46 vertices and 40 triangles
+check mesh cylinder fits x 1.0 y 0.5 z 1.0
+set open to a UI cylinder mesh with top 1.0 bottom 1.0 height 1.0 around 10 sides capped false
+check mesh open has 22 vertices and 20 triangles
+set cone to a UI cylinder mesh with top 0.0 bottom 1.0 height 1.0 around 7 sides capped true
+check mesh cone has 25 vertices and 14 triangles
+check mesh cone fits x 1.0 y 0.5 z 1.0
+set cone to a UI cylinder mesh with top 1.0 bottom 0.0 height 1.0 around 7 sides capped true
+check mesh cone has 25 vertices and 14 triangles
+set stump to a UI cylinder mesh with top 0.1 bottom 0.16 height 0.19 around 9 sides capped true
+check mesh stump has 42 vertices and 36 triangles
+check mesh stump fits x 0.16 y 0.095 z 0.16
+set vertex to the item at 0 in stump's vertices
+set expected to (a new vector with x 0.0, y (0.06 / 0.19) and z 1.0) normalized
+check mesh number (vertex's ny) equals (the y of expected)
+check mesh number (vertex's nz) equals (the z of expected)
+
+set torus to a UI torus mesh with radius 1.0 tube 0.24 around 12 slices and 7 sides swept through 360.0 degrees
+check mesh torus has 104 vertices and 168 triangles
+check mesh torus fits x 1.24 y 1.24 z 0.24
+set handle to a UI torus mesh with radius 0.095 tube 0.01 around 12 slices and 4 sides swept through 180.0 degrees
+check mesh handle has 65 vertices and 96 triangles
+for each vertex in handle's vertices:
+    require condition (vertex's y >= -0.00001) reporting "A partial torus closed across the missing arc."
+
+set ring to a UI ring mesh with inner 0.32 outer 0.4 around 32 sides
+check mesh ring has 66 vertices and 64 triangles
+check mesh ring fits x 0.4 y 0.4 z 0.0
+set disk to a UI ring mesh with inner 0.0 outer 1.0 around 8 sides
+check mesh disk has 18 vertices and 8 triangles
+
+# Mesh values own their data independently of builders and share immutable copies.
+set copy to sphere
+set sphere to a UI sphere mesh with 10 slices and 8 stacks
+check mesh copy has 12 vertices and 6 triangles
+check mesh sphere has 99 vertices and 140 triangles
+set empty to a new UI scene mesh
+require condition (((the length of empty's vertices) = 0) and ((the length of empty's indices) = 0)) reporting "An empty scene mesh is not a valid owning value."
+print line "Scene meshes own portable indexed vertices with outward normals, UVs, segmented boxes, spheres, tapered cylinders, partial tori and rings."

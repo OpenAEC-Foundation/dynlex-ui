@@ -1,0 +1,118 @@
+# Flat solids retain independent face normals and UV seams.
+import scene_mesh.dl
+
+to [append UI mesh flat triangle] {vector:first} {vector:second} {vector:third} [to vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+    set normal to (the cross product of (second - first) and (third - first)) normalized
+    set base to the length of vertices
+    append UI mesh vertex at first normal normal uv 0.0 0.0 to vertices
+    append UI mesh vertex at second normal normal uv 1.0 0.0 to vertices
+    append UI mesh vertex at third normal normal uv 0.5 1.0 to vertices
+    append UI mesh triangle base (base + 1) (base + 2) to indices
+
+to get [a UI icosahedron mesh]:
+    set ratio to (1.0 + the square root of 5.0) * 0.5
+    set points to [(a new vector with x -1.0, y ratio and z 0.0) normalized,
+        (a new vector with x 1.0, y ratio and z 0.0) normalized,
+        (a new vector with x -1.0, y (0.0 - ratio) and z 0.0) normalized,
+        (a new vector with x 1.0, y (0.0 - ratio) and z 0.0) normalized,
+        (a new vector with x 0.0, y -1.0 and z ratio) normalized,
+        (a new vector with x 0.0, y 1.0 and z ratio) normalized,
+        (a new vector with x 0.0, y -1.0 and z (0.0 - ratio)) normalized,
+        (a new vector with x 0.0, y 1.0 and z (0.0 - ratio)) normalized,
+        (a new vector with x ratio, y 0.0 and z -1.0) normalized,
+        (a new vector with x ratio, y 0.0 and z 1.0) normalized,
+        (a new vector with x (0.0 - ratio), y 0.0 and z -1.0) normalized,
+        (a new vector with x (0.0 - ratio), y 0.0 and z 1.0) normalized]
+    set faces to [0,11,5, 0,5,1, 0,1,7, 0,7,10, 0,10,11,
+        1,5,9, 5,11,4, 11,10,2, 10,7,6, 7,1,8,
+        3,9,4, 3,4,2, 3,2,6, 3,6,8, 3,8,9,
+        4,9,5, 2,4,11, 6,2,10, 8,6,7, 9,8,1]
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set index to 0
+    loop while index < the length of faces:
+        set first to the item at (the item at index in faces) in points
+        set second to the item at (the item at (index + 1) in faces) in points
+        set third to the item at (the item at (index + 2) in faces) in points
+        append UI mesh flat triangle first second third to vertices vertices and indices indices
+        set index to index + 3
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result
+
+to get [the UI polygon side of] {UI point:point} [from] {UI point:first} [to] {UI point:second}:
+    return (second's x - first's x) * (point's y - first's y) - (second's y - first's y) * (point's x - first's x)
+
+to get [a UI convex prism mesh from] {a value:points} [with depth] {floating-point number:depth}:
+    set count to the length of points
+    require condition ((count >= 3) and ((depth is finite) and (depth > 0.0))) reporting "Convex prism meshes require at least three points and a finite positive depth"
+    require condition ((depth as a 32 bit floating-point number) > 0.0) reporting "Prism mesh depth must remain positive in float32 vertices"
+    set start to the item at 0 in points
+    set left to start's x
+    set right to start's x
+    set bottom to start's y
+    set top to start's y
+    set area to 0.0
+    set index to 0
+    loop while index < count:
+        set first to the item at index in points
+        set second to the item at ((index + 1) % count) in points
+        require condition ((first's x is finite) and (first's y is finite)) reporting "Prism mesh points must be finite"
+        set area to area + (first's x * second's y - second's x * first's y)
+        set left to the minimum of left and (first's x)
+        set right to the maximum of right and (first's x)
+        set bottom to the minimum of bottom and (first's y)
+        set top to the maximum of top and (first's y)
+        increment index
+    require condition ((area is finite) and (area != 0.0)) reporting "A convex prism mesh requires a nonzero polygon area"
+    set direction to 1.0
+    if area < 0.0:
+        set direction to -1.0
+    set index to 0
+    loop while index < count:
+        set first to the item at index in points
+        set second to the item at ((index + 1) % count) in points
+        set next to the item at ((index + 2) % count) in points
+        require condition ((direction * (the UI polygon side of next from first to second)) > 0.0) reporting "Prism mesh outlines must be strictly convex"
+        for each point in points:
+            require condition ((direction * (the UI polygon side of point from first to second)) >= 0.0) reporting "Prism mesh outlines must be simple and convex"
+        increment index
+    set vertices to an empty list of UI mesh vertex
+    set indices to an empty list of a 32 bit unsigned integer
+    set cap to 0
+    loop while cap < 2:
+        set normal to a new vector with x 0.0, y 0.0 and z (2.0 * (cap as a floating-point number) - 1.0)
+        for each point in points:
+            set position to a new vector with x (point's x), y (point's y) and z (depth * (cap as a floating-point number))
+            append UI mesh vertex at position normal normal uv ((point's x - left) / (right - left)) ((point's y - bottom) / (top - bottom)) to vertices
+        set index to 1
+        set base to cap * count
+        loop while index < (count - 1):
+            if ((cap = 1) and (direction > 0.0)) or ((cap = 0) and (direction < 0.0)):
+                append UI mesh triangle base (base + index) (base + index + 1) to indices
+            else:
+                append UI mesh triangle base (base + index + 1) (base + index) to indices
+            increment index
+        increment cap
+    set index to 0
+    loop while index < count:
+        set first to the item at index in points
+        set second to the item at ((index + 1) % count) in points
+        set normal to (a new vector with x ((second's y - first's y) * direction), y ((first's x - second's x) * direction) and z 0.0) normalized
+        set base to the length of vertices
+        append UI mesh vertex at (a new vector with x (first's x), y (first's y) and z 0.0) normal normal uv 0.0 0.0 to vertices
+        append UI mesh vertex at (a new vector with x (second's x), y (second's y) and z 0.0) normal normal uv 1.0 0.0 to vertices
+        append UI mesh vertex at (a new vector with x (first's x), y (first's y) and z depth) normal normal uv 0.0 1.0 to vertices
+        append UI mesh vertex at (a new vector with x (second's x), y (second's y) and z depth) normal normal uv 1.0 1.0 to vertices
+        if direction > 0.0:
+            append UI mesh triangle base (base + 1) (base + 2) to indices
+            append UI mesh triangle (base + 1) (base + 3) (base + 2) to indices
+        else:
+            append UI mesh triangle base (base + 2) (base + 1) to indices
+            append UI mesh triangle (base + 1) (base + 2) (base + 3) to indices
+        increment index
+    set result to a UI scene mesh taking vertices vertices and indices indices
+    free vertices
+    free indices
+    return result

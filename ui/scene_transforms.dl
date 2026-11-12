@@ -1,0 +1,69 @@
+# One checked affine transform serves shader instances, normals and local picking.
+import scene_camera.dl
+
+class:
+    patterns:
+        UI scene transform
+    members:
+        matrix as graphics matrix
+        inverse as graphics matrix
+        handedness as a floating-point number
+
+to get [the UI scene vector] {vector:value} [multiplied by] {graphics matrix:matrix} [translated] {boolean:translated}:
+    set converted to the UI scene vector form of value
+    set x to the x of converted
+    set y to the y of converted
+    set z to the z of converted
+    set horizontal to (the item at 0 in matrix) * x + (the item at 4 in matrix) * y + (the item at 8 in matrix) * z
+    set vertical to (the item at 1 in matrix) * x + (the item at 5 in matrix) * y + (the item at 9 in matrix) * z
+    set depth to (the item at 2 in matrix) * x + (the item at 6 in matrix) * y + (the item at 10 in matrix) * z
+    if translated:
+        set horizontal to horizontal + (the item at 12 in matrix)
+        set vertical to vertical + (the item at 13 in matrix)
+        set depth to depth + (the item at 14 in matrix)
+    return a new vector with x horizontal, y vertical and z depth
+
+to get [a UI scene transform from] {graphics matrix:matrix}:
+    for each component in matrix:
+        require condition (component is finite) reporting "Scene transforms require finite matrix components"
+    require condition (((the item at 3 in matrix) = 0.0) and (((the item at 7 in matrix) = 0.0) and (((the item at 11 in matrix) = 0.0) and ((the item at 15 in matrix) = 1.0)))) reporting "Scene model transforms must be affine"
+    set first to the UI scene vector form of (a new vector with x (the item at 0 in matrix), y (the item at 1 in matrix) and z (the item at 2 in matrix))
+    set second to the UI scene vector form of (a new vector with x (the item at 4 in matrix), y (the item at 5 in matrix) and z (the item at 6 in matrix))
+    set third to the UI scene vector form of (a new vector with x (the item at 8 in matrix), y (the item at 9 in matrix) and z (the item at 10 in matrix))
+    set cofactor to the cross product of second and third
+    set determinant to the dot product of first and cofactor
+    require condition (determinant != 0.0) reporting "Scene model transforms must be invertible"
+    set rows to [cofactor / determinant, (the cross product of third and first) / determinant, (the cross product of first and second) / determinant]
+    set translation to the UI scene vector form of (a new vector with x (the item at 12 in matrix), y (the item at 13 in matrix) and z (the item at 14 in matrix))
+    set inverse to an identity graphics matrix
+    set index to 0
+    for each row in rows:
+        store ((the x of row) as a 32 bit floating-point number) into inverse at index
+        store ((the y of row) as a 32 bit floating-point number) into inverse at (index + 4)
+        store ((the z of row) as a 32 bit floating-point number) into inverse at (index + 8)
+        store ((0.0 - the dot product of row and translation) as a 32 bit floating-point number) into inverse at (index + 12)
+        increment index
+    for each component in inverse:
+        require condition (component is finite) reporting "Scene transform inverses must fit in float32"
+    set handedness to 1.0
+    if determinant < 0.0:
+        set handedness to -1.0
+    return @intrinsic("construct", UI scene transform, matrix, inverse, handedness)
+
+the UI scene position of {vector:point} through {UI scene transform:transform} means: the UI scene vector point multiplied by (transform's matrix) translated true
+the UI scene direction of {vector:direction} through {UI scene transform:transform} means: the UI scene vector direction multiplied by (transform's matrix) translated false
+the UI scene position of {vector:point} restored through {UI scene transform:transform} means: the UI scene vector point multiplied by (transform's inverse) translated true
+
+to get [the UI scene normal of] {vector:normal} [through] {UI scene transform:transform}:
+    set converted to the UI scene vector form of normal
+    set inverse to transform's inverse
+    set x to the x of converted
+    set y to the y of converted
+    set z to the z of converted
+    set horizontal to (the item at 0 in inverse) * x + (the item at 1 in inverse) * y + (the item at 2 in inverse) * z
+    set vertical to (the item at 4 in inverse) * x + (the item at 5 in inverse) * y + (the item at 6 in inverse) * z
+    set depth to (the item at 8 in inverse) * x + (the item at 9 in inverse) * y + (the item at 10 in inverse) * z
+    set result to a new vector with x horizontal, y vertical and z depth
+    set magnitude to the length of result
+    require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "Scene normals must be finite nonzero directions"
+    return result / magnitude

@@ -1,0 +1,1 @@
+Scene transforms share affine inverses, inverse-transpose normals, mirrored handedness, bounds and nearest world-distance mesh picking.

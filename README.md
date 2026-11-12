@@ -71,7 +71,8 @@ the application. See
 and [section authoring](docs/sections.md). [Responsive documents](docs/documents.md)
 cover appearances, rich paragraphs, editors and tab groups. [Shader surfaces](docs/shaders.md)
 cover typed vertex streams, instanced draw records and the shared driver API.
-[Scene cameras](docs/scenes.md) share camera matrices, label projection and picking.
+[Scene geometry](docs/scenes.md) shares indexed mesh primitives, camera matrices,
+label projection and picking.
 Each demo keeps its description, application
 behavior and platform entry points separate.
 

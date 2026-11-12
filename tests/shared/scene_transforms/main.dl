@@ -1,0 +1,88 @@
+import ../../../ui/scene_mesh_picking.dl
+import ../../../ui/scene_surfaces.dl
+
+to check transformed number {floating-point number:actual} equals {floating-point number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "A shared scene transform or mesh pick changed."
+
+to check transformed vector {vector:actual} equals {vector:expected}:
+    check transformed number (the length of (actual - expected)) equals 0.0
+
+set scale to a graphics scale by x 2.0 y 3.0 z 4.0
+set rotation to a graphics rotation of 90.0 degrees around x 0.0 y 0.0 z 1.0
+set translation to a graphics translation by x 10.0 y 2.0 z -3.0
+set model to the graphics product of translation and (the graphics product of rotation and scale)
+set transform to a UI scene transform from model
+set x to a new vector with x 1.0, y 0.0 and z 0.0
+set position to the UI scene position of x through transform
+check transformed vector position equals (a new vector with x 10.0, y 4.0 and z -3.0)
+check transformed vector (the UI scene position of position restored through transform) equals x
+check transformed vector (the UI scene direction of x through transform) equals (a new vector with x 0.0, y 2.0 and z 0.0)
+set normal to a new vector with x 1.0, y 1.0 and z 0.0
+set expected to (a new vector with x (0.0 - 1.0 / 3.0), y 0.5 and z 0.0) normalized
+check transformed vector (the UI scene normal of normal through transform) equals expected
+set identity to the graphics product of (transform's matrix) and (transform's inverse)
+set {identity matrix} to an identity graphics matrix
+set index to 0
+loop while index < 16:
+    check transformed number (the item at index in identity) equals (the item at index in identity matrix)
+    increment index
+check transformed number (transform's handedness) equals 1.0
+check transformed vector (the UI scene direction of (a new vector with x 1, y 0 and z 0) through transform) equals (a new vector with x 0.0, y 2.0 and z 0.0)
+
+# Normals remain perpendicular to both surface tangents under shear.
+set shear to an identity graphics matrix
+store (0.5 as a 32 bit floating-point number) into shear at 4
+set transform to a UI scene transform from shear
+set tangent to a new vector with x 0.0, y 1.0 and z 0.0
+set normal to the UI scene normal of x through transform
+check transformed number (the dot product of normal and (the UI scene direction of tangent through transform)) equals 0.0
+check transformed number (the length of normal) equals 1.0
+set transform to a UI scene transform from (a graphics scale by x -2.0 y 3.0 z 4.0)
+check transformed vector (the UI scene normal of x through transform) equals (a new vector with x -1.0, y 0.0 and z 0.0)
+check transformed number (transform's handedness) equals -1.0
+
+set box to a UI box mesh with 1 by 1 by 1 segments
+check transformed number (box's bounds' minimum's x) equals -0.5
+check transformed number (box's bounds' maximum's z) equals 0.5
+set model to the graphics product of (a graphics translation by x 1.0 y 2.0 z 3.0) and (a graphics scale by x 2.0 y 4.0 z 6.0)
+set transform to a UI scene transform from model
+set ray to a new UI scene ray
+set ray's origin to a new vector with x 1.0, y 2.0 and z 20.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -2.0
+set hit to the UI scene hit from ray on mesh box through transform including backfaces false
+require condition (hit's hit) reporting "A ray missed a transformed box."
+check transformed vector (hit's point) equals (a new vector with x 1.0, y 2.0 and z 6.0)
+check transformed number (hit's distance) equals 14.0
+set ray's origin to a new vector with x 2.0, y 2.0 and z 20.0
+require condition ((the UI scene hit from ray on mesh box through transform including backfaces false)'s hit) reporting "A ray on a box boundary was incorrectly culled."
+set ray's origin to a new vector with x 10.0, y 2.0 and z 20.0
+require condition (((the UI scene hit from ray on mesh box through transform including backfaces false)'s hit) = false) reporting "A parallel ray outside the mesh bounds reported a hit."
+set ray's origin to a new vector with x 1.0, y 2.0 and z 20.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z 1.0
+require condition (((the UI scene hit from ray on mesh box through transform including backfaces true)'s hit) = false) reporting "A mesh behind the ray reported a hit."
+set ray's origin to a new vector with x 1.0, y 2.0 and z 3.0
+require condition (((the UI scene hit from ray on mesh box through transform including backfaces false)'s hit) = false) reporting "An inside ray selected a backface of a closed mesh."
+set hit to the UI scene hit from ray on mesh box through transform including backfaces true
+require condition (hit's hit) reporting "An inside ray missed a two-sided mesh."
+check transformed number (hit's distance) equals 3.0
+
+set rotation to a graphics rotation of 45.0 degrees around x 0.0 y 1.0 z 0.0
+set model to the graphics product of rotation and (a graphics scale by x 2.0 y 4.0 z 6.0)
+set transform to a UI scene transform from model
+set ray's origin to a new vector with x 0.0, y 0.0 and z 10.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -1.0
+set hit to the UI scene hit from ray on mesh box through transform including backfaces false
+require condition (hit's hit) reporting "A ray missed a rotated and unevenly scaled mesh."
+check transformed number (hit's point's z) equals (the square root of 2.0)
+check transformed number (hit's distance) equals (10.0 - the square root of 2.0)
+
+# Mirroring preserves the mesh's outward-facing side, as in scene rendering.
+set transform to a UI scene transform from (a graphics scale by x -2.0 y 3.0 z 4.0)
+set ray's origin to a new vector with x 0.0, y 0.0 and z 10.0
+set ray's direction to a new vector with x 0.0, y 0.0 and z -1.0
+set hit to the UI scene hit from ray on mesh box through transform including backfaces false
+require condition (hit's hit) reporting "Mirroring inverted a mesh's outward-facing side."
+check transformed number (hit's distance) equals 8.0
+set empty to a new UI scene mesh
+require condition (((the UI scene hit from ray on mesh empty through transform including backfaces true)'s hit) = false) reporting "An empty scene mesh reported a hit."
+print line "Scene transforms share affine inverses, inverse-transpose normals, mirrored handedness, bounds and nearest world-distance mesh picking."

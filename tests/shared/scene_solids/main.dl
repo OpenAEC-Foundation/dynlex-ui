@@ -1,0 +1,50 @@
+import ../../../ui/scene_solids.dl
+
+to check solid number {floating-point number:actual} equals {floating-point number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "A shared solid mesh component changed."
+
+to check solid {UI scene mesh:mesh} has {integer:count} triangles enclosing {floating-point number:volume}:
+    require condition ((the length of mesh's indices) = (count * 3)) reporting "A solid has the wrong triangle count."
+    set total to 0.0
+    set index to 0
+    loop while index < the length of mesh's indices:
+        set first to the item at (the item at index in mesh's indices) in mesh's vertices
+        set second to the item at (the item at (index + 1) in mesh's indices) in mesh's vertices
+        set third to the item at (the item at (index + 2) in mesh's indices) in mesh's vertices
+        set start to the UI mesh position of first
+        set middle to the UI mesh position of second
+        set end to the UI mesh position of third
+        set area to the cross product of (middle - start) and (end - start)
+        require condition ((the length of area) > 0.00000001) reporting "A solid contains a degenerate face."
+        set normal to the UI mesh normal of first
+        require condition ((the dot product of area and normal) > 0.0) reporting "A solid face has inward winding."
+        check solid number (the length of normal) equals 1.0
+        check solid number (the length of (normal - (the UI mesh normal of second))) equals 0.0
+        check solid number (the length of (normal - (the UI mesh normal of third))) equals 0.0
+        set total to total + (the dot product of start and (the cross product of middle and end)) / 6.0
+        set index to index + 3
+    check solid number total equals volume
+
+set left to a UI point at -0.43 and 0.0
+set right to a UI point at 0.43 and 0.0
+set peak to a UI point at 0.0 and 0.37
+set house to a UI convex prism mesh from [left, right, peak] with depth 0.76
+check solid house has 8 triangles enclosing (0.86 * 0.37 * 0.76 * 0.5)
+require condition ((the length of house's vertices) = 18) reporting "An extruded gable lost its independent cap or edge normals."
+set reverse to a UI convex prism mesh from [peak, right, left] with depth 0.76
+check solid reverse has 8 triangles enclosing (0.86 * 0.37 * 0.76 * 0.5)
+set first to a UI point at -1.0 and -1.0
+set second to a UI point at 1.0 and -1.0
+set third to a UI point at 1.0 and 1.0
+set fourth to a UI point at -1.0 and 1.0
+set square to a UI convex prism mesh from [first, second, third, fourth] with depth 2.0
+check solid square has 12 triangles enclosing 8.0
+require condition ((the length of square's vertices) = 24) reporting "An extruded box must preserve texture seams."
+
+set rock to a UI icosahedron mesh
+check solid rock has 20 triangles enclosing 2.53615071012041
+require condition ((the length of rock's vertices) = 60) reporting "A flat icosahedron must keep independent face normals."
+for each vertex in rock's vertices:
+    check solid number (the length of (the UI mesh position of vertex)) equals 1.0
+    require condition ((0.0 <= vertex's u <= 1.0) and (0.0 <= vertex's v <= 1.0)) reporting "A solid mesh texture coordinate escaped its face."
+print line "Scene solids extrude either winding of convex polygons with independent surface normals and provide unit flat-shaded icosahedra."

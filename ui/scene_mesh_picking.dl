@@ -1,0 +1,53 @@
+# Broad-phase local bounds avoid per-triangle work for actors outside the ray.
+import scene_mesh.dl
+import scene_transforms.dl
+import scene_picking.dl
+
+to get {UI scene ray:ray} [intersects mesh bounds] {UI mesh bounds:bounds}:
+    set starts to [the x of (ray's origin), the y of (ray's origin), the z of (ray's origin)]
+    set directions to [the x of (ray's direction), the y of (ray's direction), the z of (ray's direction)]
+    set minimum to [the x of (bounds' minimum), the y of (bounds' minimum), the z of (bounds' minimum)]
+    set maximum to [the x of (bounds' maximum), the y of (bounds' maximum), the z of (bounds' maximum)]
+    set entry to 0.0
+    set exit to 1.7976931348623157e308
+    set axis to 0
+    loop while axis < 3:
+        set start to the item at axis in starts
+        set direction to the item at axis in directions
+        set low to the item at axis in minimum
+        set high to the item at axis in maximum
+        if direction = 0.0:
+            if (start < low) or (start > high):
+                return false
+        else:
+            set first to (low - start) / direction
+            set second to (high - start) / direction
+            set entry to the maximum of entry and (the minimum of first and second)
+            set exit to the minimum of exit and (the maximum of first and second)
+            if exit < entry:
+                return false
+        increment axis
+    return true
+
+to get [the UI scene hit from] {UI scene ray:ray} [on mesh] {UI scene mesh:mesh} [through] {UI scene transform:transform} [including backfaces] {boolean:backfaces}:
+    set result to a new UI scene hit
+    if (the length of mesh's indices) = 0:
+        return result
+    set local to a new UI scene ray
+    set local's origin to the UI scene position of (ray's origin) restored through transform
+    set local's direction to the UI scene vector (ray's direction) multiplied by (transform's inverse) translated false
+    if (local intersects mesh bounds (mesh's bounds)) = false:
+        return result
+    set index to 0
+    loop while index < the length of mesh's indices:
+        set first to the UI mesh position of (the item at (the item at index in mesh's indices) in mesh's vertices)
+        set second to the UI mesh position of (the item at (the item at (index + 1) in mesh's indices) in mesh's vertices)
+        set third to the UI mesh position of (the item at (the item at (index + 2) in mesh's indices) in mesh's vertices)
+        set candidate to the UI scene hit from local on triangle first second third including backfaces backfaces
+        if (candidate's hit) and (((result's hit) = false) or (candidate's distance < result's distance)):
+            set result to candidate
+        set index to index + 3
+    if result's hit:
+        set result's point to the UI scene position of (result's point) through transform
+        set result's distance to the length of (result's point - ray's origin)
+    return result

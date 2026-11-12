@@ -1,0 +1,1 @@
+Scene solids extrude either winding of convex polygons with independent surface normals and provide unit flat-shaded icosahedra.
