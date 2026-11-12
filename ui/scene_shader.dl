@@ -35,5 +35,5 @@ to get [the UI scene shader world normal]:
     set third to the UI scene shader normal z
     return ((first * (the x of normal) + second * (the y of normal)) + third * (the z of normal)) normalized
 
-to get [the UI scene shader clip position of] {vector:point} [through] {a value:camera}:
+to get [the UI scene shader clip position of] {vector:point} [through] {@intrinsic("matrix", 4, 4, @intrinsic("type", "float", 32)):camera}:
     return @intrinsic("multiply", camera, @intrinsic("construct", @intrinsic("vector", 4), the x of point, the y of point, the z of point, 1.0))
