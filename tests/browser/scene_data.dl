@@ -31,14 +31,19 @@ to get [a scene test screen point] {vector:point} [through] {UI scene camera:cam
 set bank to a UI scene mesh bank
 set first to the span of UI mesh (a scene test triangle) in bank
 set second to the span of UI mesh (a scene test triangle) in bank
-set camera to a UI scene camera at (a new vector with x 0.0, y 0.0 and z 5.0) aimed at (a new vector with x 0.0, y 0.0 and z 0.0) with angle 60.0 aspect 1.0 near 0.1 far 20.0
+set eye to a new vector with x 2.0, y 1.5 and z 5.0
+set camera to a UI scene camera at eye aimed at (a new vector with x 0.0, y 0.0 and z 0.0) with angle 60.0 aspect 1.0 near 0.1 far 20.0
 set records to an empty list of UI scene shader instance
 set expected to a new JSON value of kind the JSON array kind
-set positions to [(a new vector with x 0.0, y 0.0 and z 100.0), (a new vector with x -0.75, y 0.6 and z 0.4), (a new vector with x 0.75, y -0.6 and z 0.0), (a new vector with x -0.75, y 0.6 and z -0.8)]
+set front to a new vector with x -0.75, y 0.6 and z 0.4
+set back to eye + (front - eye) * 1.2
+set positions to [(a new vector with x 0.0, y 0.0 and z 100.0), front, (a new vector with x 0.75, y -0.6 and z 0.0), back]
 set colors to [UI ink 255 255 255, UI ink 128 0 0, UI ink 0 128 0, UI ink 0 0 255]
 loop index from 0 to 4:
     set position to the item at index in positions
     set scale to a new vector with x (-0.8 if index = 2, else 1.2), y 0.7 and z 1.5
+    if index = 3:
+        set scale to scale * 1.2
     set pose to a UI scene pose at position rotated (a new vector with x 0.15, y 0.2 and z 0.25) scaled scale
     set transform to a UI scene transform from (the UI scene matrix for pose)
     set material to a UI scene material with color (the item at index in colors) roughness 0.25 metalness 0.5

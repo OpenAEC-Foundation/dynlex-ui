@@ -192,6 +192,14 @@ Visibility and pickability propagate through parents. Material overrides never
 modify the prototype. `set UI scene root pose in actor to pose` moves every root
 and its descendants together.
 
+An instance also has an identity affine `anchor`. `set UI scene anchor in item
+to transform` attaches an instance to another placement's exact world transform.
+The anchor precedes the root pose and all model-local poses; it supports shear,
+nonuniform scale and mirroring without decomposing them into Euler angles.
+Bounds, picking and shader records use the resulting world placements. Setting
+an unchanged anchor does no work. Set it to a checked identity transform to
+detach while retaining the instance's local root pose.
+
 Instance `extent` contains `bounds` and `present`; an empty or entirely hidden
 model has no extent. `ui/scene_instance_picking.dl` first rejects missed instance
 bounds, then picks its nearest visible, pickable mesh. `the UI scene selection

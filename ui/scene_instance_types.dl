@@ -18,6 +18,7 @@ class:
         dirty as UI scene flag list
         placements as UI scene placement list
         root pose as UI scene pose
+        anchor as graphics matrix
         extent as UI scene extent
         pending as a boolean
         revision as a 64 bit integer
@@ -25,6 +26,23 @@ class:
 to [mark UI scene part] {integer:index} [changed in] {a pointer to UI scene instance:instance}:
     replace item at index index in (instance's dirty) with true
     set instance's pending to true
+
+to [mark UI scene roots changed in] {a pointer to UI scene instance:instance}:
+    set index to 0
+    for each part in (instance's model's parts):
+        if part's parent = -1:
+            mark UI scene part index changed in instance
+        increment index
+
+to [set UI scene anchor in] {a pointer to UI scene instance:instance} [to] {UI scene transform:transform}:
+    set changed to false
+    loop index from 0 to 16:
+        if (the item at index in (instance's anchor)) != (the item at index in (transform's matrix)):
+            set changed to true
+    if changed = false:
+        return nothing
+    set instance's anchor to transform's matrix
+    mark UI scene roots changed in instance
 
 to [set UI scene pose of part] {integer:index} [in] {a pointer to UI scene instance:instance} [to] {UI scene pose:pose}:
     if (the item at index in (instance's poses)) is the same UI scene pose as pose:
@@ -55,8 +73,4 @@ to [set UI scene root pose in] {a pointer to UI scene instance:instance} [to] {U
     if instance's root pose is the same UI scene pose as pose:
         return nothing
     set instance's root pose to pose
-    set index to 0
-    for each part in (instance's model's parts):
-        if part's parent = -1:
-            mark UI scene part index changed in instance
-        increment index
+    mark UI scene roots changed in instance

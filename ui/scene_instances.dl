@@ -4,7 +4,7 @@ import scene_instance_types.dl
 to [refresh UI scene instance] {a pointer to UI scene instance:instance}:
     if (instance's pending) = false:
         return nothing
-    set root to the UI scene matrix for (instance's root pose)
+    set root to the graphics product of (instance's anchor) and (the UI scene matrix for (instance's root pose))
     set index to 0
     for each part in (instance's model's parts):
         set parent to part's parent
@@ -51,6 +51,7 @@ to get [a UI scene instance of] {UI scene model:model}:
     set result's dirty to an empty list of a boolean
     set result's placements to an empty list of UI scene placement
     set result's root pose to an identity UI scene pose
+    set result's anchor to an identity graphics matrix
     set placeholder to a new UI scene placement
     set placeholder's transform to a UI scene transform from (an identity graphics matrix)
     for each part in model's parts:

@@ -1,0 +1,77 @@
+import ../../../ui/scene_instance_picking.dl
+import ../../../ui/scene_surfaces.dl
+import ../../../ui/scene_buffers.dl
+
+to [expect scene anchor value] {a number:actual} [near] {a number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "An anchored scene placement differs from its affine transform"
+
+set root to an identity UI scene pose
+set root's position to a UI scene vector from [1.0,2.0,3.0]
+set child to an identity UI scene pose
+set child's position to a UI scene vector from [0.0,1.0,0.0]
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set material to a UI scene material with color (UI ink 255 255 255) roughness 0.5 metalness 0.0
+set model to a UI scene model from [
+    a UI scene group named "root" under -1 at root,
+    a UI scene mesh part named "shape" under 0 using mesh with material material at child,
+    a UI scene group named "other root" under -1 at child
+]
+set item to a UI scene instance of model
+set independent to a UI scene instance of model
+set matrix to an identity graphics matrix
+store (2.0 as a 32 bit floating-point number) into matrix at 0
+store (0.5 as a 32 bit floating-point number) into matrix at 4
+store (3.0 as a 32 bit floating-point number) into matrix at 5
+store ((-4.0) as a 32 bit floating-point number) into matrix at 10
+store (10.0 as a 32 bit floating-point number) into matrix at 12
+store (20.0 as a 32 bit floating-point number) into matrix at 13
+store (30.0 as a 32 bit floating-point number) into matrix at 14
+set anchor to a UI scene transform from matrix
+set UI scene anchor in item to anchor
+set placed to the UI scene placement of part 1 in item
+expect scene anchor value (the item at 12 in placed's transform's matrix) near 13.5
+expect scene anchor value (the item at 13 in placed's transform's matrix) near 29.0
+expect scene anchor value (the item at 14 in placed's transform's matrix) near 18.0
+expect scene anchor value (placed's transform's handedness) near -1.0
+expect scene anchor value (placed's bounds' minimum's x) near 12.25
+expect scene anchor value (placed's bounds' maximum's x) near 14.75
+expect scene anchor value (placed's bounds' minimum's y) near 27.5
+expect scene anchor value (placed's bounds' maximum's z) near 20.0
+set packed to a UI scene shader instance through (placed's transform) with material material casting shadow true receiving shadow true
+expect scene anchor value (the item at 12 in packed's matrix) near 13.5
+expect scene anchor value (the item at 13 in packed's matrix) near 29.0
+expect scene anchor value (the item at 14 in packed's matrix) near 18.0
+expect scene anchor value (the item at 0 in packed's normals) near 0.5
+expect scene anchor value (the item at 1 in packed's normals) near (-1.0 / 12.0)
+expect scene anchor value (the item at 5 in packed's normals) near (1.0 / 3.0)
+expect scene anchor value (the item at 10 in packed's normals) near -0.25
+set other to the UI scene placement of part 2 in item
+expect scene anchor value (the item at 12 in other's transform's matrix) near 10.5
+expect scene anchor value (the item at 13 in other's transform's matrix) near 23.0
+set ray to @intrinsic("construct", UI scene ray, (a UI scene vector from [13.5,29.0,40.0]), (a UI scene vector from [0.0,0.0,-1.0]))
+set selection to the UI scene selection from ray in item including backfaces false
+require condition ((selection's part = 1) and (selection's hit's hit)) reporting "Picking did not use the attached instance's world transform"
+expect scene anchor value (selection's hit's point's z) near 20.0
+set revision to item's revision
+set UI scene anchor in item to anchor
+refresh UI scene instance item
+require condition (item's revision = revision) reporting "An unchanged attachment invalidated the instance"
+set pose to an identity UI scene pose
+set pose's position to a UI scene vector from [1.0,0.0,0.0]
+set UI scene root pose in item to pose
+set placed to the UI scene placement of part 1 in item
+expect scene anchor value (the item at 12 in placed's transform's matrix) near 15.5
+expect scene anchor value (the item at 13 in placed's transform's matrix) near 29.0
+set other to the UI scene placement of part 2 in item
+expect scene anchor value (the item at 12 in other's transform's matrix) near 12.5
+set placed to the UI scene placement of part 1 in independent
+expect scene anchor value (the item at 12 in placed's transform's matrix) near 1.0
+expect scene anchor value (the item at 13 in placed's transform's matrix) near 3.0
+expect scene anchor value (the item at 14 in placed's transform's matrix) near 3.0
+set UI scene anchor in item to (a UI scene transform from (an identity graphics matrix))
+set placed to the UI scene placement of part 1 in item
+expect scene anchor value (the item at 12 in placed's transform's matrix) near 2.0
+expect scene anchor value (the item at 13 in placed's transform's matrix) near 3.0
+close UI scene instance item
+close UI scene instance independent
+print line "Scene anchors preserve affine attachments, root articulation, bounds, picking and independent instances."
