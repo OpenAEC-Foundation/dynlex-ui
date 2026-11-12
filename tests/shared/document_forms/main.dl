@@ -1,0 +1,95 @@
+import ../../helpers/driver.dl
+import lib/text_scan.dl
+
+appearance form appearance:
+    maximum width is 480
+    padding is 16
+    gap is 12
+    columns are 2
+    when viewport is below 400:
+        columns are 1
+
+appearance field appearance:
+    font size is 18
+    padding is 10
+    minimum height is 44
+    background is UI ink 245 247 249
+    text is UI ink 22 28 36
+    border width is 1
+    border is UI ink 170 180 190
+    corner radius is 6
+
+document form using form appearance:
+    text field "Name" containing "Ada\n" using field appearance
+    switch "Auto save" using field appearance
+    choice field "Mode" choosing "Fast" using field appearance:
+        choice "Fast"
+        choice "Calm"
+    paragraph "After" containing "After the form" using no UI appearance
+    read only text field "Public token" containing "public" using field appearance
+
+set instance to an instance of form
+set window to the address of instance
+set view to a UI view of window sized 600 by 500 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set field to the UI layout labeled "Name" in (view's layout)
+set toggle to the UI layout labeled "Auto save" in (view's layout)
+set choice to the UI layout labeled "Mode" in (view's layout)
+require condition (field's lines != @intrinsic("construct", a pointer to UI text line)) reporting "A document text field has no text layout."
+require condition ((field's content = "Ada") and (field's typeface's size = 18)) reporting "A document field ignored its content or authored font."
+set drawn to (view's window as a pointer to test UI surface)'s drawn
+require condition (((drawn contains "Ada") and (drawn contains "Auto save")) and (drawn contains "Fast")) reporting "A document form did not paint its controls."
+require condition (((field's bounds' height >= 44.0) and (toggle's bounds' height >= 44.0)) and (choice's bounds' height > 0.0)) reporting "Document form controls did not reserve their natural height."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's text focus = field's node) and (view's input context's active)) reporting "Tab did not activate a document field's shared input bridge."
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing " Lovelace" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (field's node) in window)'s text = "Ada Lovelace") reporting "A document field did not use shared text editing."
+require condition ((field's typeface's size = 18) and (field's appearance's padding = 10.0)) reporting "Editing a field discarded its authored appearance."
+queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (field's node) in window)'s text = "Ada") reporting "A document field lost shared undo."
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (field's node) in window)'s text = "Ada") reporting "Enter inserted a newline into a single-line field."
+require condition (view's focused = toggle) reporting "A document field trapped Tab instead of entering the next control."
+queue UI input of kind 3 key 32 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the value of "Auto save" in window) = 1) reporting "A document switch did not share keyboard activation."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's popup = choice) reporting "A document choice field did not open its shared popup."
+queue UI input of kind 3 key 264 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (choice's node) in window)'s text = "Calm") and (view's popup = @intrinsic("construct", a pointer to UI layout))) reporting "A document choice field did not share popup selection."
+set view's width to 300
+ignore update UI view (the address of view)
+require condition (toggle's bounds' y > field's bounds' y) reporting "Document form controls did not stack at their responsive threshold."
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 1 containing "" in (the address of view)
+ignore update UI view (the address of view)
+set the text of "Name" in window to "abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz"
+queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (field's text scroll > 0.0) reporting "A document field did not scroll horizontally to its caret."
+require condition ((view's input context's active) and (view's input context's font's size = 18)) reporting "The document field's input bridge ignored its authored font."
+set left to field's painted bounds' x + field's appearance's padding
+set right to (((field's painted bounds' x + field's bounds' width) - field's appearance's padding) + 2.0)
+require condition ((view's input context's bounds' x >= left) and (view's input context's bounds' x <= right)) reporting "The input bridge caret escaped the scrolled field."
+set the text of "Name" in window to "Grace\nHopper\t"
+require condition ((the UI value for (field's node) in window)'s text = "GraceHopper") reporting "Programmatic field text ignored the single-line input policy."
+set public to the UI layout labeled "Public token" in (view's layout)
+activate UI layout public in (the address of view)
+queue UI input of kind 3 key 65 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "changed" in (the address of view)
+queue UI input of kind 3 key 67 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's window as a pointer to test UI surface)'s copied = "public") reporting "A styled read-only field did not retain selection and copying."
+require condition (((the UI value for (public's node) in window)'s text = "public") and (view's input context's active = false)) reporting "A styled read-only field accepted editing or activated text input."
+close the address of view
+close window
+print line "Responsive form controls share field editing, switch activation, choice selection, authored styles and caret scrolling."

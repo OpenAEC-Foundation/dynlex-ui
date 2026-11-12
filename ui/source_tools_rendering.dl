@@ -7,15 +7,15 @@ import layout_lookup.dl
 to get [the UI source tool anchor in] {a pointer to UI source tools:tools}:
     set view to tools's view
     set layout to the UI layout for element (tools's node) in (view's layout)
-    set anchor to a UI point at (layout's hit bounds' x + 8.0) and (layout's hit bounds' y + 24.0)
+    set anchor to UI box at (layout's hit bounds' x + 8.0) (layout's hit bounds' y + 8.0) sized 1 (layout's typeface's size + 2)
     set run to view's texts
     loop while run != @intrinsic("construct", a pointer to UI text run):
         if (run's generation = view's paint count) and (run's source's element = tools's node):
             set offset to tools's position - run's start
             if (0 <= offset <= run's text's length) and ((offset < run's text's length) or (run's end caret)):
                 set text to the substring of (run's text) from 0 spanning offset bytes
-                set point to a UI point at (run's origin's x + (the width of text using (run's typeface))) and (run's origin's y + 6.0)
-                return UI point point transformed by (run's transform)
+                set box to UI box at (run's origin's x + (the width of text using (run's typeface))) (run's origin's y - run's typeface's size) sized 1 (run's typeface's size + 2)
+                return UI bounds box transformed by (run's transform)
         set run to run's next
     return anchor
 

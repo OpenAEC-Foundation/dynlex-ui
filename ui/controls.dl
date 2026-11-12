@@ -3,6 +3,7 @@ import view.dl
 import ribbon_rendering.dl
 import animation.dl
 import text_field.dl
+import switch_states.dl
 
 to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
     set node to layout's node
@@ -63,17 +64,9 @@ to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with curs
     if node's kind = 17:
         set text to the UI ink (view's theme's text) displayed for node over (view's theme's background) in (view's instance)
         draw UI text ((the UI value for node in (view's instance))'s text) at (box's x) (box's y + 29) with (view's typeface) in text on frame
-        set enabled to (the UI value for node in (view's instance))'s number != 0
-        set destination to 0.0
-        if enabled:
-            set destination to 1.0
-        if (layout's painted = false) or view's instance's reduced motion:
-            set layout's transition to destination
-        else:
-            set layout's transition to UI value (layout's transition) approaching destination at speed 18.0 in view
-        set layout's painted to true
-        set track to UI ink between (UI ink 48 62 73) and (view's theme's accent) at layout's transition
-        set offset to 3.0 + (20.0 * layout's transition)
+        set position to the UI switch position of layout in view
+        set track to UI ink between (UI ink 48 62 73) and (view's theme's accent) at position
+        set offset to 3.0 + (20.0 * position)
         set left to box's x + (box's width - 46)
         draw a glass UI panel (UI box at left (box's y + 12) sized 46 26) with radius 13.0 in track on frame
         draw a UI disc at (a UI point at ((left + offset) + 10.0) and (box's y + 25.0)) with radius 10.0 from (UI ink 255 255 255) to (UI ink 204 220 234) opacity 255 on frame

@@ -1,0 +1,98 @@
+import ../../ui/browser.dl
+
+appearance page appearance:
+    maximum width is 800
+    minimum height is 800
+    padding is 32
+    gap is 20
+    background is UI ink 246 248 252
+    text is UI ink 31 41 55
+    font is "assets/fonts/NotoSans-Regular.ttf"
+    font size is 16
+    when viewport is below 600:
+        padding is 16
+
+appearance title appearance:
+    font is "assets/fonts/NotoSans-SemiBold.ttf"
+    font size is 32
+
+appearance card appearance:
+    padding is 24
+    gap is 16
+    corner radius is 16
+    border width is 1
+    border is UI ink 219 225 234
+    background is UI ink 255 255 255
+
+appearance field appearance:
+    padding is 12
+    font size is 18
+    minimum height is 48
+    corner radius is 8
+
+appearance action appearance:
+    padding is 12
+    minimum height is 44
+    corner radius is 8
+    background is UI ink 31 91 185
+    text is UI ink 255 255 255
+    text is centered
+
+document form workspace using page appearance:
+    paragraph "Title" containing "Your workspace." using title appearance
+    paragraph "Introduction" containing "Make room for the way you work." using no UI appearance
+    region "Preferences" using card appearance:
+        paragraph "Name label" containing "Name" using no UI appearance
+        text field "Name" containing "Ada" using field appearance
+        switch "Auto save" using field appearance
+        paragraph "Mode label" containing "Working style" using no UI appearance
+        choice field "Mode" choosing "Focused" using field appearance:
+            choice "Focused"
+            choice "Calm"
+            choice "Code review"
+            choice "Sketching"
+            choice "Writing"
+            choice "Presenting"
+            choice "Reading"
+            choice "Planning"
+            choice "Reviewing"
+            choice "Learning"
+            choice "Exploring"
+            choice "Resting"
+        paragraph "Summary" containing "Ada · Focused · Auto save off" using no UI appearance
+        (button "Reset preferences") wearing action appearance
+
+to [refresh form summary] {a pointer to UI instance:instance}:
+    set name to (the UI value for (the control labeled "Name" in instance) in instance)'s text
+    set mode to (the UI value for (the control labeled "Mode" in instance) in instance)'s text
+    set automatic to "Auto save on" if (the "Auto save" switch is on in instance), else "Auto save off"
+    set the text of "Summary" in instance to (formatted "{name} · {mode} · {automatic}")
+
+to [reset form preferences] {a pointer to UI instance:instance}:
+    set the text of "Name" in instance to "Ada"
+    set the value of "Auto save" in instance to 0
+    set the text of "Mode" in instance to "Focused"
+    refresh form summary instance
+
+to [close form workspace] {a pointer to UI view:view}:
+    set instance to view's instance
+    close view
+    close instance
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open form workspace:
+    globals:
+        form workspace
+    execute:
+        set instance to storage for one slot initialized with (an instance of form workspace)
+        for each label in ["Name", "Auto save", "Mode"]:
+            bind (the control labeled label in instance) in instance to (the function named "refresh form summary $") for event 0
+        bind (the control labeled "Reset preferences" in instance) in instance to (the function named "reset form preferences $") for event 0
+        set view to storage for one slot initialized with (a UI view of instance sized 800 by 800 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with the browser UI driver)
+        set view's close action to (the function named "close form workspace $") as a pointer
+        run view
+
+open form workspace

@@ -6,14 +6,22 @@ to refresh UI text geometry for {a pointer to UI text source:source} in {a point
     set layout to the UI layout for element (source's element) in (view's layout)
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "Editable text has no retained layout"
     set content to the presented UI text of source in view
-    if (layout's content = content) and (layout's lines != @intrinsic("construct", a pointer to UI text line)):
+    set changed to false
+    if (layout's node's kind = 39) and (view's instance's description's kind != 40):
+        set changed to ((@intrinsic("equal", layout's typeface's resource, view's typeface's resource)) = false) or (layout's typeface's size != view's typeface's size)
+        set layout's typeface to view's typeface
+        set layout's appearance to default UI appearance settings
+        set layout's appearance's foreground to view's theme's text
+    if ((layout's content = content) and (layout's lines != @intrinsic("construct", a pointer to UI text line))) and (changed = false):
         return nothing
     set layout's content to content
     set span to 1.0e30
-    if layout's node's kind = 39:
-        set layout's typeface to view's typeface
-        set layout's appearance to default UI appearance settings
-    else if layout's appearance's unwrapped = false:
+    if (layout's node's kind != 39) and (layout's appearance's unwrapped = false):
         set span to the maximum of 1.0 and (layout's bounds' width - layout's appearance's padding * 2.0)
     ignore the number of wrapped UI rows in layout within span
+    set layout's text width to 0.0
+    set line to layout's lines
+    loop while line != @intrinsic("construct", a pointer to UI text line):
+        set layout's text width to the maximum of (layout's text width) and (line's width)
+        set line to line's next
 

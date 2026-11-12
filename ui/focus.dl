@@ -72,7 +72,7 @@ to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI vie
             collect UI focus from child in view
             set child to child's next
         return nothing
-    if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 39)) or ((kind = 43) or (kind = 44)):
+    if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 43)) or (the UI element (layout's node) is a text control):
         append UI focus layout in view
         return nothing
     set child to layout's first
@@ -84,7 +84,7 @@ to reconcile UI editing focus in {a pointer to UI view:view}:
     set element to @intrinsic("construct", UI reference)
     if view's keyboard focus and (view's focused != @intrinsic("construct", a pointer to UI layout)):
         set node to view's focused's node
-        if (node's kind = 39) or (node's kind = 44):
+        if the UI element node is a text control:
             set element to node
     set changed to element != view's text focus
     set view's text focus to element

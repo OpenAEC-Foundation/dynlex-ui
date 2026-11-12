@@ -15,15 +15,11 @@ to handle UI input in {a pointer to UI view:view}:
         set view's keyboard focus to false
         dismiss the UI popup in view
         set view's damaged to true
+    if process UI control popup input in view:
+        return nothing
     set hot to @intrinsic("construct", a pointer to UI layout)
     if view's paint count > 0:
-        if view's popup != @intrinsic("construct", a pointer to UI layout):
-            set child to view's popup's first
-            loop while child != @intrinsic("construct", a pointer to UI layout):
-                if cursor is inside (child's painted bounds):
-                    set hot to child
-                set child to child's next
-        else:
+        if view's popup = @intrinsic("construct", a pointer to UI layout):
             set hot to the UI hit at cursor in view
             set text to the UI text hit at cursor in view
             if text != @intrinsic("construct", a pointer to UI text run):
@@ -40,7 +36,7 @@ to handle UI input in {a pointer to UI view:view}:
     if (the UI text hit at cursor in view) != @intrinsic("construct", a pointer to UI text run):
         set editing to hot = @intrinsic("construct", a pointer to UI layout)
         if hot != @intrinsic("construct", a pointer to UI layout):
-            set editing to ((hot's node's kind = 39) or (hot's node's kind = 44)) or ((the UI element (hot's node) is interactive in (view's instance)) = false)
+            set editing to (the UI element (hot's node) is a text control) or ((the UI element (hot's node) is interactive in (view's instance)) = false)
         if editing:
             set shape to 2
     if view's selection's dragging:
@@ -52,7 +48,6 @@ to handle UI input in {a pointer to UI view:view}:
     handle UI text keys in view
     if view's key press >= 0:
         set view's damaged to true
-        handle UI popup keys in view
         if view's key press = 258:
             set view's text focus to @intrinsic("construct", UI reference)
             dismiss the UI popup in view
@@ -82,7 +77,7 @@ to handle UI input in {a pointer to UI view:view}:
             if hot != @intrinsic("construct", a pointer to UI layout):
                 if hot's order > 0:
                     set view's focus order to hot's order
-                if (hot's node's kind = 39) or (hot's node's kind = 44):
+                if the UI element (hot's node) is a text control:
                     set view's keyboard focus to true
         else:
             if (view's pressed != @intrinsic("construct", a pointer to UI layout)) and (view's pressed = hot):

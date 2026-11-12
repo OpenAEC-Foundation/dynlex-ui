@@ -1,0 +1,24 @@
+# One content policy for model initialization, programmatic updates and input.
+import declarations.dl
+import lib/utf8.dl
+
+to get UI text accepted from {string:inserted} by {UI reference:element}:
+    set filtered to a new string buffer containing (inserted's length) bytes
+    set count to 0
+    set index to 0
+    loop while index < inserted's length:
+        set character to the UTF8 character at index in inserted
+        require condition (character's valid) reporting "UI text must contain valid UTF-8"
+        set allowed to (character's code >= 32) and (character's code != 127)
+        if element's kind = 44:
+            set allowed to allowed or ((character's code = 10) or (character's code = 9))
+        if allowed:
+            set cursor to index
+            loop while cursor < character's next:
+                store (the character at cursor in inserted) into (the data of filtered) at count
+                increment cursor
+                increment count
+        set index to character's next
+    set filtered's length to count
+    store (0 as a byte) into (the data of filtered) at count
+    return filtered

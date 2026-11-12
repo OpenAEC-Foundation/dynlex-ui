@@ -83,8 +83,9 @@ both platforms. Clipboard copy/cut/paste and browser IME composition are support
 The shared renderer positions native text input at the active caret. Browser IME
 composition works in single-line fields and multiline editors, with commit,
 cancellation and undo; read-only content does not activate the text input bridge.
-Documents also support rich paragraphs, source-anchored selection, multiline
-editing and undo/redo. `ui/source_workspace.dl` supplies reusable source documents,
+Documents also support responsive fields, switches, choice lists, rich paragraphs,
+source-anchored selection, multiline editing and undo/redo.
+`ui/source_workspace.dl` supplies reusable source documents,
 project-aware language analysis, semantic colors and mapped diagnostics for both
 drivers; applications supply project metadata and a language transport.
 `ui/source_tools.dl` adds the shared completion popup: Ctrl+Space requests it,

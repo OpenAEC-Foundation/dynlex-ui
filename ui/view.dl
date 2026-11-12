@@ -8,6 +8,7 @@ import input_types.dl
 import input_context_types.dl
 import image_types.dl
 import overlay_types.dl
+import choice_types.dl
 
 class:
     patterns:
@@ -96,7 +97,7 @@ class:
         logical width as an integer
         logical height as an integer
         popup as a pointer to UI layout
-        popup index as an integer
+        popup choices as UI choice popover
         last cursor as UI point
         content bounds as UI bounds
         hit bounds as UI bounds

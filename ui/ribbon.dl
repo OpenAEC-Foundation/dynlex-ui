@@ -55,7 +55,7 @@ section tool field {C string:text} sized {integer:width}:
     body:
         children: many UI reference
     value:
-        a UI component 34 labeled text styled "" at 0 0 sized width by 28 containing (the body's children)
+        (a UI component 34 labeled text styled "" at 0 0 sized width by 28 containing (the body's children)) with initial text text
 
 menu item {C string:text} with icon {C string:icon} means: a UI component 35 labeled text styled icon at 0 0 sized 0 by 32 containing no UI children
 menu item {C string:text} means: menu item text with icon ""

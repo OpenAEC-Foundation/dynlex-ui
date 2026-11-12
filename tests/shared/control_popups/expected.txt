@@ -1,0 +1,1 @@
+Dropdowns reuse bounded choices, authored presentation, disabled navigation, pointer release and hidden-list protection.

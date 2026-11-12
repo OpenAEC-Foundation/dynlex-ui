@@ -1,0 +1,11 @@
+import animation.dl
+
+to get [the UI switch position of] {a pointer to UI layout:layout} [in] {a pointer to UI view:view}:
+    set enabled to (the UI value for (layout's node) in (view's instance))'s number != 0
+    set destination to 1.0 if enabled, else 0.0
+    if (layout's painted = false) or view's instance's reduced motion:
+        set layout's transition to destination
+    else:
+        set layout's transition to UI value (layout's transition) approaching destination at speed 18.0 in view
+    set layout's painted to true
+    return layout's transition

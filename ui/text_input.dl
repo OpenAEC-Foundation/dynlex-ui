@@ -3,6 +3,7 @@ import document_layout.dl
 import text_navigation.dl
 import hit_testing.dl
 import lib/unicode.dl
+import text_content.dl
 
 # Selection anchors are byte offsets on Unicode scalar boundaries.
 to get the UI text hit at {UI point:point} in {a pointer to UI view:view} limited to {a pointer to UI text source:scope}:
@@ -97,7 +98,7 @@ to handle UI text pointer at {UI point:point} over {a pointer to UI layout:hot} 
     if (view's down != view's was down) and view's down:
         set run to the UI text hit at point in view limited to (view's selection's limit)
         if hot != @intrinsic("construct", a pointer to UI layout):
-            if (the UI element (hot's node) is interactive in (view's instance)) and ((hot's node's kind != 39) and (hot's node's kind != 44)):
+            if (the UI element (hot's node) is interactive in (view's instance)) and ((the UI element (hot's node) is a text control) = false):
                 set inline to false
                 if run != @intrinsic("construct", a pointer to UI text run):
                     set inline to run's control = hot
@@ -115,27 +116,6 @@ to handle UI text pointer at {UI point:point} over {a pointer to UI layout:hot} 
             select UI text at point in run extending true in view
     if view's down = false:
         set view's selection's dragging to false
-
-to get UI text accepted from {string:inserted} by {UI reference:element}:
-    set filtered to a new string buffer containing (inserted's length) bytes
-    set count to 0
-    set index to 0
-    loop while index < inserted's length:
-        set character to the UTF8 character at index in inserted
-        require condition (character's valid) reporting "UI text must contain valid UTF-8"
-        set allowed to (character's code >= 32) and (character's code != 127)
-        if element's kind = 44:
-            set allowed to allowed or ((character's code = 10) or (character's code = 9))
-        if allowed:
-            set cursor to index
-            loop while cursor < character's next:
-                store (the character at cursor in inserted) into (the data of filtered) at count
-                increment cursor
-                increment count
-        set index to character's next
-    set filtered's length to count
-    store (0 as a byte) into (the data of filtered) at count
-    return filtered
 
 to commit UI text {string:updated} selecting {integer:anchor} through {integer:caret} in {a pointer to UI view:view}:
     set composing to view's selection's composing

@@ -19,6 +19,9 @@ set source to view's selection's caret source
 set caret to view's selection's caret
 set popup to a UI choice popover
 set other to a UI choice popover
+set transform to @intrinsic("construct", UI transform, 0.0, -2.0, 3.0, 0.0, 100.0, 50.0)
+set rotated to UI bounds (UI box at 10 20 sized 5 7) transformed by transform
+require condition (((rotated's x = 46.0) and (rotated's y = 80.0)) and ((rotated's width = 14.0) and (rotated's height = 15.0))) reporting "A transformed anchor lost its enclosing bounds."
 add UI choice "independent" enabled true to (the address of other)
 add UI choice "unavailable" enabled false to (the address of popup)
 set index to 0
@@ -28,7 +31,7 @@ loop while index < 12:
 show UI choice popover (the address of popup) reporting "" with hint "Enter choose · Esc close" in (the address of view)
 set layout to the UI layout for element (the control labeled "Source" in window) in (view's layout)
 set frame to @intrinsic("construct", UI frame, the address of view, true)
-paint UI choice popover (the address of popup) anchored at (a UI point at 880.0 and 590.0) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
+paint UI choice popover (the address of popup) anchored at (UI box at 880 574 sized 1 12) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
 require condition ((popup's rows = 8) and (popup's selected = 1)) reporting "Choice lists did not skip an unavailable first item."
 require condition ((popup's bounds' x >= 8.0) and ((popup's bounds' x + popup's bounds' width) <= 892.0)) reporting "Choices extended outside their viewport."
 require condition ((popup's bounds' y >= 8.0) and ((popup's bounds' y + popup's bounds' height) <= 592.0)) reporting "Choices extended below their viewport."
@@ -43,7 +46,7 @@ require condition (popup's selected = 4) reporting "Arrow navigation selected a 
 queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
 process UI input in (the address of view)
 require condition (popup's selected = 12) reporting "End did not select the final choice."
-paint UI choice popover (the address of popup) anchored at (a UI point at 880.0 and 590.0) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
+paint UI choice popover (the address of popup) anchored at (UI box at 880 574 sized 1 12) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
 require condition (popup's first = 5) reporting "The selected choice did not scroll into view."
 queue UI input of kind 3 key 264 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
 process UI input in (the address of view)
@@ -58,7 +61,7 @@ set view's key press to 257
 require condition ((read UI choice popover (the address of popup) in (the address of view)) = 2) reporting "Enter did not activate the selected choice."
 set view's key press to 256
 require condition ((read UI choice popover (the address of popup) in (the address of view)) = 3) reporting "Escape did not request dismissal."
-paint UI choice popover (the address of popup) anchored at (a UI point at 0.0 and 0.0) within (UI box at 0 0 sized 20 20) using (layout's typeface) styled (layout's appearance) on frame
+paint UI choice popover (the address of popup) anchored at (UI box at 0 0 sized 1 12) within (UI box at 0 0 sized 20 20) using (layout's typeface) styled (layout's appearance) on frame
 set view's key press to 257
 require condition ((read UI choice popover (the address of popup) in (the address of view)) != 2) reporting "An invisible choice list activated an item."
 dismiss UI choice popover (the address of popup) in (the address of view)
@@ -67,7 +70,7 @@ detach UI overlay overlay in (the address of view)
 clear UI choice popover (the address of popup) in (the address of view)
 add UI choice "disabled" enabled false to (the address of popup)
 show UI choice popover (the address of popup) reporting "" with hint "Esc close" in (the address of view)
-paint UI choice popover (the address of popup) anchored at (a UI point at 0.0 and 0.0) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
+paint UI choice popover (the address of popup) anchored at (UI box at 0 0 sized 1 12) within (UI box at 0 0 sized 900 600) using (layout's typeface) styled (layout's appearance) on frame
 set view's key press to 269
 ignore read UI choice popover (the address of popup) in (the address of view)
 set view's key press to 257

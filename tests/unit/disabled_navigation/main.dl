@@ -34,11 +34,11 @@ activate UI layout field in (the address of view)
 set two to the UI child at 1 in (field's node)
 set UI control two enabled false in (the address of instance)
 set view's key press to 264
-handle UI popup keys in (the address of view)
-require condition (view's popup index = 2) reporting "Arrow navigation selected a disabled popup item"
+ignore process UI control popup input in (the address of view)
+require condition (view's popup choices' selected = 2) reporting "Arrow navigation selected a disabled popup item"
 set UI control (field's node) enabled false in (the address of instance)
 set view's key press to 257
-handle UI popup keys in (the address of view)
+ignore process UI control popup input in (the address of view)
 require condition ((the UI value for (field's node) in (the address of instance))'s number = 0) reporting "An open disabled field accepted a menu item"
 require condition (view's popup = @intrinsic("construct", a pointer to UI layout)) reporting "A disabled popup owner remained open"
 close the address of view

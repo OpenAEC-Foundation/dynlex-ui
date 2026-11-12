@@ -60,6 +60,47 @@ Selection is zero-based and must identify an existing child.
 content, including empty content. Editors use that same distinction. Links store
 their destinations separately from content and visual variants.
 
+Single-line fields, switches and choices participate in document layout and use
+the same input, undo, focus and activation code as classic windows and ribbons:
+
+```dynlex
+appearance preferences appearance:
+    columns are 2
+    gap is 12
+    when viewport is below 500:
+        columns are 1
+
+appearance field appearance:
+    padding is 12
+    font size is 18
+    minimum height is 48
+
+document preferences using preferences appearance:
+    text field "Name" containing "Ada" using field appearance
+    switch "Auto save" using field appearance
+    choice field "Mode" choosing "Focused" using field appearance:
+        choice "Focused"
+        choice "Calm"
+        choice "Code review"
+```
+
+The choice field's name is independent of its selected text. Read or set its
+text with `the UI value for node in instance` or `set the text of "Mode" in
+instance to "Calm"`; its numeric value is the selected zero-based index. Choices
+must be nonempty and the initial text must identify an option. Bind changes to
+event 0, just as for buttons. Single-line fields remove line breaks from initial,
+programmatic, typed, pasted and composed text. `read only text field "Name"
+containing "Ada" using field appearance` retains selection and copying.
+
+Dropdowns share `UI choice popover` with source completion and diagnostics. Lists
+stay inside the viewport, display up to eight rows, reveal the selected row and
+skip disabled items. Arrow keys, Home/End, Page Up/Down, wheel, Enter/Space and
+Escape work without changing the selected value until acceptance. Dropdown
+pointer activation happens on release; source completion retains activation on
+press. Popups inherit document typography and colors, including dark surfaces.
+Choice placement takes anchor bounds, so both tall controls and transformed code
+carets can open their lists above or below without assuming a fixed line height.
+
 Regions support columns, maximum widths, stacking thresholds, padding, gaps,
 overlays and sticky positioning. Paragraphs support inline `words` and `link`
 sections; selection copies their source text through line wrapping and reflow.

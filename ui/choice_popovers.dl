@@ -3,39 +3,51 @@
 import choice_popover_types.dl
 import shapes.dl
 import clipping.dl
+import icon_rendering.dl
 
-to [paint UI choice popover] {a pointer to UI choice popover:popup} [anchored at] {UI point:anchor} [within] {UI bounds:viewport} [using] {UI font:typeface} [styled] {UI appearance settings:style} [on] {UI frame:frame}:
+to [place UI choice popover] {a pointer to UI choice popover:popup} [anchored at] {UI bounds:anchor} [within] {UI bounds:viewport} [using] {UI font:typeface}:
     set popup's rows to 0
     set popup's bounds to UI box at 0 0 sized 0 0
-    retire UI floating layout (the address of (popup's surface))
     if popup's visible = false:
         return nothing
     set popup's row height to the maximum of 28.0 and (typeface's size + 12.0)
-    set available to ((viewport's height - 50.0) / popup's row height) as an integer
+    set footer to 12.0 if (popup's hint = ""), else 34.0
+    set available to (((viewport's height - 16.0) - footer) / popup's row height) as an integer
     if (viewport's width <= 16.0) or (available < 1):
         return nothing
-    set view to frame's view
-    set width to the minimum of 440.0 and (viewport's width - 16.0)
+    set width to the minimum of (popup's preferred width) and (viewport's width - 16.0)
     set rows to the minimum of 8 and (the minimum of (popup's count) and available)
     set popup's rows to rows
-    set height to ((the maximum of 1 and rows) * popup's row height) + 34.0
+    set height to ((the maximum of 1 and rows) * popup's row height) + footer
     set left to the maximum of (viewport's x + 8.0) and (the minimum of (anchor's x) and (((viewport's x + viewport's width) - width) - 8.0))
-    set top to anchor's y
+    set top to anchor's y + anchor's height + 4.0
     if (top + height) > ((viewport's y + viewport's height) - 8.0):
-        set top to (anchor's y - height) - 24.0
+        set top to (anchor's y - height) - 4.0
     set top to the maximum of (viewport's y + 8.0) and (the minimum of top and (((viewport's y + viewport's height) - height) - 8.0))
-    set box to UI box at left top sized width height
-    set popup's bounds to box
+    set popup's bounds to UI box at left top sized width height
+    if popup's selected < popup's first:
+        set popup's first to the maximum of 0 and (popup's selected)
+    if popup's selected >= (popup's first + rows):
+        set popup's first to (popup's selected - rows) + 1
+    set popup's first to the maximum of 0 and (the minimum of (popup's first) and (popup's count - rows))
+
+to [paint UI choice popover] {a pointer to UI choice popover:popup} [anchored at] {UI bounds:anchor} [within] {UI bounds:viewport} [using] {UI font:typeface} [styled] {UI appearance settings:style} [on] {UI frame:frame}:
+    retire UI floating layout (the address of (popup's surface))
+    place UI choice popover popup anchored at anchor within viewport using typeface
+    if popup's bounds' width <= 0.0:
+        return nothing
+    set view to frame's view
+    set box to popup's bounds
+    set left to box's x
+    set top to box's y
+    set width to box's width
+    set height to box's height
     record UI floating layout (the address of (popup's surface)) in box on frame
     set background to style's background
     set foreground to style's foreground
     set outline to UI ink between background and foreground at 0.2
     set selected to UI ink between background and foreground at 0.12
     set muted to UI ink between background and foreground at 0.65
-    if popup's selected < popup's first:
-        set popup's first to the maximum of 0 and (popup's selected)
-    if popup's selected >= (popup's first + rows):
-        set popup's first to (popup's selected - rows) + 1
     draw a UI shadow under box with radius 7.0 softness 8.0 strength 14 in (UI ink 0 0 0) on frame
     draw a rounded UI box box with radius 7.0 in outline on frame
     draw a rounded UI box (UI box at (left + 1.0) (top + 1.0) sized (width - 2.0) (height - 2.0)) with radius 6.0 in background on frame
@@ -43,26 +55,41 @@ to [paint UI choice popover] {a pointer to UI choice popover:popup} [anchored at
     set {previous selectable} to view's selectable
     set view's selectable to false
     set baseline to ((popup's row height + typeface's size) / 2.0) - 2.0
-    if rows = 0:
+    if popup's rows = 0:
         draw UI text (popup's message) at (left + 12.0) ((top + 6.0) + baseline) with typeface in muted on frame
     set row to 0
-    loop while row < rows:
+    loop while row < popup's rows:
         set index to popup's first + row
         set item to the UI choice at index in popup
         set y to (top + 6.0) + (row * popup's row height)
         if index = popup's selected:
             draw a rounded UI box (UI box at (left + 5.0) y sized (width - 10.0) (popup's row height)) with radius 4.0 in selected on frame
         set ink to foreground if (item's enabled), else muted
-        draw UI text (item's label) at (left + 12.0) (y + baseline) with typeface in ink on frame
+        set {text left} to left + 12.0
+        if item's icon != "":
+            draw UI icon (item's icon) in (UI box at text left (y + ((popup's row height - 16.0) / 2.0)) sized 16 16) in ink using (the address of (view's icons)) on frame
+            set text left to text left + 24.0
+        draw UI text (item's label) at text left (y + baseline) with typeface in ink on frame
         increment row
-    draw UI text (popup's hint) at (left + 12.0) ((top + height) - 10.0) with (view's small) in muted on frame
+    if popup's hint != "":
+        draw UI text (popup's hint) at (left + 12.0) ((top + height) - 10.0) with (view's small) in muted on frame
     restore UI clip clip in view on frame
     set view's selectable to previous selectable
+
+to get [the UI choice under] {UI point:cursor} [in] {a pointer to UI choice popover:popup}:
+    if (cursor is inside (popup's bounds)) = false:
+        return -1
+    set row to (((cursor's y - popup's bounds' y) - 6.0) / popup's row height) as an integer
+    set index to popup's first + row
+    if (cursor's y >= (popup's bounds' y + 6.0)) and ((0 <= row < popup's rows) and (index < popup's count)):
+        if (the UI choice at index in popup)'s enabled:
+            return index
+    return -1
 
 to get [read UI choice popover] {a pointer to UI choice popover:popup} [in] {a pointer to UI view:view}:
     if popup's visible = false:
         return 0
-    if view's key press = 256:
+    if (view's key press = 256) or (view's input kind = 7):
         return 3
     if popup's rows > 0:
         if (view's modifiers = 0) and ((view's key press = 264) or (view's key press = 265)):
@@ -72,44 +99,56 @@ to get [read UI choice popover] {a pointer to UI choice popover:popup} [in] {a p
             return 1
         if (view's modifiers = 0) and ((view's key press = 268) or (view's key press = 269)):
             set direction to 1 if (view's key press = 268), else -1
-            set popup's selected to -1 if (direction = 1), else (popup's count)
+            set popup's selected to (-1) if (direction = 1), else (popup's count)
             move UI choice selection in popup by direction wrapping false
             set view's damaged to true
             return 1
         if (view's modifiers = 0) and ((view's key press = 266) or (view's key press = 267)):
-            set direction to -1 if (view's key press = 266), else 1
+            set direction to (-1) if (view's key press = 266), else 1
             set remaining to popup's rows
             loop while remaining > 0:
                 move UI choice selection in popup by direction wrapping false
                 decrement remaining
             set view's damaged to true
             return 1
-        if ((view's key press = 257) or ((view's key press = 258) and (popup's accepts tab))) and (popup's selected >= 0):
-            return 2
+        set accepts to (view's key press = 257) or ((view's key press = 258) and (popup's accepts tab))
+        set accepts to accepts or ((view's key press = 32) and (popup's accepts space))
+        if accepts and (popup's selected >= 0):
+            if (the UI choice at (popup's selected) in popup)'s enabled:
+                return 2
     set cursor to the UI cursor in view
     if cursor is inside (popup's bounds):
         if (view's input kind = 1) or (view's input kind = 2):
+            set index to the UI choice under cursor in popup
             set shape to 0
-            set activated to false
-            set row to (((cursor's y - popup's bounds' y) - 6.0) / popup's row height) as an integer
-            set selected to popup's first + row
-            if (cursor's y >= (popup's bounds' y + 6.0)) and ((0 <= row < popup's rows) and (selected < popup's count)):
-                if (the UI choice at selected in popup)'s enabled:
-                    set popup's selected to selected
+            if index >= 0:
+                set shape to 1
+                if popup's selected != index:
+                    set popup's selected to index
                     set view's damaged to true
-                    set shape to 1
-                    set activated to (view's input kind = 2) and (view's down)
             if view's cursor shape != shape:
                 set view's cursor shape to shape
                 @intrinsic("call pointer", view's driver's cursor, nothing, view, shape)
-            if activated:
-                return 2
+            if view's input kind = 2:
+                if view's down:
+                    set popup's pressed to index
+                    if (index >= 0) and (popup's on release = false):
+                        return 2
+                else:
+                    set activated to (index >= 0) and (popup's pressed = index)
+                    set popup's pressed to -1
+                    if activated and (popup's on release):
+                        return 2
             return 1
-        if view's input kind = 5:
+        if (view's input kind = 5) and (view's scroll y != 0.0):
             set direction to 1 if (view's scroll y > 0.0), else -1
             move UI choice selection in popup by direction wrapping false
             set view's damaged to true
             return 1
     if ((view's input kind = 2) and view's down) or (view's key press >= 0):
+        set popup's pressed to -1
         return 3
+    if (view's input kind = 2) and (view's down = false):
+        set popup's pressed to -1
+        return 1
     return 0

@@ -2,8 +2,10 @@
 import view.dl
 import ribbon_scroll.dl
 import focus.dl
+import popup_choices.dl
 
 to dismiss the UI popup in {a pointer to UI view:view}:
+    clear UI choice popover (the address of (view's popup choices)) in view
     set view's popup to @intrinsic("construct", a pointer to UI layout)
     set view's pressed to @intrinsic("construct", a pointer to UI layout)
 
@@ -11,7 +13,7 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
     set node to layout's node
     if (the UI element node is enabled in (view's instance)) = false:
         return nothing
-    if (node's kind = 39) or (node's kind = 44):
+    if the UI element node is a text control:
         set view's focus order to layout's order
         set view's keyboard focus to true
         set view's text focus to @intrinsic("construct", UI reference)
@@ -35,7 +37,10 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
             return nothing
         if owner's node's kind = 34:
             set value to the UI value for (owner's node) in (view's instance)
-            select UI option (view's popup index) from (owner's node) into value
+            set index to 0
+            loop while (the UI child at index in (owner's node)) != node:
+                increment index
+            select UI option index from (owner's node) into value
             activate (owner's node) belonging to (owner's parent) in (view's instance)
         else:
             activate node belonging to (layout's parent) in (view's instance)
@@ -46,43 +51,40 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
         if view's popup = layout:
             dismiss the UI popup in view
         else:
-            set view's popup to layout
-            set view's popup index to 0
-            if node's kind = 34:
-                set view's popup index to (the UI value for node in (view's instance))'s number
+            open UI popup for layout in view
         return nothing
     activate node belonging to (layout's parent) in (view's instance)
 
-to handle UI popup keys in {a pointer to UI view:view}:
-    if view's popup = @intrinsic("construct", a pointer to UI layout):
-        return nothing
-    if view's key press = 256:
-        ignore the UI close key was pressed in view
-        return nothing
-    set direction to 0
-    if view's key press = 265:
-        set direction to -1
-    if view's key press = 264:
-        set direction to 1
-    if direction != 0:
-        set count to view's popup's node's count
-        set index to ((view's popup index + direction) + count) mod count
-        set attempts to 0
-        loop while ((the UI element (the UI child at index in (view's popup's node)) is enabled in (view's instance)) = false) and (attempts < count):
-            set index to ((index + direction) + count) mod count
-            increment attempts
-        if attempts < count:
-            set view's popup index to index
-        set view's keyboard focus to true
-        set view's key press to -1
-    if view's key press = 257:
-        set child to view's popup's first
+to get [process UI control popup input in] {a pointer to UI view:view}:
+    set owner to view's popup
+    if owner = @intrinsic("construct", a pointer to UI layout):
+        return false
+    if (the UI element (owner's node) is enabled in (view's instance)) = false:
+        dismiss the UI popup in view
+        return false
+    refresh UI popup choices in view
+    set popup to the address of (view's popup choices)
+    set decision to read UI choice popover popup in view
+    if decision = 0:
+        return false
+    set tabbing to view's key press = 258
+    if decision = 2:
+        set child to owner's first
         set index to 0
-        loop while index < view's popup index:
+        loop while index < popup's selected:
             set child to child's next
             increment index
         activate UI layout child in view
-        set view's key press to -1
+    if decision = 3:
+        dismiss the UI popup in view
+    if tabbing:
+        return false
+    set view's key press to -1
+    set view's typed text to ""
+    set view's scroll x and view's scroll y to 0.0
+    set view's was down to view's down
+    set view's pressed to @intrinsic("construct", a pointer to UI layout)
+    return true
 
 to get the UI close key was pressed in {a pointer to UI view:view}:
     if view's key press != 256:

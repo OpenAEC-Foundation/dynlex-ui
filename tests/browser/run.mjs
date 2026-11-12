@@ -270,6 +270,9 @@ try {
   } else if (example === 'editor') {
     const { verifyEditor } = await import('./editor.mjs');
     await verifyEditor({ click, key, evaluate, command, waitFor, settled, screenshot });
+  } else if (example === 'forms') {
+    const { verifyForms } = await import('./forms.mjs');
+    await verifyForms({ click, key, evaluate, command, waitFor, settled, screenshot });
   } else if (example === 'pictures') {
     let image=readPng(await screenshot('pictures-decoded'));
     assert.deepEqual(image.pixel(580,80),[255,0,0]);

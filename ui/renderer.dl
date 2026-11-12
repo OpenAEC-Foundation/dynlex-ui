@@ -108,7 +108,7 @@ to paint UI view {a pointer to UI view:view}:
         set width to view's width - 64
         draw a rounded UI box (UI box at 32 bottom sized width 44) with radius 10.0 in (UI ink 229 236 248) on frame
         draw UI text (view's instance's status) at 48 (bottom + 27) with (view's typeface) in (view's theme's text) on frame
-    draw the UI popup with cursor cursor in view on frame
+    draw the UI popup in view on frame
     set view's selectable to false
     draw UI overlays on frame
     finish UI text painting in view

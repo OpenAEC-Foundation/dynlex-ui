@@ -1,0 +1,33 @@
+# Choice data is independent of view lifetime and input dispatch.
+import layout_types.dl
+
+class:
+    patterns:
+        UI choice
+    members:
+        label as a string
+        icon as a C string
+        enabled as a boolean
+        next as a pointer to UI choice
+
+class:
+    patterns:
+        UI choice popover
+    members:
+        first item as a pointer to UI choice
+        last item as a pointer to UI choice
+        count as an integer
+        selected as an integer
+        first as an integer
+        rows as an integer
+        row height as a floating-point number
+        preferred width as a floating-point number
+        bounds as UI bounds
+        visible as a boolean
+        accepts tab as a boolean
+        accepts space as a boolean
+        on release as a boolean
+        pressed as an integer
+        message as a string
+        hint as a string
+        surface as UI layout

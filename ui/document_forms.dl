@@ -1,0 +1,40 @@
+# Form decoration uses the same values, focus and activation as desktop controls.
+import shapes.dl
+import icon_rendering.dl
+import switch_states.dl
+import control_presentation.dl
+
+to get [the UI form text bounds of] {a pointer to UI layout:layout} [in] {UI bounds:box}:
+    set padding to layout's appearance's padding
+    set width to the maximum of 1.0 and (box's width - padding * 2.0)
+    if layout's node's kind = 17:
+        set width to the maximum of 1.0 and (width - 52.0)
+    if layout's node's kind = 34:
+        set width to the maximum of 1.0 and (width - 24.0)
+    return UI box at (box's x + padding) (box's y + padding) sized width (the maximum of 1.0 and (box's height - padding * 2.0))
+
+to [draw UI form decoration for] {a pointer to UI layout:layout} [in] {UI bounds:box} [on] {UI frame:frame}:
+    set view to frame's view
+    set node to layout's node
+    set appearance to the UI appearance of layout displayed in view
+    set available to the UI element node is enabled in (view's instance)
+    if node's kind = 17:
+        set position to the UI switch position of layout in view
+        set track to UI box at (((box's x + box's width) - appearance's padding) - 44.0) (box's y + ((box's height - 24.0) / 2.0)) sized 44 24
+        set off to UI ink between (layout's appearance's background) and (layout's appearance's foreground) at 0.2
+        set ink to UI ink between off and (view's theme's accent) at position
+        set ink to the UI ink ink displayed for node over (appearance's background) in (view's instance)
+        draw a rounded UI box track with radius 12.0 in ink on frame
+        set knob to the UI ink (UI ink 255 255 255) displayed for node over (appearance's background) in (view's instance)
+        set shade to the UI ink (UI ink 232 236 240) displayed for node over (appearance's background) in (view's instance)
+        draw a UI disc at (a UI point at ((track's x + 12.0) + (position * 20.0)) and (track's y + 12.0)) with radius 9.0 from knob to shade opacity 255 on frame
+    if (node's kind = 39) or (node's kind = 34):
+        set target to 0.0
+        if available and ((view's hot = layout) or ((view's focused = layout) and view's keyboard focus)):
+            set target to 1.0
+        set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
+        if layout's hover > 0.01:
+            draw a rounded UI outline box with radius (appearance's radius) width (the maximum of 1.0 and (appearance's border width)) in (UI ink between (appearance's border ink) and (view's theme's accent) at (layout's hover)) on frame
+    if node's kind = 34:
+        set arrow to UI box at (((box's x + box's width) - appearance's padding) - 14.0) (box's y + ((box's height - 12.0) / 2.0)) sized 12 12
+        draw UI icon "down" in arrow in (appearance's foreground) using (the address of (view's icons)) on frame

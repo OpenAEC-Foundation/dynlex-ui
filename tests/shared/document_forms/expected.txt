@@ -1,0 +1,1 @@
+Responsive form controls share field editing, switch activation, choice selection, authored styles and caret scrolling.

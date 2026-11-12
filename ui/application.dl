@@ -95,6 +95,7 @@ to get update UI view {a pointer to UI view:view}:
 
 to close {a pointer to UI view:view}:
     close UI overlays in view
+    dismiss the UI popup in view
     loop while view's input first != @intrinsic("construct", a pointer to UI input event):
         set event to view's input first
         set view's input first to event's next

@@ -1,0 +1,103 @@
+import ../../helpers/driver.dl
+import lib/text_scan.dl
+
+appearance page appearance:
+    padding is 16
+    gap is 12
+    background is UI ink 20 25 35
+    text is UI ink 225 230 240
+    font size is 18
+
+document choices using page appearance:
+    choice field "Palette" choosing "First":
+        choice "First"
+        choice "Disabled"
+        choice "Third"
+        choice "Fourth"
+        choice "Fifth"
+        choice "Sixth"
+        choice "Seventh"
+        choice "Eighth"
+        choice "Ninth"
+        choice "Tenth"
+        choice "Eleventh"
+        choice "Last"
+    button "After"
+
+set instance to an instance of choices
+set view to a UI view of (the address of instance) sized 300 by 260 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set field to the UI layout labeled "Palette" in (view's layout)
+set unavailable to the UI child at 1 in (field's node)
+set UI control unavailable enabled false in (the address of instance)
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+set popup to the address of (view's popup choices)
+require condition ((0 < popup's rows <= 8) and (popup's rows < popup's count)) reporting "A dropdown did not bound its visible rows."
+require condition ((popup's bounds' x >= 8.0) and ((popup's bounds' x + popup's bounds' width) <= 292.0)) reporting "A dropdown exceeded its viewport width."
+require condition ((popup's bounds' y >= 8.0) and ((popup's bounds' y + popup's bounds' height) <= 252.0)) reporting "A dropdown exceeded its viewport height."
+require condition ((the UI popup font in (the address of view))'s size = 18) reporting "A dropdown discarded its control's font."
+set appearance to the UI popup appearance in (the address of view)
+require condition ((appearance's background's red = 20) and (appearance's foreground's red = 225)) reporting "A dropdown discarded its authored colors."
+set anchor to field's painted bounds
+set view's height to 600
+set field's painted bounds to UI box at 16 330 sized 268 50
+refresh UI popup choices in (the address of view)
+require condition ((popup's bounds' y + popup's bounds' height) <= 326.0) reporting "An upward dropdown overlaps its tall anchor."
+set view's height to 260
+set field's painted bounds to anchor
+refresh UI popup choices in (the address of view)
+queue UI input of kind 3 key 264 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((popup's selected = 11) and (popup's first > 0)) reporting "End did not reveal the last dropdown option."
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 264 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (field's node) in (the address of instance))'s text = "Third") and (view's popup = @intrinsic("construct", a pointer to UI layout))) reporting "Dropdown keyboard input did not skip disabled choices and accept exactly once."
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+set x to popup's bounds' x + 20.0
+set y to (popup's bounds' y + 6.0) + (popup's row height / 2.0)
+queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's popup = field) reporting "A dropdown accepted on pointer press instead of release."
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (field's node) in (the address of instance))'s text = "First") reporting "A dropdown did not accept its released option."
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+set y to ((popup's bounds' y + 6.0) + (2.0 * popup's row height)) + (popup's row height / 2.0)
+queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 1 key 0 at 299.0 259.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's popup = field) and ((the UI value for (field's node) in (the address of instance))'s text = "First")) reporting "Dragging out of a dropdown committed its pressed option."
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's popup = @intrinsic("construct", a pointer to UI layout)) reporting "An outside press did not dismiss a dropdown."
+activate UI layout field in (the address of view)
+queue UI input of kind 7 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (view's popup = @intrinsic("construct", a pointer to UI layout)) reporting "A dropdown retained capture after focus loss."
+activate UI layout field in (the address of view)
+set UI control (field's node) enabled false in (the address of instance)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's popup = @intrinsic("construct", a pointer to UI layout)) and ((the UI value for (field's node) in (the address of instance))'s text = "First")) reporting "A disabled dropdown owner accepted an option."
+set UI control (field's node) enabled true in (the address of instance)
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+set view's width and view's height to 20
+queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the UI value for (field's node) in (the address of instance))'s text = "First") reporting "A dropdown accepted an invisible choice."
+require condition (popup's rows = 0) reporting "A dropdown retained rows in an unusable viewport."
+close the address of view
+close the address of instance
+print line "Dropdowns reuse bounded choices, authored presentation, disabled navigation, pointer release and hidden-list protection."

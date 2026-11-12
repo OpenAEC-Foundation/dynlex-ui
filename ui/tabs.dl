@@ -26,7 +26,7 @@ to get the selected UI child of {UI reference:group} in {a pointer to UI instanc
     return the UI child at index in group
 
 to get the active UI editor within {UI reference:node} in {a pointer to UI instance:instance}:
-    if (node's kind = 39) or (node's kind = 44):
+    if the UI element node is a text control:
         return node
     if node's kind = 48:
         return the active UI editor within (the selected tab of node in instance) in instance

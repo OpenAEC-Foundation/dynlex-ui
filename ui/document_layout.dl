@@ -35,6 +35,16 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     set appearance's font path to inherited's font path
     set appearance's bold to inherited's bold
     set appearance's line spacing to inherited's line spacing
+    if (node's kind = 39) or (node's kind = 34):
+        set appearance's padding to 8.0
+        set appearance's minimum height to 36.0
+        set appearance's radius to 6.0
+        set appearance's border width to 1.0
+        set appearance's border ink to UI ink between (inherited's background) and (inherited's foreground) at 0.3
+        set appearance's filled to true
+    if node's kind = 17:
+        set appearance's padding to 8.0
+        set appearance's minimum height to 36.0
     apply UI appearance (node's appearance) for (view's width as a floating-point number) to (the address of appearance)
     if (node's kind = 22) and (node != view's instance's page):
         set appearance's hidden to true
@@ -47,7 +57,8 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     if appearance's hidden:
         return nothing
     set inner to the maximum of 1.0 and (width - (appearance's padding * 2.0))
-    if ((((node's kind = 2) or (node's kind = 42)) or (node's kind = 43)) or (node's kind = 44)) or (node's kind = 46):
+    set {text control} to the UI element node is a text control
+    if ((((((node's kind = 2) or (node's kind = 17)) or (node's kind = 34)) or (node's kind = 42)) or (node's kind = 43)) or text control) or (node's kind = 46):
         set layout's content to (the UI value for node in (view's instance))'s text
         set layout's rich to (node's kind = 42) and (node's count > 0)
         set layout's typeface to a document UI font for appearance in view
@@ -56,7 +67,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set source to the address of (layout's text source)
         if source's text != layout's content:
             if (view's selection's anchor source = source) or (view's selection's caret source = source):
-                if node's kind = 44:
+                if text control:
                     set view's selection's composing to false
                     set view's selection's composition to ""
                     set view's selection's anchor to the UI text boundary at or before (view's selection's anchor) in (layout's content)
@@ -65,20 +76,26 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
                 else:
                     clear UI selection in view
             set source's text to layout's content
-        if node's kind = 44:
+        if text control:
             set layout's content to the presented UI text of source in view
-        if node's kind = 44:
             set layout's text source's element to node
         set span to inner
-        if appearance's unwrapped:
+        if (appearance's unwrapped or (node's kind = 39)) or (node's kind = 34):
             set span to 1.0e30
+        if (node's kind = 17) and (appearance's unwrapped = false):
+            set span to the maximum of 1.0 and (inner - 52.0)
         set count to the number of wrapped UI rows in layout within span
         set layout's text width to 0.0
         set line to layout's lines
         loop while line != @intrinsic("construct", a pointer to UI text line):
             set layout's text width to the maximum of (layout's text width) and (line's width)
             set line to line's next
+        if (node's kind = 17) or (node's kind = 34):
+            set reserved to 52.0 if (node's kind = 17), else 24.0
+            set layout's text width to layout's text width + reserved
         set layout's bounds' height to layout's text height + appearance's padding * 2.0
+        if (node's kind = 17) or (node's kind = 34):
+            set layout's bounds' height to the maximum of (layout's bounds' height) and (28.0 + appearance's padding * 2.0)
     else if node's kind = 45:
         set path to (the UI value for node in (view's instance))'s destination
         set image to UI image from path in view
@@ -120,7 +137,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             reflow document UI layout child within inner inheriting appearance in view
             if child's appearance's hidden = false:
                 set kind to child's node's kind
-                if (((kind = 2) or (kind = 42)) or (kind = 43)) or (kind = 46):
+                if (((((kind = 2) or (kind = 17)) or (kind = 34)) or (kind = 42)) or (kind = 43)) or (kind = 46):
                     set width to the minimum of inner and (the maximum of (child's appearance's minimum width) and (child's text width + child's appearance's padding * 2.0))
                     reflow document UI layout child within width inheriting appearance in view
                 if (left > appearance's padding) and ((left + child's bounds' width) > (appearance's padding + inner)):

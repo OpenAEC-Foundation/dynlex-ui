@@ -1,35 +1,12 @@
 import overlays.dl
 import document_declarations.dl
-
-class:
-    patterns:
-        UI choice
-    members:
-        label as a string
-        enabled as a boolean
-        next as a pointer to UI choice
-
-class:
-    patterns:
-        UI choice popover
-    members:
-        first item as a pointer to UI choice
-        last item as a pointer to UI choice
-        count as an integer
-        selected as an integer
-        first as an integer
-        rows as an integer
-        row height as a floating-point number
-        bounds as UI bounds
-        visible as a boolean
-        accepts tab as a boolean
-        message as a string
-        hint as a string
-        surface as UI layout
+import choice_types.dl
 
 to get [a UI choice popover]:
     set result to a new UI choice popover
     set result's selected to -1
+    set result's pressed to -1
+    set result's preferred width to 440.0
     set result's surface's node to a UI container of kind 41 containing no UI children
     return result
 
@@ -45,6 +22,7 @@ to get [the UI choice at] {integer:index} [in] {a pointer to UI choice popover:p
 to [add UI choice] {string:label} [enabled] {boolean:enabled} [to] {a pointer to UI choice popover:popup}:
     set item to storage for one slot initialized with (a new UI choice)
     set item's label to label
+    set item's icon to ""
     set item's enabled to enabled
     if popup's count = 0:
         set popup's first item to item
@@ -59,6 +37,7 @@ to [dismiss UI choice popover] {a pointer to UI choice popover:popup} [in] {a po
     if popup's visible:
         set view's damaged to true
     set popup's visible to false
+    set popup's pressed to -1
     set popup's rows to 0
     set popup's bounds to UI box at 0 0 sized 0 0
     retire UI floating layout (the address of (popup's surface))

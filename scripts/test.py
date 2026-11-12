@@ -66,6 +66,7 @@ def main():
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
+        applications.append((['--entry', 'tests/browser/forms.dl', '--output', '.cache/forms'], '.cache/forms'))
         applications.append((['--entry', 'tests/browser/pictures.dl', '--output', '.cache/browser/pictures'], '.cache/browser/pictures'))
         for arguments, directory in applications:
             subprocess.run(['python3', 'scripts/build.py', *arguments, '--dynlex', str(args.dynlex.resolve())], cwd=project, check=True)

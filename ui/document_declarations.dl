@@ -40,6 +40,27 @@ section paragraph {C string:name} using {UI appearance reference:appearance}:
 link {C string:text} to {C string:destination} using {UI appearance reference:appearance} means: ((a UI text component 43 labeled text styled "") leading to destination) wearing appearance
 editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 44 labeled name styled "") with initial text initial) wearing appearance
 read only editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (editor name containing initial using appearance) with read only text
+text field {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text field name containing initial) wearing appearance
+read only text field {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text field name containing initial using appearance) with read only text
+switch {C string:name} using {UI appearance reference:appearance} means: (switch name) wearing appearance
+choice {C string:text} means: a UI text component 35 labeled text styled ""
+
+a UI choice field {C string:name} choosing {C string:initial} from {an array:children} using {UI appearance reference:appearance} means: ((a UI component 34 labeled name styled "" at 0 0 sized 0 by 0 containing children) with initial text initial) wearing appearance
+
+section choice field {C string:name} choosing {C string:initial} using {UI appearance reference:appearance}:
+    result: UI reference
+    body:
+        children: many UI reference
+    value:
+        a UI choice field name choosing initial from (the body's children) using appearance
+
+section choice field {C string:name} choosing {C string:initial}:
+    result: UI reference
+    body:
+        children: many UI reference
+    value:
+        a UI choice field name choosing initial from (the body's children) using no UI appearance
+
 picture {C string:name} from {C string:path} using {UI appearance reference:appearance} means: ((a UI text component 45 labeled name styled "") leading to path) wearing appearance
 surface {C string:name} using {UI appearance reference:appearance} means: (a UI text component 20 labeled name styled "") wearing appearance
 

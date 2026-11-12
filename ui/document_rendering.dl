@@ -8,6 +8,7 @@ import document_tabs_rendering.dl
 import editor_rendering.dl
 import composition_rendering.dl
 import control_presentation.dl
+import document_forms.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to the UI appearance of layout displayed in view
@@ -25,14 +26,15 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         set box's y to the maximum of 0.0 and (box's y)
     set layout's painted bounds to box
     set kind to layout's node's kind
-    if appearance's filled or (((((kind = 2) or (kind = 20)) or (kind = 43)) or (kind = 44)) or (kind = 45)):
+    set {text control} to the UI element (layout's node) is a text control
+    if appearance's filled or (((((((kind = 2) or (kind = 17)) or (kind = 20)) or (kind = 34)) or (kind = 43)) or text control) or (kind = 45)):
         set layout's paint generation to view's paint count
         set layout's hit bounds to the UI intersection of box and (view's hit bounds)
     if appearance's filled:
         draw a rounded UI box box with radius (appearance's radius) in (appearance's background) on frame
     if appearance's border width > 0.0:
         draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
-    if ((((kind = 2) or (kind = 42)) or (kind = 43)) or (kind = 44)) or (kind = 46):
+    if ((((((kind = 2) or (kind = 17)) or (kind = 34)) or (kind = 42)) or (kind = 43)) or text control) or (kind = 46):
         if (kind = 2) or (kind = 43):
             set target to 0.0
             if available and ((view's hot = layout) or ((view's focused = layout) and (view's keyboard focus))):
@@ -41,27 +43,29 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             if layout's hover > 0.01:
                 set tint to appearance's foreground
                 draw a rounded UI surface box with radius (appearance's radius) from tint to tint opacity ((layout's hover * 20.4) as an integer) feathered by 0.75 on frame
+        if ((kind = 17) or (kind = 34)) or (kind = 39):
+            draw UI form decoration for layout in box on frame
         set top to box's y + appearance's padding
-        set view's selectable to (kind != 2) and (kind != 43)
+        set view's selectable to (((kind != 2) and (kind != 17)) and (kind != 34)) and (kind != 43)
         set view's text source to the address of (layout's text source)
-        set clip to UI box at (box's x + appearance's padding) (box's y + appearance's padding) sized (box's width - appearance's padding * 2.0) (box's height - appearance's padding * 2.0)
+        set clip to the UI form text bounds of layout in box
         set saved to a UI clip restricted to clip in view on frame
-        if kind = 44:
+        if text control:
             keep the UI caret visible in layout within clip in view
             set top to top - layout's scroll position
         set line to layout's lines
         set colors to @intrinsic("construct", a pointer to UI text color span)
-        if kind = 44:
+        if text control:
             set value to the UI value for (layout's node) in (view's instance)
             if value's colored text = layout's text source's text:
                 set colors to value's colors
         loop while line != @intrinsic("construct", a pointer to UI text line):
             set left to box's x + appearance's padding
-            if kind = 44:
+            if text control:
                 set left to left - layout's text scroll
             if appearance's centered:
                 set left to box's x + (box's width - line's width) / 2.0
-            if kind = 44:
+            if text control:
                 if view's selection's composing and (view's selection's caret source = (the address of (layout's text source))):
                     set colors to draw composing UI row line in layout at left (top + line's top + line's ascent) starting with colors on frame
                 else:

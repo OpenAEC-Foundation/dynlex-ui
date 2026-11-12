@@ -23,6 +23,17 @@ the identity UI transform means: @intrinsic("construct", UI transform, 1.0, 0.0,
 to get UI point {UI point:point} transformed by {UI transform:transform}:
     return a UI point at (transform's xx * point's x + transform's xy * point's y + transform's x) and (transform's yx * point's x + transform's yy * point's y + transform's y)
 
+to get UI bounds {UI bounds:box} transformed by {UI transform:transform}:
+    set first to UI point (a UI point at (box's x) and (box's y)) transformed by transform
+    set second to UI point (a UI point at (box's x + box's width) and (box's y)) transformed by transform
+    set third to UI point (a UI point at (box's x) and (box's y + box's height)) transformed by transform
+    set fourth to UI point (a UI point at (box's x + box's width) and (box's y + box's height)) transformed by transform
+    set left to the minimum of (the minimum of (first's x) and (second's x)) and (the minimum of (third's x) and (fourth's x))
+    set right to the maximum of (the maximum of (first's x) and (second's x)) and (the maximum of (third's x) and (fourth's x))
+    set top to the minimum of (the minimum of (first's y) and (second's y)) and (the minimum of (third's y) and (fourth's y))
+    set bottom to the maximum of (the maximum of (first's y) and (second's y)) and (the maximum of (third's y) and (fourth's y))
+    return UI box at left top sized (right - left) (bottom - top)
+
 to get UI point {UI point:point} untransformed by {UI transform:matrix}:
     set determinant to (matrix's xx * matrix's yy) - (matrix's xy * matrix's yx)
     require condition (determinant != 0.0) reporting "A singular UI transform cannot be inverted"

@@ -1,0 +1,57 @@
+# Dropdowns and source tools use the same bounded choice surface.
+import choice_popovers.dl
+
+to get [the UI popup font in] {a pointer to UI view:view}:
+    if view's instance's description's kind = 40:
+        return view's popup's typeface
+    return view's small
+
+to get [the UI popup appearance in] {a pointer to UI view:view}:
+    if view's instance's description's kind = 40:
+        return view's popup's appearance
+    set result to default UI appearance settings
+    set result's background to view's theme's surface
+    set result's foreground to view's theme's text
+    return result
+
+to [refresh UI popup choices in] {a pointer to UI view:view}:
+    set owner to view's popup
+    set popup to the address of (view's popup choices)
+    set item to popup's first item
+    set child to owner's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        set item's label to (the UI value for (child's node) in (view's instance))'s text
+        set item's enabled to the UI element (child's node) is enabled in (view's instance)
+        set item's icon to child's node's variant
+        if owner's node's kind = 34:
+            if ((the UI value for (owner's node) in (view's instance))'s text) = item's label:
+                set item's icon to "check"
+        set child to child's next
+        set item to item's next
+    if popup's selected >= 0:
+        if (the UI choice at (popup's selected) in popup)'s enabled = false:
+            move UI choice selection in popup by 1 wrapping true
+    set typeface to the UI popup font in view
+    set width to the maximum of 196.0 and (owner's painted bounds' width)
+    set item to popup's first item
+    loop while item != @intrinsic("construct", a pointer to UI choice):
+        set width to the maximum of width and ((the width of (item's label) using typeface) + 64.0)
+        set item to item's next
+    set popup's preferred width to width
+    set anchor to owner's painted bounds
+    place UI choice popover popup anchored at anchor within (the UI viewport bounds in view) using typeface
+
+to [open UI popup for] {a pointer to UI layout:layout} [in] {a pointer to UI view:view}:
+    set popup to the address of (view's popup choices)
+    clear UI choice popover popup in view
+    set view's popup to layout
+    set popup's on release to true
+    set popup's accepts space to true
+    set child to layout's first
+    loop while child != @intrinsic("construct", a pointer to UI layout):
+        add UI choice ((the UI value for (child's node) in (view's instance))'s text) enabled (the UI element (child's node) is enabled in (view's instance)) to popup
+        set child to child's next
+    if layout's node's kind = 34:
+        set popup's selected to (the UI value for (layout's node) in (view's instance))'s number
+    show UI choice popover popup reporting "" with hint "" in view
+    refresh UI popup choices in view
