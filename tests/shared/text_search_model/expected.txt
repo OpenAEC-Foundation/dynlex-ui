@@ -1,0 +1,1 @@
+Search models cache Unicode and multiline matches, refresh options and navigate original byte ranges with wrapping.

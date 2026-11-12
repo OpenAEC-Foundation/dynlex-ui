@@ -1,21 +1,29 @@
 import ../../ui/application.dl
 import interface.dl
 
-to read snake input from {a pointer to UI view:view}:
-    if view's input kind != 3:
-        if (view's input kind = 9) and ((view's key press = the UI space key) or ((view's key press = the UI P key) or (view's key press = the UI escape key))):
-            set view's key press to -1
-        return nothing
-    set match to the snake match in (view's instance)
-    set key to view's key press
+to get [the snake direction for key] {integer:key}:
     if (key = the UI up arrow key) or (key = the UI W key):
-        turn match toward 0
+        return 0
     if (key = the UI right arrow key) or (key = the UI D key):
-        turn match toward 1
+        return 1
     if (key = the UI down arrow key) or (key = the UI S key):
-        turn match toward 2
+        return 2
     if (key = the UI left arrow key) or (key = the UI A key):
-        turn match toward 3
+        return 3
+    return -1
+
+to read snake input from {a pointer to UI view:view}:
+    set key to view's key press
+    set direction to the snake direction for key key
+    set match to the snake match in (view's instance)
+    if (direction >= 0) and (view's instance's page's text = "playing"):
+        if view's input kind = 3:
+            turn match toward direction
+        consume the UI key in view
+    if view's input kind != 3:
+        if (view's input kind = 9) and ((key = the UI space key) or ((key = the UI P key) or (key = the UI escape key))):
+            consume the UI key in view
+        return nothing
     if (key = the UI space key) or (key = the UI P key):
         if (view's instance's page's text = "playing") or (view's instance's page's text = "paused"):
             pause or resume match
@@ -23,7 +31,7 @@ to read snake input from {a pointer to UI view:view}:
                 show page "paused" in (view's instance)
             else:
                 show page "playing" in (view's instance)
-            set view's key press to -1
+            consume the UI key in view
     if key = the UI escape key:
         if view's instance's page's text = "settings":
             leave snake settings in (view's instance)
@@ -37,7 +45,7 @@ to read snake input from {a pointer to UI view:view}:
             set view's closed to true
         else:
             return to the snake menu in (view's instance)
-        set view's key press to -1
+        consume the UI key in view
 
 to refresh the snake interface in {a pointer to UI view:view}:
     set match to the snake match in (view's instance)

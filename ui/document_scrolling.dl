@@ -10,6 +10,9 @@ to keep the UI caret visible in {a pointer to UI layout:layout} within {UI bound
     set position to view's selection's caret
     if view's selection's composing:
         set position to view's selection's composition start + view's selection's composition caret
+    reveal UI text byte position in layout within box
+
+to [reveal UI text byte] {integer:position} [in] {a pointer to UI layout:layout} [within] {UI bounds:box}:
     set line to layout's lines
     loop while line != @intrinsic("construct", a pointer to UI text line):
         if (position >= line's start) and (position <= line's end):

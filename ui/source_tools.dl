@@ -124,6 +124,11 @@ to [update UI source tools in] {a pointer to UI source workspace:workspace}:
     update UI source instance selection in tools
     update UI source navigation in tools
     update UI source hover in tools
+    set editor to workspace's editors
+    loop while editor != @intrinsic("construct", a pointer to UI source editor):
+        if editor's pane != @intrinsic("construct", UI reference):
+            refresh UI source search in editor in view
+        set editor to editor's next
     if (focus UI source tools tools) = false:
         return nothing
     if (tools's mode != 0) and (tools's mode != 2):

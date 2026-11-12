@@ -1,0 +1,56 @@
+import ../../ui/browser.dl
+import ../../ui/source_panes.dl
+import ../../ui/source_tools.dl
+
+class:
+    patterns:
+        search laboratory state
+    members:
+        workspace as a pointer to UI source workspace
+
+appearance page appearance:
+    padding is 24
+    gap is 16
+    font size is 16
+
+appearance code appearance:
+    height is 160
+    padding is 12
+    border width is 1
+    border is UI ink 170 180 190
+
+document search laboratory using page appearance:
+    source pane "Studio" containing "row\nRow\nrow" using code appearance
+    source pane "River" containing "get hay" using code appearance
+
+to [update search laboratory] {a pointer to UI view:view}:
+    set state to view's instance's state as a pointer to search laboratory state
+    update UI source tools in (state's workspace)
+
+to [close search laboratory] {a pointer to UI view:view}:
+    set instance to view's instance
+    set state to instance's state as a pointer to search laboratory state
+    free UI source workspace (state's workspace)
+    close view
+    close instance
+    destroy the value at state
+    deallocate state
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open search laboratory:
+    globals:
+        search laboratory
+    execute:
+        set state to storage for one slot initialized with (a new search laboratory state)
+        set instance to storage for one slot initialized with (an instance of search laboratory with state state)
+        set view to storage for one slot initialized with (a UI view of instance sized 800 by 700 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with the browser UI driver)
+        set state's workspace to a UI source workspace in instance rooted at "file:///workspace"
+        enable UI source tools for (state's workspace) in view
+        update UI frames in view using (the function named "update search laboratory $")
+        set view's close action to (the function named "close search laboratory $") as a pointer
+        run view
+
+open search laboratory

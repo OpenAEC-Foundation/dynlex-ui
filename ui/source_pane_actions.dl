@@ -1,6 +1,7 @@
 import source_buffers.dl
 import source_inspection.dl
 import source_actions.dl
+import source_search.dl
 
 to [inspect a UI source pane] {a pointer to UI instance:instance}:
     set editor to instance's event context as a pointer to UI source editor
@@ -42,5 +43,6 @@ to [bind UI source panes in] {a pointer to UI source workspace:workspace}:
             bind (editor's outline) in (workspace's instance) to (the function named "inspect a UI source pane $") for event 0 with context (editor as a pointer)
             bind (editor's instances) in (workspace's instance) to (the function named "inspect a UI source pane $") for event 0 with context (editor as a pointer)
             bind (editor's fixes) in (workspace's instance) to (the function named "inspect a UI source pane $") for event 0 with context (editor as a pointer)
+            bind UI source search controls in editor
             present UI source pane editor in (workspace's instance)
         set editor to editor's next

@@ -59,14 +59,18 @@ to handle UI input in {a pointer to UI view:view}:
             set view's keyboard focus to true
             if view's focus order > view's control count:
                 set view's focus order to 1
+            if view's control count > 0:
+                consume the UI key in view
         refresh UI focus in view
         if view's popup = @intrinsic("construct", a pointer to UI layout):
             navigate UI tabs in view
         refresh UI focus in view
         if ((view's key press = 257) or (view's key press = 32)) and (view's focused != @intrinsic("construct", a pointer to UI layout)):
             activate UI layout (view's focused) in view
-        if (the UI close key was pressed in view) and (view's instance's description's kind != 40):
-            set view's closed to true
+            consume the UI key in view
+        if (view's instance's description's kind != 40) or (view's popup != @intrinsic("construct", a pointer to UI layout)):
+            if the UI close key was pressed in view:
+                set view's closed to true
     if view's down != view's was down:
         set view's damaged to true
         if view's down:

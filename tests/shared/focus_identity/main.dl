@@ -1,0 +1,33 @@
+import ../../helpers/driver.dl
+
+document focus laboratory:
+    text field "Before" containing "first" using no UI appearance
+    view group "Options" using no UI appearance:
+        paragraph "Closed" containing "Closed" using no UI appearance
+        text field "Query" containing "find" using no UI appearance
+    text field "After" containing "last" using no UI appearance
+
+set instance to an instance of focus laboratory
+set window to the address of instance
+set view to a UI view of window sized 600 by 400 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set before to the UI layout labeled "Before" in (view's layout)
+set query to the UI layout labeled "Query" in (view's layout)
+set after to the UI layout labeled "After" in (view's layout)
+activate UI layout before in (the address of view)
+set (the UI value for (the control labeled "Options" in window) in window)'s number to 1
+activate UI layout query in (the address of view)
+require condition ((view's focused = query) and (view's text focus = query's node)) reporting "A newly shown control used its stale hidden focus order."
+ignore update UI view (the address of view)
+require condition (view's input context's active) reporting "A focused field did not activate native input."
+forget UI text source (the address of (query's text source)) in (the address of view)
+require condition (view's input context's active = false) reporting "Forgetting an active field retained its platform input context."
+set (the UI value for (the control labeled "Options" in window) in window)'s number to 0
+activate UI layout after in (the address of view)
+require condition ((view's focused = after) and (view's text focus = after's node)) reporting "Hiding a preceding control focused a different identity."
+ignore update UI view (the address of view)
+forget UI text source (the address of (query's text source)) in (the address of view)
+require condition (view's input context's active) reporting "Forgetting another field retired the current input context."
+close the address of view
+close window
+print line "Programmatic activation refreshes focus identity before using a changed control order."

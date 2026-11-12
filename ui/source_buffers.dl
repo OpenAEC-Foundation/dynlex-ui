@@ -35,6 +35,7 @@ to [restore UI source location] {a pointer to UI source buffer:buffer} [in] {a p
     require condition (editor's current = buffer) reporting "Only the visible source buffer can receive focus"
     set layout to the UI layout for element (editor's node) in (view's layout)
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
+    refresh UI focus in view
     set text to (the UI value for (editor's node) in (view's instance))'s text
     set source to the address of (layout's text source)
     if source's text != text:

@@ -8,6 +8,7 @@ import layout_lookup.dl
 import source_tools_types.dl
 import source_palette.dl
 import source_buffer_types.dl
+import source_search_types.dl
 
 class:
     patterns:
@@ -36,6 +37,7 @@ class:
         outline as UI reference
         instances as UI reference
         fixes as UI reference
+        search as UI source search
 
 class:
     patterns:
@@ -51,7 +53,7 @@ to [discover UI source editors within] {UI reference:node} [in] {a pointer to UI
     set scope to pane
     if node's variant = "source-pane":
         set scope to node
-    if node's kind = 44:
+    if the UI element node is a source editor:
         set entry to a new UI source editor
         set entry's node to node
         set entry's workspace to workspace
@@ -205,6 +207,16 @@ to [present UI source workspace] {a pointer to UI source workspace:workspace} [u
         set entry to entry's next
 
 to [free UI source workspace] {a pointer to UI source workspace:workspace}:
+    set retiring to workspace's editors
+    loop while retiring != @intrinsic("construct", a pointer to UI source editor):
+        if retiring's search's visible:
+            if workspace's tools != @intrinsic("construct", a pointer to UI source tools):
+                if workspace's tools's view != @intrinsic("construct", a pointer to UI view):
+                    hide UI search controls within (retiring's pane) in (workspace's tools's view)
+        set value to the UI value for (retiring's node) in (workspace's instance)
+        if clear UI search marks from (the address of (value's text state)):
+            invalidate workspace's instance
+        set retiring to retiring's next
     free UI source tools (workspace's tools)
     free UI source palette (workspace's palette)
     free UI language client (workspace's client)

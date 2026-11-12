@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from application_notices import compiler_notices
 
 
 def revision(directory):
@@ -15,6 +16,7 @@ def revision(directory):
 
 def export_sdk(project, compiler, output):
     sources = {'LICENSE.md': (project / 'LICENSE.md').read_bytes()}
+    sources.update({f'licenses/{name}': data for name, data in compiler_notices(compiler).items()})
     for directory in ['ui', 'platform', 'assets']:
         for path in sorted((project / directory).rglob('*')):
             if path.is_file():

@@ -1,0 +1,1 @@
+Key commands share scoped dispatch, contextual actions, native text defaults and per-event delivery results.

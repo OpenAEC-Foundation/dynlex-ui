@@ -4,6 +4,7 @@ import invalidation.dl
 import lib/utf8.dl
 
 import overlays.dl
+import key_bindings.dl
 
 # Kinds: 1 motion, 2 primary button, 3 key press, 4 text, 5 scroll,
 # 6 key release, 7 focus loss, 8 refresh, 9 repeat, 10 composition,
@@ -13,8 +14,12 @@ import overlays.dl
 # Text input: key=0 typed character, key=1 clipboard.
 # Composition: key=input epoch, modifiers=0 end/1 begin/2 update,
 # x/y=UTF-16 selection anchor/caret within the composition text.
-to queue UI input of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {string:text} in {a pointer to UI view:view}:
-    set event to @intrinsic("construct", UI input event, kind, key, x, y, modifiers, text, @intrinsic("construct", a pointer to UI input event))
+to [queue UI input of kind] {integer:kind} [key] {integer:key} [at] {floating-point number:x} {floating-point number:y} [with modifiers] {integer:modifiers} [containing] {string:text} [replying to] {a pointer to UI input delivery:delivery} [in] {a pointer to UI view:view}:
+    if delivery != @intrinsic("construct", a pointer to UI input delivery):
+        require condition (delivery's status != 1) reporting "An input delivery is already queued"
+        set delivery's status to 1
+        set delivery's handled to false
+    set event to @intrinsic("construct", UI input event, kind, key, x, y, modifiers, text, @intrinsic("construct", a pointer to UI input event), delivery)
     set entry to storage for one slot initialized with event
     if view's input first = @intrinsic("construct", a pointer to UI input event):
         set view's input first to entry
@@ -23,12 +28,16 @@ to queue UI input of kind {integer:kind} key {integer:key} at {floating-point nu
     set view's input last to entry
     @intrinsic("call pointer", view's driver's wake, nothing, view)
 
+to queue UI input of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {string:text} in {a pointer to UI view:view}:
+    queue UI input of kind kind key key at x y with modifiers modifiers containing text replying to (@intrinsic("construct", a pointer to UI input delivery)) in view
+
 to process UI input in {a pointer to UI view:view}:
     loop while view's input first != @intrinsic("construct", a pointer to UI input event):
         set event to view's input first
         set view's input first to event's next
         set view's input kind to event's kind
         set view's input code to event's key
+        set view's input handled to false
         set view's message to event's text
         set view's modifiers to event's modifiers
         set view's key press to -1
@@ -69,7 +78,10 @@ to process UI input in {a pointer to UI view:view}:
         if event's kind = 13:
             receive platform UI text (event's text) for (event's key) selecting (event's x as an integer) through (event's y as an integer) in view
         set consumed to process UI overlays in view
+        if consumed = false:
+            set consumed to process UI key bindings in view
         if consumed:
+            set view's input handled to true
             set view's key press to -1
             set view's typed text to ""
             set view's scroll x and view's scroll y to 0.0
@@ -85,6 +97,9 @@ to process UI input in {a pointer to UI view:view}:
         set view's typed text to ""
         set view's scroll x to 0.0
         set view's scroll y to 0.0
+        if event's delivery != @intrinsic("construct", a pointer to UI input delivery):
+            set event's delivery's handled to view's input handled
+            set event's delivery's status to 2
         destroy the value at event
         deallocate event
     set view's input last to @intrinsic("construct", a pointer to UI input event)

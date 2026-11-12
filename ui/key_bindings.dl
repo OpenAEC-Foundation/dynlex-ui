@@ -1,0 +1,53 @@
+# Keyboard commands use the same scoped handler/context machinery as controls.
+import key_handling.dl
+import focus.dl
+import layout_lookup.dl
+import interaction.dl
+
+to get [the UI event for key] {integer:key} [with modifiers] {integer:modifiers}:
+    require condition (0 <= key < 512) reporting "A UI key binding requires a valid key"
+    require condition (0 <= modifiers < 16) reporting "UI key modifiers use Shift, Control, Alt and Super bits"
+    return 1024 + modifiers * 512 + key
+
+to [bind UI key] {integer:key} [with modifiers] {integer:modifiers} [from] {UI reference:scope} [in] {a pointer to UI instance:instance} [to] {a callback:action} [with context] {a pointer:context}:
+    bind scope in instance to action for event (the UI event for key key with modifiers modifiers) with context context
+
+to [unbind UI key] {integer:key} [with modifiers] {integer:modifiers} [from] {UI reference:scope} [in] {a pointer to UI instance:instance}:
+    unbind UI handler for scope in instance for event (the UI event for key key with modifiers modifiers)
+
+to [activate a UI key target in] {a pointer to UI view:view}:
+    set target to view's instance's event context as UI reference
+    set layout to the UI layout for element target in (view's layout)
+    require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "The keyboard action targets a control outside its view"
+    activate UI layout layout in view
+
+to [bind UI key] {integer:key} [with modifiers] {integer:modifiers} [from] {UI reference:scope} [in] {a pointer to UI instance:instance} [activating] {UI reference:target}:
+    bind UI key key with modifiers modifiers from scope in instance to (the function named "activate a UI key target in $") with context (target as a pointer)
+
+to get [process UI key bindings in] {a pointer to UI view:view}:
+    if ((view's input kind != 3) and (view's input kind != 9)) or (view's key press < 0):
+        return false
+    if (view's active = false) or (view's selection's composing):
+        return false
+    refresh UI focus in view
+    set event to the UI event for key (view's key press) with modifiers (view's modifiers bitwise and 15)
+    set layout to view's focused
+    if layout = @intrinsic("construct", a pointer to UI layout):
+        set layout to view's layout
+    set origin to layout's node
+    loop while true:
+        if the UI element (layout's node) is enabled in (view's instance):
+            set handler to the UI handler for (layout's node) in (view's instance) for event event
+            if handler != @intrinsic("construct", a pointer to UI handler):
+                invoke UI handler handler for origin in (view's instance) receiving view
+                return true
+        if layout = view's layout:
+            return false
+        set layout to the UI layout for element (layout's parent) in (view's layout)
+        require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A key scope has no retained parent"
+
+section when the {C string:label} control receives key {integer:key} with modifiers {integer:modifiers}:
+    receiver: a pointer to UI view
+    returns: nothing
+    value:
+        bind UI key key with modifiers modifiers from (the control labeled label in this window) in this window to @intrinsic("deferred body") with context (0 as a pointer)

@@ -1,0 +1,1 @@
+Snake claims fresh and repeated direction keys only on the playing surface, and turns only on a fresh press.

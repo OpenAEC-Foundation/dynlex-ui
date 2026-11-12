@@ -1,0 +1,24 @@
+import source_search_rendering.dl
+
+to [refresh UI source search in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    set search to the address of (editor's search)
+    if search's visible = false:
+        return nothing
+    synchronize UI source workspace (editor's workspace) at (view's seconds) seconds
+    set model to the address of (search's model)
+    set model's query to UI search text labeled "Find text" in editor
+    set model's sensitive to (the UI value for (the UI search control labeled "Match case" in editor) in (view's instance))'s number != 0
+    set model's whole to (the UI value for (the UI search control labeled "Whole words" in editor) in (view's instance))'s number != 0
+    set model's newlines to true
+    if refresh UI text search model in (editor's document's source):
+        set search's error to ""
+        set position to the minimum of (editor's current's anchor) and (editor's current's caret)
+        ignore choose UI text search model forward true from position through position
+        reveal the UI source search match in editor in view
+    present UI source search in editor
+
+to [move UI source search in] {a pointer to UI source editor:editor} [forward] {boolean:forward} [in] {a pointer to UI view:view}:
+    refresh UI source search in editor in view
+    if choose UI text search (the address of (editor's search's model)) forward forward from (editor's current's anchor) through (editor's current's caret):
+        reveal the UI source search match in editor in view
+    present UI source search in editor

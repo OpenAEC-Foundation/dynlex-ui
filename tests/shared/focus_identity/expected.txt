@@ -1,0 +1,1 @@
+Programmatic activation refreshes focus identity before using a changed control order.

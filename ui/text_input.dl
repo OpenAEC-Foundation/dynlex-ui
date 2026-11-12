@@ -4,6 +4,7 @@ import text_navigation.dl
 import hit_testing.dl
 import lib/unicode.dl
 import text_content.dl
+import key_handling.dl
 
 # Selection anchors are byte offsets on Unicode scalar boundaries.
 to get the UI text hit at {UI point:point} in {a pointer to UI view:view} limited to {a pointer to UI text source:scope}:
@@ -270,12 +271,17 @@ to [navigate UI text in] {a pointer to UI view:view}:
         if shift = false:
             set view's selection's anchor to position
         set view's damaged to true
-        set view's key press to -1
-    if (key = 257) or (key = 32):
-        set view's key press to -1
+        consume the UI key in view
+    if key = 257:
+        consume the UI key in view
+    if key = 32:
+        if the UI element (source's element) accepts edits in (view's instance):
+            set view's key press to -1
+        else:
+            consume the UI key in view
     if key = 256:
         clear UI selection in view
-        set view's key press to -1
+        consume the UI key in view
         set view's damaged to true
 
 to handle UI [text] keys in {a pointer to UI view:view}:
@@ -303,7 +309,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
     if command:
         if editable and ((view's key press = 90) or (view's key press = 89)):
             restore UI text history in view forward ((view's key press = 89) or shift)
-            set view's key press to -1
+            consume the UI key in view
         if view's key press = 65:
             set first to source
             set last to source
@@ -314,7 +320,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
             set view's selection's anchor to 0
             set view's selection's caret source to last
             set view's selection's caret to last's text's length
-            set view's key press to -1
+            consume the UI key in view
             set view's damaged to true
             set view's reveal caret to true
         if (view's key press = 67) or (view's key press = 88):
@@ -323,7 +329,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
                 @intrinsic("call pointer", view's driver's copy, nothing, view, the data of text, text's length)
             if editable and (view's key press = 88):
                 replace UI text selection with (the string form of "") in view
-            set view's key press to -1
+            consume the UI key in view
     if editable:
         if view's typed text's length > 0:
             replace UI text selection with (view's typed text) in view
@@ -335,7 +341,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
             if key = 258:
                 replace UI text selection with (the string form of "    ") in view
             if (key = 257) or (key = 258):
-                set view's key press to -1
+                consume the UI key in view
         if (key = 259) or (key = 261):
             if view's selection's anchor = view's selection's caret:
                 if key = 259:
@@ -343,7 +349,7 @@ to handle UI [text] keys in {a pointer to UI view:view}:
                 else if view's selection's caret < source's text's length:
                     set view's selection's anchor to (the UTF8 character at (view's selection's caret) in (source's text))'s next
             replace UI text selection with (the string form of "") in view
-            set view's key press to -1
+            consume the UI key in view
     if control:
         if editable = false:
             set view's typed text to ""

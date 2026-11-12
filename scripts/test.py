@@ -23,6 +23,7 @@ def main():
     subprocess.run([sys.executable, 'scripts/generate_source_colors.py',
                     '--dynlex', str(args.dynlex.resolve()), '--check'], cwd=project, check=True)
     subprocess.run([sys.executable, 'tests/packaging/runtime_modules.py'], cwd=project, check=True)
+    subprocess.run([sys.executable, 'tests/packaging/application_notices.py'], cwd=project, check=True)
     compiler = args.dynlex.resolve() / 'build/dynlex'
     if not compiler.is_file():
         parser.error(f'Build the compiler first: {compiler}')
@@ -66,6 +67,8 @@ def main():
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
+        applications.append((['--entry', 'tests/browser/commands.dl', '--output', '.cache/commands'], '.cache/commands'))
+        applications.append((['--entry', 'tests/browser/search.dl', '--output', '.cache/search'], '.cache/search'))
         applications.append((['--entry', 'tests/browser/forms.dl', '--output', '.cache/forms'], '.cache/forms'))
         applications.append((['--entry', 'tests/browser/pictures.dl', '--output', '.cache/browser/pictures'], '.cache/browser/pictures'))
         for arguments, directory in applications:

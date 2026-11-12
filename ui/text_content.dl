@@ -2,29 +2,41 @@
 import declarations.dl
 import lib/utf8.dl
 
+to get [the UI element] {UI reference:node} [is a source editor]:
+    return node's kind = 44
+
 to get [the UI element] {UI reference:node} [is multiline]:
-    return (node's kind = 44) or (node's kind = 50)
+    return (the UI element node is a source editor) or (node's kind = 50)
 
 to get [the UI element] {UI reference:node} [is a text control]:
     return (node's kind = 39) or (the UI element node is multiline)
 
 to get UI text accepted from {string:inserted} by {UI reference:element}:
     set filtered to a new string buffer containing (inserted's length) bytes
+    set multiline to the UI element element is multiline
     set count to 0
     set index to 0
     loop while index < inserted's length:
         set character to the UTF8 character at index in inserted
         require condition (character's valid) reporting "UI text must contain valid UTF-8"
-        set allowed to (character's code >= 32) and (character's code != 127)
-        if the UI element element is multiline:
-            set allowed to allowed or ((character's code = 10) or (character's code = 9))
-        if allowed:
-            set cursor to index
-            loop while cursor < character's next:
-                store (the character at cursor in inserted) into (the data of filtered) at count
-                increment cursor
-                increment count
-        set index to character's next
+        if multiline and (character's code = 13):
+            store (10 as a byte) into (the data of filtered) at count
+            increment count
+            set index to character's next
+            if index < inserted's length:
+                if (the character at index in inserted) = (10 as a byte):
+                    increment index
+        else:
+            set allowed to (character's code >= 32) and (character's code != 127)
+            if multiline:
+                set allowed to allowed or ((character's code = 10) or (character's code = 9))
+            if allowed:
+                set cursor to index
+                loop while cursor < character's next:
+                    store (the character at cursor in inserted) into (the data of filtered) at count
+                    increment cursor
+                    increment count
+            set index to character's next
     set filtered's length to count
     store (0 as a byte) into (the data of filtered) at count
     return filtered

@@ -99,6 +99,9 @@ to close {a pointer to UI view:view}:
     loop while view's input first != @intrinsic("construct", a pointer to UI input event):
         set event to view's input first
         set view's input first to event's next
+        if event's delivery != @intrinsic("construct", a pointer to UI input delivery):
+            set event's delivery's handled to false
+            set event's delivery's status to 3
         destroy the value at event
         deallocate event
     if view's observer != @intrinsic("construct", a pointer to UI observer):
@@ -140,3 +143,11 @@ to run {a pointer to UI view:view}:
 to finish UI application {a pointer to UI view:view}:
     require condition (view's close action != (0 as a pointer)) reporting "The UI application has no close handler"
     @intrinsic("call pointer", view's close action, nothing, view)
+
+# A platform user gesture needs its own result before returning to the host.
+to get [deliver UI input of kind] {integer:kind} [key] {integer:key} [at] {floating-point number:x} {floating-point number:y} [with modifiers] {integer:modifiers} [containing] {string:text} [in] {a pointer to UI view:view}:
+    set delivery to a new UI input delivery
+    queue UI input of kind kind key key at x y with modifiers modifiers containing text replying to (the address of delivery) in view
+    ignore update UI view view
+    require condition (delivery's status = 2) reporting "Synchronous UI input was not delivered"
+    return delivery's handled

@@ -1,0 +1,80 @@
+import source_buffers.dl
+import text_marks.dl
+import document_forms.dl
+import document_scrolling.dl
+
+to get [the UI search control labeled] {C string:label} [in] {a pointer to UI source editor:editor}:
+    set node to the UI element labeled label in (editor's pane)
+    require condition (node != @intrinsic("construct", UI reference)) reporting "A source pane is missing a search control"
+    return node
+
+to [set UI search text labeled] {C string:label} [in] {a pointer to UI source editor:editor} [to] {string:text}:
+    set UI text of (the UI search control labeled label in editor) in (editor's workspace's instance) to text
+
+to get [UI search text labeled] {C string:label} [in] {a pointer to UI source editor:editor}:
+    return (the UI value for (the UI search control labeled label in editor) in (editor's workspace's instance))'s text
+
+to [clear UI source search marks in] {a pointer to UI source editor:editor}:
+    set buffer to editor's buffers
+    set changed to false
+    loop while buffer != @intrinsic("construct", a pointer to UI source buffer):
+        set state to the UI text state for (buffer's document) in editor in (editor's workspace's instance)
+        set changed to (clear UI search marks from state) or changed
+        set buffer to buffer's next
+    if changed:
+        invalidate editor's workspace's instance
+
+to [present UI source search in] {a pointer to UI source editor:editor}:
+    set search to the address of (editor's search)
+    if search's visible = false:
+        return nothing
+    set model to the address of (search's model)
+    set window to editor's workspace's instance
+    set state to the UI text state for (editor's document) in editor in window
+    set layer to the UI text mark layer named "editor search" in state
+    set rebuild to (search's generation != model's generation) or (search's selected != model's current)
+    if layer = @intrinsic("construct", a pointer to UI text mark layer):
+        set rebuild to true
+    if rebuild:
+        mark UI text (model's text) in layer "editor search" at priority 20 in state
+        mark UI text (model's text) in layer "editor match" at priority 30 in state
+        set index to 0
+        loop while index < the length of (model's matches):
+            set match to the item at index in (model's matches)
+            add UI text mark (UI ink 234 190 74) from (match's start) to (match's end) with opacity 60 in layer "editor search" in state
+            if index = model's current:
+                add UI text mark (UI ink 234 190 74) from (match's start) to (match's end) with opacity 125 in layer "editor match" in state
+            increment index
+        set search's generation to model's generation
+        set search's selected to model's current
+        invalidate window
+    set count to the length of (model's matches)
+    set caption to the string form of "No matches"
+    if count > 0:
+        set caption to formatted "{model's current + 1} of {count}"
+    if model's query's length = 0:
+        set caption to "Enter text to find · Enter next · Shift+Enter previous · Esc close"
+    if search's error's length > 0:
+        set caption to search's error
+    set UI search text labeled "Search result" in editor to caption
+    for each label in ["Previous match", "Next match"]:
+        set UI control (the UI search control labeled label in editor) enabled (count > 0) in window
+    set editable to (editor's document's writable) and (the UI element (editor's node) accepts edits in window)
+    set UI control (the UI search control labeled "Replace text" in editor) enabled editable in window
+    for each label in ["Replace", "Replace all"]:
+        set UI control (the UI search control labeled label in editor) enabled (editable and (count > 0)) in window
+
+to [reveal the UI source search match in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
+    set model to the address of (editor's search's model)
+    if model's current < 0:
+        return nothing
+    set match to the item at (model's current) in (model's matches)
+    set editor's current's anchor to match's start
+    set editor's current's caret to match's end
+    if view's text focus = editor's node:
+        restore UI source location (editor's current) in editor in view
+        set view's reveal caret to true
+    set layout to the UI layout for element (editor's node) in (view's layout)
+    refresh UI text geometry for (the address of (layout's text source)) in view
+    reveal UI text byte (match's end) in layout within (the UI form text bounds of layout in (layout's painted bounds))
+    set view's damaged to true

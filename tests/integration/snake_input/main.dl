@@ -1,0 +1,30 @@
+import ../../../examples/snake/application.dl
+
+[menu surface] means: UI node 22 with "menu" colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
+[playing surface] means: UI node 22 with "playing" colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
+[settings surface] means: UI node 22 with "settings" colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
+
+set game to a new snake session
+set instance to an instance of menu surface with state (the address of game)
+set instance's page to menu surface
+set view to a new UI view
+set view's instance to the address of instance
+set view's input kind to 3
+set view's key press to 265
+read snake input from (the address of view)
+require condition ((view's input handled = false) and (view's key press = 265)) reporting "The menu stole direction keys from its controls."
+set instance's page to settings surface
+read snake input from (the address of view)
+require condition (view's input handled = false) reporting "Settings stole direction keys from its controls."
+set instance's page to playing surface
+begin a run in (the address of game)
+set view's input kind to 9
+read snake input from (the address of view)
+require condition ((view's input handled) and (game's direction = 1)) reporting "A repeated direction key turned the snake or leaked its default."
+set view's input kind to 3
+set view's key press to 265
+read snake input from (the address of view)
+require condition ((view's input handled) and (game's direction = 0)) reporting "A fresh direction key did not turn and claim its event."
+close the address of instance
+close the address of game
+print line "Snake claims fresh and repeated direction keys only on the playing surface, and turns only on a fresh press."

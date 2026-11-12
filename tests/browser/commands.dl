@@ -1,0 +1,58 @@
+import ../../ui/browser.dl
+
+class:
+    patterns:
+        key laboratory state
+    members:
+        finds as an integer
+        runs as an integer
+
+appearance page appearance:
+    padding is 24
+    gap is 16
+    font size is 18
+
+appearance source appearance:
+    height is 160
+    padding is 12
+    border width is 1
+    border is UI ink 170 180 190
+
+document keyboard laboratory using page appearance:
+    editor "Source" containing "alpha" using source appearance
+    button "Run"
+    paragraph "Status" containing "Ready" using no UI appearance
+    code:
+        when the "Source" control receives key 70 with modifiers 2:
+            set state to this window's state as a pointer to key laboratory state
+            increment state's finds
+            set the text of "Status" in this window to (formatted "Find {state's finds}")
+        when the "Run" button is clicked:
+            set state to this window's state as a pointer to key laboratory state
+            increment state's runs
+            set the text of "Status" in this window to (formatted "Run {state's runs}")
+
+to [close keyboard laboratory] {a pointer to UI view:view}:
+    set instance to view's instance
+    set state to instance's state as a pointer to key laboratory state
+    close view
+    close instance
+    destroy the value at state
+    deallocate state
+    destroy the value at view
+    deallocate view
+    destroy the value at instance
+    deallocate instance
+
+function open keyboard laboratory:
+    globals:
+        keyboard laboratory
+    execute:
+        set state to storage for one slot initialized with (a new key laboratory state)
+        set instance to storage for one slot initialized with (an instance of keyboard laboratory with state state)
+        bind UI key 257 with modifiers 2 from (the control labeled "Source" in instance) in instance activating (the control labeled "Run" in instance)
+        set view to storage for one slot initialized with (a UI view of instance sized 800 by 600 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf" with the browser UI driver)
+        set view's close action to (the function named "close keyboard laboratory $") as a pointer
+        run view
+
+open keyboard laboratory

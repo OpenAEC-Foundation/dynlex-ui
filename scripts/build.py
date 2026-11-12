@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from application_notices import write_notices
 
 
 def main():
@@ -30,15 +31,14 @@ def main():
         output = (args.output or project / "build" / f"{name}.out").resolve()
         output.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run([str(compiler), str(source), "-o", str(output)], cwd=project, check=True)
+        write_notices(project, dynlex, output.with_name(output.name + '.licenses'))
         print(output)
         return
     output = (args.output or project / "dist" / name).resolve()
     output.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(compiler), str(source), "--emit-wasm", "-o", str(output / "application.wasm")], cwd=project, check=True)
     shutil.copy2(project / "LICENSE.md", output / "LICENSE.md")
-    licenses = output / "licenses"
-    licenses.mkdir(exist_ok=True)
-    shutil.copy2(project / "assets/icons/LICENSE", licenses / "icons.txt")
+    write_notices(project, dynlex, output / "licenses")
     platform = output / "platform"
     platform.mkdir(exist_ok=True)
     source = project / "platform/browser"

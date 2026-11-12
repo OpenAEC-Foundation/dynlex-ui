@@ -1,3 +1,4 @@
+import key_handling.dl
 import view.dl
 import text.dl
 import tabs.dl
@@ -32,7 +33,7 @@ to navigate UI tabs in {a pointer to UI view:view}:
         set index to ((index + step) + group's count) mod group's count
         increment attempts
     if attempts = group's count:
-        set view's key press to -1
+        consume the UI key in view
         return nothing
     if group's kind = 28:
         set target to the UI layout for element (the UI child at index in group) in (view's layout)
@@ -40,4 +41,4 @@ to navigate UI tabs in {a pointer to UI view:view}:
     else:
         clear UI selection in view
     activate (the UI child at index in group) belonging to group in (view's instance)
-    set view's key press to -1
+    consume the UI key in view

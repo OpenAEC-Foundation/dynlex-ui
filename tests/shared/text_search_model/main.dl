@@ -1,0 +1,28 @@
+import ../../../ui/text_search_model.dl
+
+set search to a new UI text search
+set search's query to "k"
+set search's newlines to true
+require condition (refresh UI text search (the address of search) in (the string form of "K k\r\n𐐀")) reporting "A new search was not evaluated."
+require condition ((the length of (search's matches)) = 2) reporting "Search state lost Unicode folding."
+require condition (((refresh UI text search (the address of search) in (the string form of "K k\r\n𐐀")) = false) and (search's generation = 1)) reporting "An unchanged search recomputed its result."
+require condition (choose UI text search (the address of search) forward true from 0 through 0) reporting "The first result could not be selected."
+require condition (search's current = 0) reporting "Initial search did not start at the caret."
+ignore choose UI text search (the address of search) forward true from 0 through 3
+require condition (search's current = 1) reporting "Next did not pass the selected match."
+ignore choose UI text search (the address of search) forward true from 4 through 5
+require condition (search's current = 0) reporting "Next did not wrap."
+ignore choose UI text search (the address of search) forward false from 0 through 3
+require condition (search's current = 1) reporting "Previous did not wrap."
+set search's query to "\n𐐨"
+ignore refresh UI text search (the address of search) in (the string form of "K k\r\n𐐀")
+set match to the item at 0 in (search's matches)
+require condition ((match's start = 5) and (match's end = 11)) reporting "Multiline search did not retain original byte endpoints."
+set search's sensitive to true
+ignore refresh UI text search (the address of search) in (the string form of "K k\r\n𐐀")
+require condition ((the length of (search's matches)) = 0) reporting "Changing case policy did not refresh an unchanged source."
+require condition ((choose UI text search (the address of search) forward true from 0 through 0) = false) reporting "An empty result allowed navigation."
+set search's query to ""
+ignore refresh UI text search (the address of search) in (the string form of "source")
+require condition ((search's current = -1) and ((the length of (search's matches)) = 0)) reporting "Clearing the query retained a result."
+print line "Search models cache Unicode and multiline matches, refresh options and navigate original byte ranges with wrapping."

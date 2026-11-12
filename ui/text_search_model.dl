@@ -1,0 +1,59 @@
+# Search state is independent of source analysis, controls and platform APIs.
+import lib/text_search.dl
+
+class:
+    patterns:
+        UI text search
+    members:
+        query as a string
+        sensitive as a boolean
+        whole as a boolean
+        newlines as a boolean
+        text as a string
+        requested as a string
+        matched case as a boolean
+        matched words as a boolean
+        matched newlines as a boolean
+        ready as a boolean
+        matches as the type of (an empty sequence of text search match)
+        current as an integer
+        generation as an integer
+
+to get [refresh UI text search] {a pointer to UI text search:search} [in] {string:text}:
+    if search's ready:
+        if (((search's text = text) and (search's requested = search's query)) and ((search's matched case = search's sensitive) and (search's matched words = search's whole))) and (search's matched newlines = search's newlines):
+            return false
+    set result to literal text matches in text for (search's query) matching case (search's sensitive) requiring whole words (search's whole) treating line breaks alike (search's newlines)
+    require condition (result's status = 0) reporting "UI text search requires valid UTF-8"
+    set search's text to text
+    set search's requested to search's query
+    set search's matched case to search's sensitive
+    set search's matched words to search's whole
+    set search's matched newlines to search's newlines
+    set search's matches to result's matches
+    set search's current to -1
+    set search's ready to true
+    increment search's generation
+    return true
+
+to get [choose UI text search] {a pointer to UI text search:search} [forward] {boolean:forward} [from] {integer:anchor} [through] {integer:caret}:
+    require condition (search's ready) reporting "Search navigation requires a current result"
+    set count to the length of (search's matches)
+    if count = 0:
+        set search's current to -1
+        return false
+    set selected to 0 if forward, else (count - 1)
+    set boundary to (the maximum of anchor and caret) if forward, else (the minimum of anchor and caret)
+    set index to 0
+    set found to false
+    loop while index < count:
+        set match to the item at index in (search's matches)
+        if forward:
+            if (found = false) and (match's start >= boundary):
+                set selected to index
+                set found to true
+        else if match's end <= boundary:
+            set selected to index
+        increment index
+    set search's current to selected
+    return true

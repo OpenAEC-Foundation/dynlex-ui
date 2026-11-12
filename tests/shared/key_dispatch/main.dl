@@ -1,0 +1,99 @@
+import ../../helpers/driver.dl
+import ../../../ui/key_bindings.dl
+
+appearance column appearance:
+    gap is 8
+    padding is 8
+
+appearance code appearance:
+    height is 90
+
+class:
+    patterns:
+        key test state
+    members:
+        root as an integer
+        scoped as an integer
+        run as an integer
+        observed as an integer
+
+# Key callbacks receive the view and retain the same contextual event frame as
+# other handlers. The window accessor works for either receiver.
+function [record root command] {a pointer to UI view:view}:
+    execute:
+        set state to view's instance's event context as a pointer to key test state
+        increment state's root
+
+function [record scoped command] {a pointer to UI view:view}:
+    execute:
+        set state to view's instance's event context as a pointer to key test state
+        increment state's scoped
+
+function [record Run action] {a pointer to UI instance:instance}:
+    execute:
+        set state to instance's event context as a pointer to key test state
+        increment state's run
+
+function [observe key dispatch] {a pointer to UI view:view}:
+    execute:
+        if (view's input kind = 3) or (view's input kind = 9):
+            set state to view's instance's state as a pointer to key test state
+            increment state's observed
+            if view's key press = 293:
+                consume the UI key in view
+
+document commands using column appearance:
+    region "Left" using column appearance:
+        editor "Source" containing "abc" using code appearance
+        button "Run"
+    text field "Elsewhere" containing "other" using no UI appearance
+
+set state to a new key test state
+set instance to an instance of commands with state (the address of state)
+set window to the address of instance
+set view to a UI view of window sized 600 by 400 using font "regular" with the test UI driver
+set context to (the address of state) as a pointer
+set source to the control labeled "Source" in window
+set region to the control labeled "Left" in window
+set button to the control labeled "Run" in window
+bind button in window to (the function named "record Run action $") for event 0 with context context
+bind UI key 70 with modifiers 2 from commands in window to (the function named "record root command $") with context context
+bind UI key 70 with modifiers 2 from region in window to (the function named "record scoped command $") with context context
+bind UI key 257 with modifiers 2 from source in window activating button
+watch UI input in (the address of view) using (the function named "observe key dispatch $")
+ignore update UI view (the address of view)
+require condition (deliver UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)) reporting "Tab did not report shared focus handling."
+require condition (view's text focus = source) reporting "Tab did not enter the source control."
+set previous to state's observed
+require condition (deliver UI input of kind 3 key 70 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) reporting "A scoped command did not report handling."
+require condition (((state's scoped = 1) and (state's root = 0)) and (state's observed = previous)) reporting "A scoped command bubbled or reached an unrelated input observer."
+require condition (window's event context = (0 as a pointer)) reporting "A key command leaked its contextual callback frame."
+require condition (deliver UI input of kind 9 key 70 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) reporting "A repeated key bypassed shared command dispatch."
+require condition (state's scoped = 2) reporting "A repeated command did not run."
+require condition (deliver UI input of kind 3 key 257 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) reporting "A key activation was not handled."
+require condition ((state's run = 1) and ((the UI value for source in window)'s text = "abc")) reporting "A command activation also inserted a newline."
+set UI control button enabled false in window
+require condition (deliver UI input of kind 3 key 257 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) reporting "A bound disabled action leaked its shortcut to the platform."
+require condition (state's run = 1) reporting "A shortcut activated a disabled control."
+require condition ((deliver UI input of kind 3 key 32 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)) = false) reporting "An editable space key suppressed native text entry."
+ignore deliver UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing " " in (the address of view)
+require condition ((the UI value for source in window)'s text = "abc ") reporting "A native space did not enter the shared text model once."
+require condition ((deliver UI input of kind 3 key 86 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) = false) reporting "A paste shortcut blocked the platform clipboard event."
+require condition ((deliver UI input of kind 3 key 294 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)) = false) reporting "An unbound function key was claimed."
+require condition (deliver UI input of kind 3 key 293 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)) reporting "An application input observer could not claim its key."
+set elsewhere to the UI layout labeled "Elsewhere" in (view's layout)
+activate UI layout elsewhere in (the address of view)
+require condition (deliver UI input of kind 3 key 70 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)) reporting "A root command did not handle input outside the nested scope."
+require condition ((state's root = 1) and (state's scoped = 2)) reporting "A sibling used another pane's command context."
+# A receipt belongs to its own queued event, not to the last event in the batch.
+set delivery to a new UI input delivery
+queue UI input of kind 3 key 263 at 0.0 0.0 with modifiers 0 containing "" replying to (the address of delivery) in (the address of view)
+queue UI input of kind 1 key 0 at 10.0 10.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((delivery's status = 2) and (delivery's handled)) reporting "A later motion replaced the key's delivery result."
+set pending to a new UI input delivery
+queue UI input of kind 3 key 70 at 0.0 0.0 with modifiers 2 containing "" replying to (the address of pending) in (the address of view)
+close the address of view
+require condition ((pending's status = 3) and (pending's handled = false)) reporting "Closing a view left a pending input receipt unresolved."
+close window
+print line "Key commands share scoped dispatch, contextual actions, native text defaults and per-event delivery results."

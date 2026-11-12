@@ -86,14 +86,15 @@ to copy browser UI text in {a pointer to UI view:view} containing {C string:text
 to wake browser UI {a pointer to UI view:view}:
     @intrinsic("call", "dynlex_ui", "ui_wake", nothing, view's window)
 
-to receive browser UI input in {a pointer to UI view:view} of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {C string:text} counting {integer:count}:
+to get receive browser UI input in {a pointer to UI view:view} of kind {integer:kind} key {integer:key} at {floating-point number:x} {floating-point number:y} with modifiers {integer:modifiers} containing {C string:text} counting {integer:count}:
     set content to the substring of (a new string from text containing count bytes) from 0 spanning count bytes
-    queue UI input of kind kind key key at x y with modifiers modifiers containing content in view
     # Resolve editing focus inside the browser's user gesture, so a touch can
     # activate the native keyboard. Text commits also refresh source geometry
     # before the next pointer event can inspect it.
     if (((kind = 2) and (key = 1)) or ((kind = 3) or (kind = 9))) or ((kind = 4) or (kind = 13)):
-        ignore update UI view view
+        return deliver UI input of kind kind key key at x y with modifiers modifiers containing content in view
+    queue UI input of kind kind key key at x y with modifiers modifiers containing content in view
+    return false
 
 to get the next browser UI frame in {a pointer to UI view:view}:
     set animation to update UI view view

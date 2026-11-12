@@ -1,6 +1,7 @@
 # Reusable editor chrome is an ordinary static UI description. Behavior is
 # attached by source_tools.dl and never changes the application's event state.
 import document_declarations.dl
+import source_search_views.dl
 
 appearance UI source header appearance:
     flow is horizontal
@@ -26,7 +27,9 @@ source pane {C string:name} containing {C string:source} using {UI appearance re
         (button "Outline") wearing UI source action appearance,
         (button "Instances") wearing UI source action appearance,
         (button "Fixes") wearing UI source action appearance,
+        (button "Find") wearing UI source action appearance,
         paragraph "Location" containing name using UI source location appearance
     ]) wearing UI source header appearance,
+    UI source search controls,
     editor name containing source using (the UI source content appearance using appearance)
 ]) wearing (the UI source frame appearance using appearance)

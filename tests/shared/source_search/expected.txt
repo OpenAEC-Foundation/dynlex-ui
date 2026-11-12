@@ -1,0 +1,1 @@
+Source Find and Replace share scoped fields, Unicode matching, focus, independent marks, atomic undo and read-only project policy.

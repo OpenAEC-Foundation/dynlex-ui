@@ -45,7 +45,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
     const bytes = encoder.encode(value);
     const pointer = runtime.env.malloc(bytes.length + 1);
     new Uint8Array(memory.buffer, pointer, bytes.length).set(bytes);
-    try { surface.input(surface.view, kind, key, x, y, modifiers, pointer, bytes.length); }
+    try { return surface.input(surface.view, kind, key, x, y, modifiers, pointer, bytes.length); }
     finally { runtime.env.free(pointer); }
   }
 

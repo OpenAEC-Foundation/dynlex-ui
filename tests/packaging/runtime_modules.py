@@ -1,6 +1,7 @@
 """The SDK carries every runtime module supplied by its compiler checkout."""
 from pathlib import Path
 import sys
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -12,9 +13,15 @@ import export_sdk
 
 
 class RuntimeModules(unittest.TestCase):
+    def compiler_notices(self, compiler):
+        (compiler / 'metadata').mkdir(parents=True)
+        (compiler / 'metadata/library-notices.json').write_text(json.dumps({'custom.txt': 'notice.txt'}))
+        (compiler / 'notice.txt').write_text('Compiler library notice\n')
+
     def test_export_requires_the_runtime_entrypoint(self):
         with tempfile.TemporaryDirectory() as directory:
             compiler = Path(directory) / 'compiler'
+            self.compiler_notices(compiler)
             (compiler / 'web').mkdir(parents=True)
             (compiler / 'web/graphics-backend.js').write_text('// Graphics adapter\n')
             with patch.object(export_sdk, 'revision', return_value='test-revision'):
@@ -24,6 +31,7 @@ class RuntimeModules(unittest.TestCase):
     def test_export_includes_additional_runtime_dependencies(self):
         with tempfile.TemporaryDirectory() as directory:
             compiler = Path(directory) / 'compiler'
+            self.compiler_notices(compiler)
             runtime = compiler / 'src/web/ide/public/compiler'
             runtime.mkdir(parents=True)
             names = ['runtimeImports.js', 'runtimeFilesystem.js', 'runtimeHost.js',
@@ -39,6 +47,7 @@ class RuntimeModules(unittest.TestCase):
             prefix = 'platform/browser/runtime/'
             self.assertEqual({name.removeprefix(prefix) for name in manifest['files'] if name.startswith(prefix)}, set(names))
             with zipfile.ZipFile(output) as archive:
+                self.assertEqual(archive.read('licenses/custom.txt'), b'Compiler library notice\n')
                 for name in names:
                     self.assertEqual(archive.read(prefix + name), (runtime / name).read_bytes())
 

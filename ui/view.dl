@@ -83,6 +83,7 @@ class:
         key press as an integer
         input kind as an integer
         input code as an integer
+        input handled as a boolean
         message as a string
         focus order as an integer
         control count as an integer
@@ -146,3 +147,7 @@ section when painting the {C string:label} canvas:
     returns: nothing
     value:
         bind (the control labeled label in this window) in this window to @intrinsic("deferred body") for event 1
+
+# Contextual callbacks retain a uniform window accessor for each UI receiver.
+the UI window of {a pointer to UI view:view} means: view's instance
+the UI window of {a pointer to UI canvas frame:canvas} means: canvas's instance

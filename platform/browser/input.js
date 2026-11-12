@@ -93,11 +93,7 @@ export function connectInput(surface, send, schedule) {
   const keydown = event => {
     const key = keyNumber(event.code);
     if (key < 0 || event.isComposing || composing) return;
-    const shortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
-    if ([256, 257, 258, 259, 261, 262, 263, 264, 265, 266, 267, 268, 269].includes(key) ||
-        (290 <= key && key <= 314) ||
-        (shortcut && [65, 67, 88, 89, 90].includes(key))) event.preventDefault();
-    send(event.repeat ? 9 : 3, key, 0, 0, modifiers(event));
+    if (send(event.repeat ? 9 : 3, key, 0, 0, modifiers(event))) event.preventDefault();
   };
   const keyup = event => {
     const key = keyNumber(event.code);

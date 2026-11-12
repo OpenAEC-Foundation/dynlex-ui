@@ -26,11 +26,14 @@ to get the UI text boundary at or before {integer:offset} in {string:text}:
     return position
 
 to clear UI selection in {a pointer to UI view:view}:
+    set view's input context's active to false
     set view's selection to a new UI text selection
 
 # A floating surface can disappear between paints. Retained runs must release
 # their borrowed source before its owner is cleared, even before the next paint.
 to [forget UI text source] {a pointer to UI text source:source} [in] {a pointer to UI view:view}:
+    if (source's element != @intrinsic("construct", UI reference)) and (view's input context's element = source's element):
+        set view's input context's active to false
     if ((view's selection's anchor source = source) or (view's selection's caret source = source)) or (view's selection's limit = source):
         clear UI selection in view
     set run to view's texts

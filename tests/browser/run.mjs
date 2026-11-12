@@ -267,6 +267,12 @@ try {
       if (resources.size !== 0) throw new Error('Closing the font retained masks');
     })()`);
 
+  } else if (example === 'search') {
+    const {verifySearch} = await import('./search.mjs');
+    await verifySearch({click,key,evaluate,command,waitFor,settled,screenshot});
+  } else if (example === 'commands') {
+    const {verifyCommands}=await import('./commands.mjs');
+    await verifyCommands({click,key,evaluate,command,waitFor,settled,screenshot});
   } else if (example === 'editor') {
     const { verifyEditor } = await import('./editor.mjs');
     await verifyEditor({ click, key, evaluate, command, waitFor, settled, screenshot });

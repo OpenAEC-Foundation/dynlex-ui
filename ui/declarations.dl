@@ -162,7 +162,8 @@ to invalidate {a pointer to UI instance:instance}:
         @intrinsic("call pointer", observer's notify, nothing, observer's context)
         set observer to observer's next
 
-this window means: @intrinsic("receiver")
+the UI window of {a pointer to UI instance:instance} means: instance
+this window means: the UI window of @intrinsic("receiver")
 
 section code:
     receiver: a pointer to UI instance
@@ -225,6 +226,20 @@ to [bind UI action] {a callback:action} [to] {UI reference:target} [in] {a point
         set entry to @intrinsic("construct", UI handler, target, callback, context, instance's handlers, event)
         set instance's handlers to storage for one slot initialized with entry
     invalidate instance
+
+to [unbind UI handler for] {UI reference:target} [in] {a pointer to UI instance:instance} [for event] {integer:event}:
+    set previous to @intrinsic("construct", a pointer to UI handler)
+    set handler to instance's handlers
+    loop while handler != @intrinsic("construct", a pointer to UI handler):
+        if (handler's target = target) and (handler's event = event):
+            if previous = @intrinsic("construct", a pointer to UI handler):
+                set instance's handlers to handler's next
+            else:
+                set previous's next to handler's next
+            deallocate handler
+            return nothing
+        set previous to handler
+        set handler to handler's next
 
 to [unbind UI handlers with context] {a pointer:context} [in] {a pointer to UI instance:instance}:
     # The supplied owner can itself be a field of a released handler.

@@ -1,3 +1,12 @@
+# A delivery is fresh (0), queued (1), delivered (2), or cancelled (3).
+# The requesting caller retains it until the queue has retired the event.
+class:
+    patterns:
+        UI input delivery
+    members:
+        status as an integer
+        handled as a boolean
+
 class:
     patterns:
         UI input event
@@ -9,3 +18,4 @@ class:
         modifiers as an integer
         text as a string
         next as a pointer to UI input event
+        delivery as a pointer to UI input delivery

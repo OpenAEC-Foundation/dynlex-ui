@@ -319,8 +319,22 @@ cleanup releases the projects belonging to its controls.
 
 Import `ui/source_panes.dl` for `source pane "Plan" containing text using
 appearance`. This is an ordinary immutable description containing an editor,
-filename, Back, Main file, Outline, Instances and Fixes buttons. A workspace scopes those controls to their
+filename, Back, Main file, Outline, Instances, Fixes and Find buttons. A workspace scopes those controls to their
 pane. Bare editors and panes use identical document and interaction code.
+Find/Replace is also library code shared by every pane. Ctrl/Cmd+F opens Find;
+Ctrl/Cmd+H focuses Replace. F3/Shift+F3 or query Enter/Shift+Enter move between
+matches without taking typing focus away. Replace Enter or Ctrl/Cmd+Enter replaces
+one match; adding Alt to Ctrl/Cmd+Enter replaces all matches in one undoable
+transaction. Alt+Enter enters a literal query or replacement newline. Escape
+closes Find and returns to the source selection. Queries, options and replacement
+text belong to the pane, including when visiting imported sources. Search folds
+Unicode simple case and optionally requires whole words; CRLF, LF and CR query
+line breaks match while retaining original source byte ranges. These are literal
+queries, without regular-expression or replacement-template interpretation.
+Read-only sources remain searchable and reject replacements. Search and current
+match marks occupy their own named layers, independently of execution and other
+application annotations.
+
 Enable `ui/source_tools.dl` once per workspace for completion and F12 definition
 navigation; Alt+Left returns through its location history. Visits retain each
 file's independent undo/redo, annotations, Unicode selection and scroll position.

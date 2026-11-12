@@ -1,3 +1,4 @@
+import key_handling.dl
 # Popup content belongs to the description. Views own capture and focus only.
 import view.dl
 import ribbon_scroll.dl
@@ -14,6 +15,7 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
     if (the UI element node is enabled in (view's instance)) = false:
         return nothing
     if the UI element node is a text control:
+        refresh UI focus in view
         set view's focus order to layout's order
         set view's keyboard focus to true
         set view's text focus to @intrinsic("construct", UI reference)
@@ -79,7 +81,7 @@ to get [process UI control popup input in] {a pointer to UI view:view}:
         dismiss the UI popup in view
     if tabbing:
         return false
-    set view's key press to -1
+    consume the UI key in view
     set view's typed text to ""
     set view's scroll x and view's scroll y to 0.0
     set view's was down to view's down
@@ -89,7 +91,7 @@ to get [process UI control popup input in] {a pointer to UI view:view}:
 to get the UI close key was pressed in {a pointer to UI view:view}:
     if view's key press != 256:
         return false
-    set view's key press to -1
+    consume the UI key in view
     if view's popup != @intrinsic("construct", a pointer to UI layout):
         dismiss the UI popup in view
         return false

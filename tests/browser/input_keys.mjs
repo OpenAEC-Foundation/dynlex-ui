@@ -20,7 +20,8 @@ globalThis.devicePixelRatio = 1;
 globalThis.ResizeObserver = class {observe() {} disconnect() {}};
 globalThis.matchMedia = () => new Target();
 const events = [];
-const connection = connectInput({canvas,title:'Test'},(...args) => events.push(args),() => {});
+let handled = false;
+const connection = connectInput({canvas,title:'Test'},(...args) => {events.push(args);return handled;},() => {});
 function key(target,code,options={}) {
   const event = new Event('keydown',{cancelable:true});
   Object.assign(event,{code,shiftKey:false,ctrlKey:false,altKey:false,metaKey:false,
@@ -29,18 +30,25 @@ function key(target,code,options={}) {
   return event.defaultPrevented;
 }
 for (let number=1;number<=25;number++) {
-  assert.equal(key(canvas,`F${number}`),true);
+  assert.equal(key(canvas,`F${number}`),false);
   assert.deepEqual(events.at(-1),[3,289+number,0,0,0]);
 }
+handled=true;
 assert.equal(key(input,'ArrowLeft',{altKey:true}),true);
 assert.deepEqual(events.at(-1),[3,263,0,0,4]);
 assert.equal(key(input,'KeyZ',{ctrlKey:true}),true);
 assert.deepEqual(events.at(-1),[3,90,0,0,2]);
 assert.equal(key(canvas,'F12',{repeat:true}),true);
 assert.deepEqual(events.at(-1),[9,301,0,0,0]);
+handled=false;
+assert.equal(key(input,'Space'),false,'Native text entry must retain printable defaults.');
+assert.equal(key(input,'KeyV',{ctrlKey:true}),false,'The clipboard event must remain available.');
+assert.equal(key(canvas,'KeyF',{ctrlKey:true}),false,'An unbound shortcut must retain its platform default.');
+handled=true;
+assert.equal(key(canvas,'KeyF',{ctrlKey:true}),true,'A shared command must suppress its platform default.');
 const count = events.length;
 assert.equal(key(input,'F12',{isComposing:true}),false);
 assert.equal(key(canvas,'Unrecognized'),false);
 assert.equal(events.length,count);
 connection.close();
-console.log('Browser keys preserve native codes and reserve application function keys.');
+console.log('Browser keys preserve native codes and suppress defaults only when shared dispatch handles them.');

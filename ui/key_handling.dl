@@ -1,0 +1,8 @@
+# Stopping shared dispatch and suppressing platform defaults are distinct.
+import view.dl
+
+to [consume the UI key in] {a pointer to UI view:view}:
+    set view's input handled to true
+    set view's key press to -1
+
+this view means: @intrinsic("receiver")
