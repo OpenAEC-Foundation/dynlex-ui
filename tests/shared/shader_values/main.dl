@@ -1,0 +1,30 @@
+import ../../../ui/shader_values.dl
+
+set value to a UI float shader value from 1.25
+require condition ((value's scalar = 0) and ((value's rows = 1) and (value's columns = 1))) reporting "Scalar reflection was lost."
+require condition ((the item at 0 in ((value's data + 0) as a pointer to a 32 bit floating-point number)) = 1.25) reporting "Float bytes were converted to integer values."
+set copied to value
+set value to a UI float shader value from 2.5
+require condition ((the item at 0 in ((copied's data + 0) as a pointer to a 32 bit floating-point number)) = 1.25) reporting "Shader values borrowed another value's storage."
+set {signed input} to a UI signed shader vector from [-2147483648,2147483647]
+require condition ((signed input's scalar = 1) and (signed input's columns = 2)) reporting "Signed vector metadata changed."
+require condition (((the item at 0 in signed input's data) = 2147483648) and ((the item at 1 in signed input's data) = 2147483647)) reporting "Signed boundary bits were lost."
+set {unsigned input} to a UI unsigned shader vector from [4294967295,0,2147483648]
+require condition ((unsigned input's scalar = 2) and (unsigned input's columns = 3)) reporting "Unsigned vector metadata changed."
+require condition (((the item at 0 in unsigned input's data) = 4294967295) and ((the item at 2 in unsigned input's data) = 2147483648)) reporting "Unsigned values passed through signed or float storage."
+set matrix to a UI float shader matrix from [1.0,2.0,3.0,4.0,5.0,6.0] with 3 rows and 2 columns
+set bytes to (matrix's data + 0) as a pointer to a 32 bit floating-point number
+require condition (((the item at 4 in bytes) = 3.0) and ((the item at 9 in bytes) = 6.0)) reporting "Matrix rows did not retain sixteen-byte strides."
+set index to 0
+loop while index < 16:
+    if ((index % 4) >= 2) or (index >= 12):
+        require condition ((the item at index in matrix's data) = 0) reporting "Unused uniform bytes were not zero initialized."
+    increment index
+set source to an identity graphics matrix
+store (17.0 as a 32 bit floating-point number) into source at 12
+store ((-4.0) as a 32 bit floating-point number) into source at 13
+set camera to a UI shader value from graphics matrix source
+set bytes to (camera's data + 0) as a pointer to a 32 bit floating-point number
+require condition (((the item at 3 in bytes) = 17.0) and ((the item at 7 in bytes) = -4.0)) reporting "Column-major graphics matrices were not transposed into shader rows."
+require condition (((the item at 12 in bytes) = 0.0) and ((the item at 15 in bytes) = 1.0)) reporting "The shader matrix bottom row was corrupted."
+print line "Shader values own exact scalar bits, padded matrix rows and transposed graphics matrices."

@@ -6,6 +6,7 @@ class:
         UI shader operations
     members:
         frame as a pointer
+        uniforms as a pointer
         vertices as a pointer
         indices as a pointer
         draws as a pointer

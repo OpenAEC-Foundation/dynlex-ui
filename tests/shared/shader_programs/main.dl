@@ -1,7 +1,7 @@
 import ../../../ui/shader_programs.dl
 
 to get a test shader binding named {C string:name} at {integer:binding}:
-    return a JSON object containing [JSON text "name" is name, JSON number "group" is 2, JSON number "binding" is binding]
+    return a JSON object containing [JSON text "name" is name, JSON number "group" is 2, JSON number "binding" is binding, JSON child "type" is (a JSON object containing [JSON text "scalar" is "float32", JSON number "rows" is 1, JSON number "columns" is 1])]
 
 to get a test shader stage containing {a pointer to JSON value:binding}:
     return a JSON object containing [JSON text "webgpu" is "gpu source", JSON text "webgl" is "gl source", JSON child "uniforms" is (a JSON array containing [binding])]
@@ -23,6 +23,9 @@ require condition ((the error from merging UI shader bindings from stage into bi
 free stage
 set stage to a test shader stage containing (a test shader binding named "camera" at 5)
 require condition ((the error from merging UI shader bindings from stage into bindings) != "") reporting "One input acquired two bindings."
+free stage
+set stage to a test shader stage containing (a JSON object containing [JSON text "name" is "camera", JSON number "group" is 2, JSON number "binding" is 4, JSON child "type" is (a JSON object containing [JSON text "scalar" is "float32", JSON number "rows" is 4, JSON number "columns" is 4])])
+require condition ((the error from merging UI shader bindings from stage into bindings) = "Shader stages disagree about a uniform type") reporting "A matrix and scalar linked to the same block."
 free stage
 set pass to a JSON object containing [JSON child "uniforms" is bindings]
 set program to a JSON object containing [JSON child "passes" is (a JSON array containing [pass])]

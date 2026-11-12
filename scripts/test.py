@@ -63,7 +63,8 @@ def main():
         subprocess.run(['node', 'tests/browser/source_connection.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services']:
+        subprocess.run(['node', 'tests/browser/shader_value_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services', 'shader_uniforms']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
@@ -84,7 +85,7 @@ def main():
             environment.pop('VK_DRIVER_FILES', None)
             environment.pop('VK_ICD_FILENAMES', None)
             for mode in ['webgpu', 'webgl-no-adapter', 'webgl-no-api']:
-                subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', directory, mode], cwd=project, env=environment, check=True)
+                subprocess.run([xvfb, '-a', '-s', '-screen 0 1400x1000x24', 'node', 'tests/browser/run.mjs', directory, mode, str(args.dynlex.resolve())], cwd=project, env=environment, check=True)
 
 
 if __name__ == '__main__':

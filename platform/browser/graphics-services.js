@@ -1,5 +1,5 @@
 // Asset decoding and GPU programs are platform services, not UI controllers.
-export function createGraphicsServices({ gpu, surfaces, resources, id, memory, text, base }) {
+export function createGraphicsServices({ gpu, surfaces, resources, id, memory, base }) {
   const programs = new Map(), assets = new Map();
   async function read(path, signal) {
     const response = await fetch(new URL(path, base), { signal });
@@ -87,11 +87,14 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, t
       ui_image_upload(handle, pointer, width, height) {
         return upload(surfaces.get(handle), new Uint8Array(memory.buffer, pointer, width * height * 4), width, height).resource;
       },
-      ui_shader_frame(surface,handle,width,height,pointer,count) {
+      ui_shader_frame(surface,handle,width,height) {
         const program=programFor(surface,handle);
-        const texture=program.renderer.render(width,height,JSON.parse(text(pointer,count)));
+        const texture=program.renderer.render(width,height);
         resources.set(program.output,texture);
         return program.output;
+      },
+      ui_shader_uniform(surface,handle,pass,group,binding,scalar,rows,columns,pointer,bytes) {
+        programFor(surface,handle).renderer.uniformBuffer(pass,group,binding,scalar,rows,columns,new Uint8Array(memory.buffer,pointer,bytes));
       },
       ui_shader_vertex_buffer(surface,handle,pass,slot,pointer,bytes) {
         programFor(surface,handle).renderer.vertexBuffer(pass,slot,new Uint8Array(memory.buffer,pointer,bytes));

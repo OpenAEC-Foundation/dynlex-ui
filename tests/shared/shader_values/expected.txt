@@ -1,0 +1,1 @@
+Shader values own exact scalar bits, padded matrix rows and transposed graphics matrices.

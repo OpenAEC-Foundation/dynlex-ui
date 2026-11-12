@@ -34,7 +34,7 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
   const gpu = await createGpu(reportError);
   const faces = await loadFonts(fontPaths, base);
   const fonts = createFontServices(gpu, faces, resources, id);
-  const graphics = createGraphicsServices({ gpu, surfaces, resources, id, memory, text, base });
+  const graphics = createGraphicsServices({ gpu, surfaces, resources, id, memory, base });
   const callback = number => instance.exports.__indirect_function_table.get(number);
   const pictures = createPictureServices({ graphics, surfaces, callback, text, fail: reportError });
   const requests = new Map();

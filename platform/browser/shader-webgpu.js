@@ -1,5 +1,6 @@
 // Render compiled shader passes to a texture on the UI's selected device.
 import { createShaderGeometry } from './shader-streams.js';
+import { createShaderUniforms } from './shader-uniforms.js';
 const fullscreen = `@vertex fn main(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let points = array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));
   return vec4f(points[index],0,1);
@@ -17,7 +18,7 @@ export async function createWebGpuShader(device, descriptor, target, retire) {
     retire
   };
   const dispose=pass=>{
-    for(const binding of pass.bindings) retire(binding.buffer);
+    if(pass.uniforms!==null) pass.uniforms.close();
     pass.geometry.close();
   };
   async function module(code) {
@@ -31,7 +32,7 @@ export async function createWebGpuShader(device, descriptor, target, retire) {
   }
   try {
     for(const description of descriptor.passes) {
-      const pass={geometry:createShaderGeometry(description,transfer),pipeline:null,bindings:[],groups:[]};
+      const pass={geometry:createShaderGeometry(description,transfer),pipeline:null,uniforms:null,bindings:[],groups:[]};
       passes.push(pass);
       const [vertex,fragment]=await Promise.all([
         module(description.vertex===null?fullscreen:description.vertex),module(description.fragment)
@@ -53,8 +54,11 @@ export async function createWebGpuShader(device, descriptor, target, retire) {
         primitive:{topology:description.topology},
         ...(depthEnabled?{depthStencil:{format:'depth24plus',depthWriteEnabled:description.depth,depthCompare:description.depth?'less':'always'}}:{})
       });
-      for(const uniform of description.uniforms)
-        pass.bindings.push({...uniform,buffer:device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST})});
+      pass.uniforms=createShaderUniforms(description.uniforms,{
+        allocate(description,size) {return device.createBuffer({size,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});},
+        write(buffer,bytes) {device.queue.writeBuffer(buffer,0,bytes);}, retire
+      });
+      pass.bindings=pass.uniforms.bindings;
       pass.groups=layouts.map((layout,index)=>device.createBindGroup({layout,
         entries:pass.bindings.filter(binding=>binding.group===index).map(binding=>({binding:binding.binding,resource:{buffer:binding.buffer}}))}));
     }
@@ -75,24 +79,20 @@ export async function createWebGpuShader(device, descriptor, target, retire) {
     bufferBytes(index,slot) { return passAt(index).geometry.bufferBytes(slot); },
     bufferRecords(index,slot) { return passAt(index).geometry.bufferRecords(slot); },
     indexCount(index) { return passAt(index).geometry.indexCount; },
-    render(width,height,values) {
+    uniformBuffer(index,group,binding,scalar,rows,columns,bytes) {
+      passAt(index).uniforms.upload(group,binding,scalar,rows,columns,bytes);
+    },
+    render(width,height) {
       active();
       if(!Number.isInteger(width)||!Number.isInteger(height)||width<=0||height<=0||Math.max(width,height)>device.limits.maxTextureDimension2D)
         throw new Error('Shader target dimensions exceed device limits');
-      if(values.length!==passes.length) throw new Error('Shader values must describe every pass');
+      for(const pass of passes) pass.uniforms.requireReady();
       const plans=passes.map(pass=>pass.geometry.commands);
       if(output===null||output.width!==width||output.height!==height) {
         if(output) retire(output.texture);
         if(depth) retire(depth);
         output=target(width,height);
         if(depthEnabled) depth=device.createTexture({size:[width,height],format:'depth24plus',usage:GPUTextureUsage.RENDER_ATTACHMENT});
-      }
-      for(const [index,pass] of passes.entries()) {
-        for(const binding of pass.bindings) {
-          const value=values[index][binding.name];
-          if(typeof value!=='number'||!Number.isFinite(value)) throw new Error(`Missing shader value: ${binding.name}`);
-          device.queue.writeBuffer(binding.buffer,0,new Float32Array([value,0,0,0]));
-        }
       }
       const encoder=device.createCommandEncoder();
       const render=encoder.beginRenderPass({colorAttachments:[{view:output.texture.createView(),

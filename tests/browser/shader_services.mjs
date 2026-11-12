@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { createGraphicsServices } from '../../platform/browser/graphics-services.js';
 
-const memory={buffer:new ArrayBuffer(1024)},decoder=new TextDecoder(),encoder=new TextEncoder();
-const text=(pointer,count)=>decoder.decode(new Uint8Array(memory.buffer,pointer,count));
+const memory={buffer:new ArrayBuffer(1024)};
 const surface={},other={},surfaces=new Map([[17,surface],[18,other]]),resources=new Map();
 const calls=[],buffers=new Map();let sequence=100,closed=0;
 const texture={texture:{destroy(){}},width:5,height:3};
@@ -13,11 +12,12 @@ const renderer={
   bufferBytes(pass,slot){return buffers.get(`${pass}:${slot}`).byteLength;},
   bufferRecords(pass,slot){return buffers.get(`${pass}:${slot}`).byteLength/8;},
   indexCount(){return 3;},
-  render(width,height,values){calls.push(['render',width,height,values]);return texture;},
+  uniformBuffer(...args){calls.push(['uniform',...args.slice(0,-1),[...args.at(-1)]]);},
+  render(width,height){calls.push(['render',width,height]);return texture;},
   close(){closed++;}
 };
 const gpu={backend:'webgpu',async shader(owner,description){assert.equal(owner,surface);calls.push(['create',description]);return renderer;}};
-const service=createGraphicsServices({gpu,surfaces,resources,id:()=>++sequence,memory,text,base:'https://assets.invalid/project/'});
+const service=createGraphicsServices({gpu,surfaces,resources,id:()=>++sequence,memory,base:'https://assets.invalid/project/'});
 const fetch=globalThis.fetch;
 globalThis.fetch=async url=>{
   if(String(url)==='https://assets.invalid/project/vertices.bin')return new Response(new Uint8Array([1,2,3,4,5,6,7,8]));
@@ -48,10 +48,12 @@ try {
   new Uint32Array(memory.buffer,48,6).set([3,2,1,4,5,1]);
   imports.ui_shader_draws(17,handle,0,48,1);
   assert.deepEqual(calls.at(-1),['draws',0,[3,2,1,4,5,1]]);
-  const values=encoder.encode('[{"gain":0.5}]');new Uint8Array(memory.buffer,96,values.length).set(values);
-  const output=imports.ui_shader_frame(17,handle,5,3,96,values.length);
+  new Uint8Array(memory.buffer,96,16).set([1,2,3,4]);
+  imports.ui_shader_uniform(17,handle,0,2,3,0,1,4,96,16);
+  assert.deepEqual(calls.at(-1),['uniform',0,2,3,0,1,4,[1,2,3,4,0,0,0,0,0,0,0,0,0,0,0,0]]);
+  const output=imports.ui_shader_frame(17,handle,5,3);
   assert.equal(resources.get(output),texture);
-  assert.deepEqual(calls.at(-1),['render',5,3,[{gain:.5}]]);
+  assert.deepEqual(calls.at(-1),['render',5,3]);
   assert.throws(()=>imports.ui_shader_buffer_bytes(18,handle,0,0),/different surface/);
   await assert.rejects(()=>service.request({operation:'release',resource:handle},{signal:new AbortController().signal},other),/different surface/);
   imports.ui_shader_close(17,handle);

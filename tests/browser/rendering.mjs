@@ -18,13 +18,14 @@ export async function verifyRendering() {
       : '#version 300 es\nlayout(location=0) in vec4 position;void main(){gl_Position=position;}',
     vertexBuffers: [{arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]}],
     draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
-    uniforms: [{ name: 'gain', group: 1, binding: 5 }], depth: true, blend: 'additive', topology: 'triangle-list',
+    uniforms: [{ name: 'gain', group: 1, binding: 5, type:{scalar:'float32',rows:1,columns:4} }], depth: true, blend: 'additive', topology: 'triangle-list',
     fragment: gpu.backend === 'webgpu'
       ? '@group(1) @binding(5) var<uniform> gain:vec4f;@fragment fn main()->@location(0) vec4f{return vec4f(gain.x,0,0,0);}'
       : '#version 300 es\nprecision highp float;layout(std140) uniform Settings{vec4 _group_1_binding_5_fs;};out vec4 color;void main(){color=vec4(_group_1_binding_5_fs.x,0,0,0);}'
   }] });
   shader.vertexBuffer(1, 0, new Float32Array([-1,-1,0,1, 3,-1,0,1, -1,3,0,1]));
-  const rendered = shader.render(5, 3, [{}, { gain: 0.25 }]);
+  shader.uniformBuffer(1,1,5,0,1,4,new Uint8Array(new Float32Array([0.25,0,0,0]).buffer));
+  const rendered = shader.render(5, 3);
   const clip = { x: -3, y: 4, width: 43, height: 24 };
   const box = (left, top, width, height, value, alpha, texture, bounds) => {
     const vertices = [];
@@ -148,7 +149,7 @@ export async function verifyShaderBuffers() {
   const fragment=gpu.backend==='webgpu' ? '@fragment fn main(@location(0) color:vec3f)->@location(0) vec4f{return vec4f(color,1);}'
     : '#version 300 es\nprecision highp float;in vec3 ink;out vec4 color;void main(){color=vec4(ink,1);}';
   const shader=await gpu.shader(surface,{passes:[{vertex,fragment,vertexBuffers:layouts,draws:[],
-    uniforms:[{name:'minimum_vertex',group:0,binding:0}],depth:false,blend:'opaque',topology:'triangle-list'}]});
+    uniforms:[{name:'minimum_vertex',group:0,binding:0,type:{scalar:'float32',rows:1,columns:4}}],depth:false,blend:'opaque',topology:'triangle-list'}]});
   const vertices=new Float32Array(32),signed=new Int32Array(16);
   vertices.fill(-99);signed.fill(99);
   for(const [index,point] of [[-.2,-.6],[.2,-.6],[.2,.6],[-.2,.6]].entries()) {
@@ -163,7 +164,8 @@ export async function verifyShaderBuffers() {
   for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) verticesForTexture.push(x*128,y*64,x,y,1,1,1,1);
   const context=new OffscreenCanvas(128,64).getContext('2d');
   const frame=(minimum=0)=>{
-    const image=shader.render(128,64,[{minimum_vertex:minimum}]);
+    shader.uniformBuffer(0,0,0,0,1,4,new Uint8Array(new Float32Array([minimum,0,0,0]).buffer));
+    const image=shader.render(128,64);
     gpu.begin(surface,[0,0,0]);
     gpu.triangles(surface,new Float32Array(verticesForTexture),image,{x:0,y:0,width:128,height:64});
     gpu.present(surface,128,64,1);context.drawImage(canvas,0,0);
@@ -193,4 +195,92 @@ export async function verifyShaderBuffers() {
     if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Typed shader buffers produced a WebGL API error');
     if(errors.length) throw errors[0];
   } finally { shader.close();gpu.releaseSurface(surface);gpu.close(); }
+}
+
+export async function verifyShaderUniforms() {
+  const errors=[],gpu=await createGpu(error=>errors.push(error));
+  const canvas=document.createElement('canvas');canvas.width=16;canvas.height=16;
+  const surface=gpu.surface(canvas);
+  const fragment=gpu.backend==='webgpu'?`
+    struct Row { @size(16) value:vec2f }
+    struct Matrix { rows:array<Row,3> }
+    @group(0) @binding(0) var<uniform> camera:Matrix;
+    @group(0) @binding(1) var<uniform> signedInput:vec2i;
+    @group(0) @binding(2) var<uniform> unsignedInput:vec3u;
+    @fragment fn main()->@location(0) vec4f {
+      return vec4f(camera.rows[2].value.y,
+        select(0.0,0.5,signedInput.x==(-2147483647-1)),
+        select(0.0,1.0,unsignedInput.z==4294967295u),1.0);
+    }`:`#version 300 es
+    precision highp float;precision highp int;
+    layout(std140) uniform Camera {vec2 _group_0_binding_0_rows[3];};
+    layout(std140) uniform Signed {ivec2 _group_0_binding_1_signed;};
+    layout(std140) uniform Unsigned {uvec3 _group_0_binding_2_unsigned;};
+    out vec4 color;
+    void main(){color=vec4(_group_0_binding_0_rows[2].y,
+      _group_0_binding_1_signed.x==(-2147483647-1)?0.5:0.0,
+      _group_0_binding_2_unsigned.z==4294967295u?1.0:0.0,1.0);}`;
+  const shader=await gpu.shader(surface,{passes:[{vertex:null,fragment,vertexBuffers:[],
+    draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
+    uniforms:[{name:'camera',group:0,binding:0,type:{scalar:'float32',rows:3,columns:2}},
+      {name:'signedInput',group:0,binding:1,type:{scalar:'sint32',rows:1,columns:2}},
+      {name:'unsignedInput',group:0,binding:2,type:{scalar:'uint32',rows:1,columns:3}}],
+    depth:false,blend:'opaque',topology:'triangle-list'}]});
+  const matrix=new Float32Array(12);matrix[9]=0.25;
+  const vertices=[];
+  for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) vertices.push(x*16,y*16,x,y,1,1,1,1);
+  const context=new OffscreenCanvas(16,16).getContext('2d');
+  const frame=()=>{
+    const image=shader.render(16,16);
+    gpu.begin(surface,[0,0,0]);
+    gpu.triangles(surface,new Float32Array(vertices),image,{x:0,y:0,width:16,height:16});
+    gpu.present(surface,16,16,1);context.drawImage(canvas,0,0);
+    return [...context.getImageData(8,8,1,1).data];
+  };
+  try {
+    shader.uniformBuffer(0,0,0,0,3,2,new Uint8Array(matrix.buffer));
+    shader.uniformBuffer(0,0,1,1,1,2,new Uint8Array(new Int32Array([-2147483648,2147483647,0,0]).buffer));
+    shader.uniformBuffer(0,0,2,2,1,3,new Uint8Array(new Uint32Array([0,2147483648,4294967295,0]).buffer));
+    const first=frame(),persisted=frame(),expected=[137,188,255,255];
+    if(first.some((value,index)=>Math.abs(value-expected[index])>3)||first.some((value,index)=>value!==persisted[index]))
+      throw new Error(`Typed shader uniforms ${gpu.backend}: ${first}; expected ${expected} and persistent values`);
+    matrix[9]=0.5;shader.uniformBuffer(0,0,0,0,3,2,new Uint8Array(matrix.buffer));
+    if(Math.abs(frame()[0]-188)>3) throw new Error('A matrix uniform update did not reach the shader');
+    if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Typed uniforms produced a WebGL API error');
+    if(errors.length) throw errors[0];
+  } finally {shader.close();gpu.releaseSurface(surface);gpu.close();}
+}
+
+export async function verifyCompiledShaderUniforms() {
+  const artifacts=await fetch('/__tests__/shader-uniforms.json').then(response=>{
+    if(!response.ok) throw new Error('Compiled uniform fixtures are missing');
+    return response.json();
+  });
+  if(artifacts.filter(item=>item.kind==='uniform').length!==21||artifacts.filter(item=>item.kind==='arithmetic').length!==14) throw new Error('The compiled uniform/arithmetic corpus is incomplete');
+  const errors=[],gpu=await createGpu(error=>errors.push(error));
+  const canvas=document.createElement('canvas');canvas.width=16;canvas.height=16;
+  const surface=gpu.surface(canvas),context=new OffscreenCanvas(16,16).getContext('2d'),vertices=[];
+  for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) vertices.push(x*16,y*16,x,y,1,1,1,1);
+  try {
+    for(const artifact of artifacts) {
+      const {scalar,rows,columns}=artifact.type;
+      const shader=await gpu.shader(surface,{passes:[{vertex:null,fragment:artifact[gpu.backend],
+        vertexBuffers:[],draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
+        uniforms:artifact.uniforms,depth:false,blend:'opaque',topology:'triangle-list'}]});
+      try {
+        const code={float32:0,sint32:1,uint32:2}[scalar],bytes=new ArrayBuffer(rows*16);
+        const values=new ({float32:Float32Array,sint32:Int32Array,uint32:Uint32Array}[scalar])(bytes);
+        values.set(artifact.samples);
+        shader.uniformBuffer(0,0,3,code,rows,columns,new Uint8Array(bytes));
+        const image=shader.render(16,16);
+        gpu.begin(surface,[0,0,0]);gpu.triangles(surface,new Float32Array(vertices),image,{x:0,y:0,width:16,height:16});
+        gpu.present(surface,16,16,1);context.drawImage(canvas,0,0);
+        const pixel=[...context.getImageData(8,8,1,1).data],red=artifact.red===0.25?137:artifact.red===0.5?188:255;
+        if(Math.abs(pixel[0]-red)>3||pixel[1]!==0||pixel[2]!==0||pixel[3]!==255)
+          throw new Error(`Compiled shader uniform ${gpu.backend} ${artifact.name}: ${pixel}; expected ${red},0,0,255`);
+      } finally {shader.close();}
+    }
+    if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Compiled uniforms produced a WebGL API error');
+    if(errors.length) throw errors[0];
+  } finally {gpu.releaseSurface(surface);gpu.close();}
 }

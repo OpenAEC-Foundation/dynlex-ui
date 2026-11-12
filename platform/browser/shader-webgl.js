@@ -1,5 +1,6 @@
 import { createWebGlProgram } from './graphics-backend.js';
 import { createShaderGeometry } from './shader-streams.js';
+import { createShaderUniforms } from './shader-uniforms.js';
 
 const fullscreen = `#version 300 es
 precision highp float;
@@ -46,12 +47,12 @@ export function createWebGlShader(gl,descriptor,target) {
     retire(buffer) {gl.deleteBuffer(buffer);}
   };
   const dispose=pass=>{
-    for(const binding of pass.bindings) gl.deleteBuffer(binding.buffer);
+    if(pass.uniforms!==null) pass.uniforms.close();
     pass.geometry.close();gl.deleteVertexArray(pass.array);gl.deleteProgram(pass.program);
   };
   try {
     for(const description of descriptor.passes) {
-      const pass={geometry:createShaderGeometry(description,transfer),program:null,array:null,bindings:[],
+      const pass={geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,bindings:[],slots:new Map(),
         depth:description.depth,blend:description.blend,
         topology:{'triangle-list':gl.TRIANGLES,'line-list':gl.LINES,'point-list':gl.POINTS}[description.topology]};
       passes.push(pass);
@@ -62,19 +63,25 @@ export function createWebGlShader(gl,descriptor,target) {
       validateAttributes(gl,pass.program,pass.geometry.layouts);
       const active=Array.from({length:gl.getProgramParameter(pass.program,gl.ACTIVE_UNIFORMS)},(_,index)=>({index,name:gl.getActiveUniform(pass.program,index).name}));
       let nextBinding=0;
-      for(const uniform of description.uniforms) {
-        const matches=active.filter(item=>item.name.includes(`_group_${uniform.group}_binding_${uniform.binding}_`));
-        // A linker can eliminate a block that does not affect the output.
-        if(matches.length===0) continue;
-        const buffer=gl.createBuffer(),slot=nextBinding++;
-        if(!buffer) throw new Error('WebGL could not allocate shader uniforms');
-        pass.bindings.push({...uniform,buffer,slot});
-        gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferData(gl.UNIFORM_BUFFER,16,gl.DYNAMIC_DRAW);
-        for(const match of matches) {
-          const block=gl.getActiveUniforms(pass.program,[match.index],gl.UNIFORM_BLOCK_INDEX)[0];
-          gl.uniformBlockBinding(pass.program,block,slot);
-        }
-      }
+      pass.uniforms=createShaderUniforms(description.uniforms,{
+        allocate(uniform,bytes) {
+          const matches=active.filter(item=>item.name.includes(`_group_${uniform.group}_binding_${uniform.binding}_`));
+          // A linker can eliminate a block that does not affect the output.
+          if(matches.length===0) return null;
+          const blocks=[...new Set(matches.map(match=>gl.getActiveUniforms(pass.program,[match.index],gl.UNIFORM_BLOCK_INDEX)[0]))];
+          for(const block of blocks) if(gl.getActiveUniformBlockParameter(pass.program,block,gl.UNIFORM_BLOCK_DATA_SIZE)>bytes)
+            throw new Error('Shader uniform block exceeds its reflected storage layout');
+          const buffer=gl.createBuffer(),slot=nextBinding++;
+          if(!buffer) throw new Error('WebGL could not allocate shader uniforms');
+          pass.slots.set(buffer,slot);
+          gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferData(gl.UNIFORM_BUFFER,bytes,gl.DYNAMIC_DRAW);
+          for(const block of blocks) gl.uniformBlockBinding(pass.program,block,slot);
+          return buffer;
+        },
+        write(buffer,bytes) {gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferSubData(gl.UNIFORM_BUFFER,0,bytes);},
+        retire(buffer) {gl.deleteBuffer(buffer);}
+      });
+      pass.bindings=pass.uniforms.bindings;
     }
   } catch(error) {
     for(const pass of passes) dispose(pass);
@@ -93,11 +100,14 @@ export function createWebGlShader(gl,descriptor,target) {
     bufferBytes(index,slot) {return passAt(index).geometry.bufferBytes(slot);},
     bufferRecords(index,slot) {return passAt(index).geometry.bufferRecords(slot);},
     indexCount(index) {return passAt(index).geometry.indexCount;},
-    render(width,height,values) {
+    uniformBuffer(index,group,binding,scalar,rows,columns,bytes) {
+      passAt(index).uniforms.upload(group,binding,scalar,rows,columns,bytes);
+    },
+    render(width,height) {
       active();
       if(!Number.isInteger(width)||!Number.isInteger(height)||width<=0||height<=0||Math.max(width,height)>gl.getParameter(gl.MAX_TEXTURE_SIZE))
         throw new Error('Shader target dimensions exceed device limits');
-      if(values.length!==passes.length) throw new Error('Shader values must describe every pass');
+      for(const pass of passes) pass.uniforms.requireReady();
       const plans=passes.map(pass=>pass.geometry.commands);
       gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
       if(output===null||output.width!==width||output.height!==height) {
@@ -117,10 +127,7 @@ export function createWebGlShader(gl,descriptor,target) {
         if(plans[index].length===0) continue;
         gl.useProgram(pass.program);gl.bindVertexArray(pass.array);
         for(const binding of pass.bindings) {
-          const value=values[index][binding.name];
-          if(typeof value!=='number'||!Number.isFinite(value)) throw new Error(`Missing shader value: ${binding.name}`);
-          gl.bindBuffer(gl.UNIFORM_BUFFER,binding.buffer);gl.bufferSubData(gl.UNIFORM_BUFFER,0,new Float32Array([value,0,0,0]));
-          gl.bindBufferBase(gl.UNIFORM_BUFFER,binding.slot,binding.buffer);
+          gl.bindBufferBase(gl.UNIFORM_BUFFER,pass.slots.get(binding.buffer),binding.buffer);
         }
         if(pass.depth) gl.enable(gl.DEPTH_TEST);else gl.disable(gl.DEPTH_TEST);
         gl.depthMask(pass.depth);gl.depthFunc(gl.LESS);

@@ -53,6 +53,10 @@ to get [the error from merging UI shader bindings from] {a pointer to JSON value
             if same:
                 if (the JSON text named "name" in existing) != name:
                     return "Shader stages disagree about a uniform binding"
+                set expected to the JSON member named "type" in existing
+                set actual to the JSON member named "type" in uniform
+                if ((the JSON text named "scalar" in expected) != (the JSON text named "scalar" in actual)) or (((the JSON number named "rows" in expected) != (the JSON number named "rows" in actual)) or ((the JSON number named "columns" in expected) != (the JSON number named "columns" in actual))):
+                    return "Shader stages disagree about a uniform type"
                 set found to true
             else:
                 if (the JSON text named "name" in existing) = name:

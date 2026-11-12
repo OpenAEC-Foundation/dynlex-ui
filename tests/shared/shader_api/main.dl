@@ -4,6 +4,7 @@ class:
     patterns:
         shader API recorder
     members:
+        uniforms as an integer
         frames as an integer
         vertices as an integer
         indices as an integer
@@ -13,11 +14,16 @@ class:
 to get [the shader recorder in] {a pointer to UI view:view}:
     return view's instance's state as a pointer to shader API recorder
 
-to get [render recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [using] {C string:data} [counting] {integer:count}:
+to get [render recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [sized] {integer:width} [by] {integer:height}:
     require condition ((shader = (777 as a pointer)) and ((width = 40) and (height = 20))) reporting "Shader frame arguments changed across the driver boundary."
-    require condition ((count = 4) and ((the character at 0 in data) = 91)) reporting "Shader values were not transferred as source bytes."
     increment (the shader recorder in view)'s frames
     return 910 as a pointer
+
+to [set recorded shader uniform in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [group] {integer:group} [binding] {integer:binding} [scalar] {integer:scalar} [rows] {integer:rows} [columns] {integer:columns} [from] {a pointer:data} [counting] {integer:count}:
+    require condition ((shader = (777 as a pointer)) and ((pass = 2) and ((group = 1) and (binding = 4)))) reporting "Uniform upload lost its shader or binding."
+    require condition ((scalar = 2) and ((rows = 1) and ((columns = 3) and (count = 16)))) reporting "Uniform upload lost its reflected type or padded size."
+    require condition ((the item at 2 in (data as a pointer to a 32 bit unsigned integer)) = 4294967295) reporting "Uniform bytes were converted by the provider boundary."
+    increment (the shader recorder in view)'s uniforms
 
 to [upload recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot} [from] {a pointer:data} [counting] {integer:count}:
     require condition ((shader = (777 as a pointer)) and ((pass = 2) and (slot = 3))) reporting "Vertex upload lost its shader/pass/slot."
@@ -49,7 +55,8 @@ to [close recorded shader in] {a pointer to UI view:view} [holding] {a pointer:s
     increment (the shader recorder in view)'s closed
 
 set operations to @intrinsic("construct", UI shader operations,
-    (the function named "render recorded shader in $ holding $ sized $ by $ using $ counting $") as a pointer,
+    (the function named "render recorded shader in $ holding $ sized $ by $") as a pointer,
+    (the function named "set recorded shader uniform in $ holding $ pass $ group $ binding $ scalar $ rows $ columns $ from $ counting $") as a pointer,
     (the function named "upload recorded shader in $ holding $ pass $ slot $ from $ counting $") as a pointer,
     (the function named "index recorded shader in $ holding $ pass $ from $ counting $") as a pointer,
     (the function named "draw recorded shader in $ holding $ pass $ from $ counting $") as a pointer,
@@ -83,7 +90,9 @@ set UI shader shader pass 2 in context to draws (draws + 0) counting 2
 require condition ((the byte count of UI shader shader pass 2 buffer 3 in context) = 48) reporting "Shader buffer size queries did not use the driver."
 require condition ((the record count of UI shader shader pass 2 buffer 3 in context) = 3) reporting "Shader buffer record queries did not use the driver."
 require condition ((the index count of UI shader shader pass 2 in context) = 6) reporting "Shader index count queries did not use the driver."
-set image to a UI texture from shader shader sized 40 by 20 using (the string form of "[{}]") in context
+set UI shader shader pass 2 in context uniform group 1 binding 4 to (a UI unsigned shader vector from [0,2147483648,4294967295])
+require condition (recorder's uniforms = 1) reporting "The uniform provider was not called once."
+set image to a UI texture from shader shader sized 40 by 20 in context
 require condition ((image's resource = (910 as a pointer)) and ((image's width = 40) and (image's height = 20))) reporting "Shader texture data changed across drivers."
 set encoded to the JSON form of UI shader draw (the item at 0 in draws)
 require condition (((the JSON number named "vertexOffset" in encoded) = 4.0) and (the JSON boolean named "indexed" in encoded)) reporting "Draw descriptors and binary submissions disagree."

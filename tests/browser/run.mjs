@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { inflateSync } from 'node:zlib';
 import { setTimeout as pause } from 'node:timers/promises';
 import { readPng } from './png.mjs';
@@ -12,7 +12,12 @@ const directory = path.resolve(process.argv[2] || 'dist/ribbon');
 const example = path.basename(directory);
 const graphicsMode = process.argv[3] || 'system';
 assert(['system', 'webgpu', 'webgl-no-adapter', 'webgl-no-api'].includes(graphicsMode));
+assert(process.argv[4], 'Pass the compiler checkout after the graphics mode');
+const compiler=path.resolve(process.argv[4]);
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'dynlex-ui-chrome-'));
+try {
+  execFileSync(process.execPath,[path.join(compiler,'tests/web/shader_uniforms.mjs'),path.join(compiler,'build-web'),path.join(profile,'shader-uniforms.json')],{timeout:60000});
+} catch(error) {await fs.rm(profile,{recursive:true,force:true});throw error;}
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
   '.wasm': 'application/wasm', '.ttf': 'font/ttf', '.svg': 'image/svg+xml',
   '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg' };
@@ -22,6 +27,10 @@ const server = http.createServer(async (request, response) => {
       response.setHeader('Content-Type', 'text/javascript');
       response.end(await fs.readFile(new URL('./rendering.mjs', import.meta.url)));
       return;
+    }
+    if(request.url === '/__tests__/shader-uniforms.json') {
+      response.setHeader('Content-Type','application/json');
+      response.end(await fs.readFile(path.join(profile,'shader-uniforms.json')));return;
     }
     const filename = path.resolve(directory, '.' + new URL(request.url, 'http://localhost').pathname);
     if (!filename.startsWith(directory + '/') && filename !== directory) throw new Error('Path');
@@ -300,7 +309,7 @@ try {
   assert.equal(await evaluate('document.querySelectorAll("canvas, textarea").length'), 0);
   await pause(100);
   assert.equal(errors.length, 0, JSON.stringify(errors));
-  await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyShaderBuffers(); await module.verifyFailureBoundaries(); })');
+  await evaluate('import("/__tests__/rendering.mjs").then(async module => { await module.verifyRendering(); await module.verifyShaderBuffers(); await module.verifyShaderUniforms(); await module.verifyCompiledShaderUniforms(); await module.verifyFailureBoundaries(); })');
   assert.equal(errors.length, 0, JSON.stringify(errors));
   console.log(JSON.stringify({ example, graphicsMode, before, after, errors }));
 } catch (error) {

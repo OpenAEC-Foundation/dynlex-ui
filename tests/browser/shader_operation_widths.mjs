@@ -36,7 +36,7 @@ set UI shader shader pass pass in context to draws (draws + 0) counting draw cou
 require condition ((the byte count of UI shader shader pass pass buffer slot in context) = 48) reporting "Wrong byte count."
 require condition ((the record count of UI shader shader pass pass buffer slot in context) = 3) reporting "Wrong record count."
 require condition ((the index count of UI shader shader pass pass in context) = 6) reporting "Wrong index count."
-set image to a UI texture from shader shader sized width by height using (the string form of "[]") in context
+set image to a UI texture from shader shader sized width by height in context
 require condition (image's resource = (100 as a pointer)) reporting "Wrong texture resource."
 close UI shader shader in context
 print line "Shader provider ABI retained."
@@ -59,7 +59,8 @@ print line "Shader provider ABI retained."
       ui_shader_buffer_bytes:(...args)=>{record('bytes',args);return 48;},
       ui_shader_buffer_records:(...args)=>{record('records',args);return 3;},
       ui_shader_index_count:(...args)=>{record('index count',args);return 6;},
-      ui_shader_frame:(surface,shader,width,height,pointer,count)=>{record('frame',[surface,shader,width,height,count]);return 100;},
+      ui_shader_uniform:()=>assert.fail('Unexpected uniform upload'),
+      ui_shader_frame:(surface,shader,width,height)=>{record('frame',[surface,shader,width,height]);return 100;},
       ui_shader_close:(...args)=>record('close',args)
     });
     const instance=await WebAssembly.instantiate(module,runtime);
@@ -73,7 +74,7 @@ print line "Shader provider ABI retained."
       {kind:'vertices',args:[9,777,2,3,8]},{kind:'indices',args:[9,777,2,3]},
       {kind:'draws',args:[9,777,2,1]},{kind:'bytes',args:[9,777,2,3]},
       {kind:'records',args:[9,777,2,3]},{kind:'index count',args:[9,777,2]},
-      {kind:'frame',args:[9,777,40,20,2]},{kind:'close',args:[9,777]}
+      {kind:'frame',args:[9,777,40,20]},{kind:'close',args:[9,777]}
     ]);
     // Earlier valid operations may run, but the rejected operation must not reach its provider.
     for(let field=0;field<values.length;field++){

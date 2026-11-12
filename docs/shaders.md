@@ -47,6 +47,34 @@ follow the newly uploaded byte count, including shrinking and empty uploads.
 Changing vertex contents without changing ranges preserves cached index-bound
 validation. Index uploads snapshot their source before caller memory is reused.
 
+## Typed inputs
+
+Reflection describes every uniform as `type: {scalar, rows, columns}`. The scalar
+is `float32`, `sint32` or `uint32`. Scalars and vectors occupy sixteen bytes;
+float matrices occupy one sixteen-byte slot per row. Matrices have two through
+four rows and columns. Integer vectors preserve all 32 bits, including uint32's
+upper half. Linking requires stages to agree on the full type.
+
+DynLex owns and packs each `UI shader value`. The host receives numeric bytes
+through the shader driver, without JSON serialization or numeric repacking.
+Updates persist until replaced; rendering requires every active input to have
+been supplied. An optimized-out WebGL block needs no GPU allocation, while its
+declared type still applies to uploads.
+
+```dynlex
+set light to a UI float shader vector from [0.4,0.8,0.2]
+set flags to a UI unsigned shader value from 4294967295
+set camera to a UI shader value from graphics matrix matrix
+set UI shader resource pass 0 in view uniform group 0 binding 1 to camera
+set UI shader resource pass 0 in view uniform group 0 binding 2 to light
+set UI shader resource pass 0 in view uniform group 0 binding 3 to flags
+```
+
+The graphics-matrix constructor transposes column-major graphics matrices into
+shader row vectors. `a UI float shader matrix from values with 3 rows and 2 columns`
+accepts a flat row-major array and inserts the required padding. Values own their
+storage, so copying one or returning it from a function does not borrow locals.
+
 ## Draw records
 
 `UI shader draw` is six unsigned 32-bit words, in this order:
@@ -79,7 +107,7 @@ set draws to [
     a UI shader draw counting 36 instanced 20 starting at 0 with vertex offset 0 and instance offset 5 indexed true
 ]
 set UI shader resource pass 0 in view to draws (draws + 0) counting 1
-set image to a UI texture from shader resource sized width by height using values in view
+set image to a UI texture from shader resource sized width by height in view
 ```
 
 `the JSON form of UI shader draw draw` produces the equivalent program-description
@@ -96,3 +124,12 @@ checks source loading and the browser ABI. Browser rendering tests compare actua
 pixels on WebGPU and WebGL2, covering interleaved attributes, signed and unsigned
 inputs, instance records, offsets, live updates, shrinking, indexed and nonindexed
 draws, and draw-local builtin IDs.
+
+`tests/shared/shader_values` checks owned packing and matrix conversion on native
+and Wasm. Browser range tests exercise narrowing and non-finite inputs. The
+browser runner also compiles all 21 input shapes with the selected browser
+compiler, then compares actual WebGPU and WebGL2 pixels. Fourteen signed and
+unsigned arithmetic cases also verify conversions, division, remainders, shifts
+and extrema through both shader backends. Its direct invocation
+is `node tests/browser/run.mjs <application directory> <graphics mode> <compiler checkout>`;
+`scripts/test.py --browser --dynlex <compiler checkout>` supplies that argument.

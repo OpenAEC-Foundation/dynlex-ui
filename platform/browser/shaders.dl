@@ -1,8 +1,11 @@
 # Browser primitives implement the shared shader operation table.
 import ../../ui/shaders.dl
 
-to get [render browser shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [using] {C string:data} [counting] {integer:count}:
-    return @intrinsic("call", "dynlex_ui", "ui_shader_frame", a pointer, view's window, shader, width, height, data, count)
+to get [render browser shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [sized] {integer:width} [by] {integer:height}:
+    return @intrinsic("call", "dynlex_ui", "ui_shader_frame", a pointer, view's window, shader, width, height)
+
+to [set browser shader uniform in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [group] {integer:group} [binding] {integer:binding} [scalar] {integer:scalar} [rows] {integer:rows} [columns] {integer:columns} [from] {a pointer:data} [counting] {integer:count}:
+    @intrinsic("call", "dynlex_ui", "ui_shader_uniform", nothing, view's window, shader, pass, group, binding, scalar, rows, columns, data, count)
 
 to [upload browser shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot} [from] {a pointer:data} [counting] {integer:count}:
     @intrinsic("call", "dynlex_ui", "ui_shader_vertex_buffer", nothing, view's window, shader, pass, slot, data, count)
@@ -26,7 +29,8 @@ to [close browser shader in] {a pointer to UI view:view} [holding] {a pointer:sh
     @intrinsic("call", "dynlex_ui", "ui_shader_close", nothing, view's window, shader)
 
 the browser UI shader operations means: a static reference to @intrinsic("construct", UI shader operations,
-    (the function named "render browser shader in $ holding $ sized $ by $ using $ counting $") as a pointer,
+    (the function named "render browser shader in $ holding $ sized $ by $") as a pointer,
+    (the function named "set browser shader uniform in $ holding $ pass $ group $ binding $ scalar $ rows $ columns $ from $ counting $") as a pointer,
     (the function named "upload browser shader in $ holding $ pass $ slot $ from $ counting $") as a pointer,
     (the function named "index browser shader in $ holding $ pass $ from $ counting $") as a pointer,
     (the function named "draw browser shader in $ holding $ pass $ from $ counting $") as a pointer,

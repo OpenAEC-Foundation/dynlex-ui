@@ -1,0 +1,76 @@
+# Own the std140 bytes of one reflected shader input, without frame JSON.
+import lib/graphics_transform.dl
+import operation_values.dl
+
+class:
+    patterns:
+        UI shader value
+    members:
+        scalar as a 32 bit integer
+        rows as a 32 bit integer
+        columns as a 32 bit integer
+        data as a 32 bit unsigned integer array of 16 items
+
+to [require UI shader type storing] {integer:scalar} [with] {integer:rows} [rows and] {integer:columns} [columns]:
+    require condition ((0 <= scalar <= 2) and ((1 <= rows <= 4) and (1 <= columns <= 4))) reporting "Unsupported shader input type"
+    require condition ((rows = 1) or ((scalar = 0) and (columns >= 2))) reporting "Shader matrices require float rows with two through four columns"
+
+to get [a UI shader value from] {a value:values} [with] {integer:rows} [rows and] {integer:columns} [columns storing] {integer:scalar}:
+    require UI shader type storing scalar with rows rows and columns columns
+    require condition ((the length of values) = (rows * columns)) reporting "Shader input component count does not match its shape"
+    set result to a new UI shader value
+    set result's scalar to scalar as a 32 bit integer
+    set result's rows to rows as a 32 bit integer
+    set result's columns to columns as a 32 bit integer
+    set index to 0
+    loop while index < (rows * columns):
+        set value to the item at index in values
+        set offset to (index / columns) * 4 + (index % columns)
+        set destination to the address of (the item at offset in result's data)
+        if scalar = 0:
+            set {float value} to value as a 32 bit floating-point number
+            require condition (float value is finite) reporting "Shader floating-point inputs must be finite float32 values"
+            @intrinsic("store at", destination as a pointer to a 32 bit floating-point number, float value)
+        else if scalar = 1:
+            require condition (-2147483648 <= value <= 2147483647) reporting "Shader signed inputs must fit in int32"
+            set {signed value} to value as a 32 bit integer
+            require condition (value = signed value) reporting "Shader integer inputs must be whole numbers"
+            @intrinsic("store at", destination as a pointer to a 32 bit integer, signed value)
+        else:
+            require condition (0 <= value <= 4294967295) reporting "Shader unsigned inputs must fit in uint32"
+            set {unsigned value} to value as a 32 bit unsigned integer
+            require condition (value = unsigned value) reporting "Shader integer inputs must be whole numbers"
+            @intrinsic("store at", destination, unsigned value)
+        increment index
+    return result
+
+a UI float shader value from {a number:value} means: a UI shader value from [value] with 1 rows and 1 columns storing 0
+a UI signed shader value from {integer:value} means: a UI shader value from [value] with 1 rows and 1 columns storing 1
+a UI unsigned shader value from {integer:value} means: a UI shader value from [value] with 1 rows and 1 columns storing 2
+
+to get [a UI float shader vector from] {a value:values}:
+    require condition (2 <= (the length of values) <= 4) reporting "Shader vectors require two through four components"
+    return a UI shader value from values with 1 rows and (the length of values) columns storing 0
+
+to get [a UI signed shader vector from] {a value:values}:
+    require condition (2 <= (the length of values) <= 4) reporting "Shader vectors require two through four components"
+    return a UI shader value from values with 1 rows and (the length of values) columns storing 1
+
+to get [a UI unsigned shader vector from] {a value:values}:
+    require condition (2 <= (the length of values) <= 4) reporting "Shader vectors require two through four components"
+    return a UI shader value from values with 1 rows and (the length of values) columns storing 2
+
+to get [a UI float shader matrix from] {a value:values} [with] {integer:rows} [rows and] {integer:columns} [columns]:
+    require condition (rows >= 2) reporting "Shader matrices require two through four rows"
+    return a UI shader value from values with rows rows and columns columns storing 0
+
+to get [a UI shader value from graphics matrix] {graphics matrix:matrix}:
+    set values to a new graphics matrix
+    set row to 0
+    loop while row < 4:
+        set column to 0
+        loop while column < 4:
+            store (the item at (column * 4 + row) in matrix) into values at (row * 4 + column)
+            increment column
+        increment row
+    return a UI float shader matrix from values with 4 rows and 4 columns

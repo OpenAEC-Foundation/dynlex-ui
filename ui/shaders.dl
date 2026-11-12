@@ -1,19 +1,25 @@
 # Shared drawing operations. A host owns the shader resource and its GPU buffers.
 import view.dl
 import shader_types.dl
+import shader_values.dl
 
 to get [the UI shader operations in] {a pointer to UI view:view}:
     set provider to view's driver's shader operations
     require condition (provider != @intrinsic("construct", a pointer to UI shader operations)) reporting "This platform has no shader program provider"
     return provider
 
-to get [a UI texture from shader] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [using] {string:values} [in] {a pointer to UI view:view}:
+to get [a UI texture from shader] {a pointer:shader} [sized] {integer:width} [by] {integer:height} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
     set {pixel width} to a UI operation integer from width
     set {pixel height} to a UI operation integer from height
     require condition ((pixel width > 0) and (pixel height > 0)) reporting "Shader texture dimensions must be positive"
-    set resource to @intrinsic("call pointer", provider's frame, a pointer, view, shader, pixel width, pixel height, the data of values, a UI operation integer from (values's length))
+    set resource to @intrinsic("call pointer", provider's frame, a pointer, view, shader, pixel width, pixel height)
     return @intrinsic("construct", UI texture, resource, pixel width, pixel height)
+
+to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [uniform group] {integer:group} [binding] {integer:binding} [to] {UI shader value:value}:
+    set provider to the UI shader operations in view
+    require UI shader type storing (value's scalar) with (value's rows) rows and (value's columns) columns
+    @intrinsic("call pointer", provider's uniforms, nothing, view, shader, a UI operation integer from pass, a UI operation integer from group, a UI operation integer from binding, value's scalar, value's rows, value's columns, (value's data + 0) as a pointer, value's rows * 16)
 
 to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [vertex buffer] {integer:slot} [from] {a pointer:data} [spanning] {integer:count} [bytes]:
     set provider to the UI shader operations in view
