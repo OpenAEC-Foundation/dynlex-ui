@@ -54,7 +54,7 @@ the UI scene position of {vector:point} through {UI scene transform:transform} m
 the UI scene direction of {vector:direction} through {UI scene transform:transform} means: the UI scene vector direction multiplied by (transform's matrix) translated false
 the UI scene position of {vector:point} restored through {UI scene transform:transform} means: the UI scene vector point multiplied by (transform's inverse) translated true
 
-to get [the UI scene normal of] {vector:normal} [through] {UI scene transform:transform}:
+to get [the UI scene normal vector of] {vector:normal} [through] {UI scene transform:transform}:
     set converted to the UI scene vector form of normal
     set inverse to transform's inverse
     set x to the x of converted
@@ -63,7 +63,10 @@ to get [the UI scene normal of] {vector:normal} [through] {UI scene transform:tr
     set horizontal to (the item at 0 in inverse) * x + (the item at 1 in inverse) * y + (the item at 2 in inverse) * z
     set vertical to (the item at 4 in inverse) * x + (the item at 5 in inverse) * y + (the item at 6 in inverse) * z
     set depth to (the item at 8 in inverse) * x + (the item at 9 in inverse) * y + (the item at 10 in inverse) * z
-    set result to a new vector with x horizontal, y vertical and z depth
+    return a new vector with x horizontal, y vertical and z depth
+
+to get [the UI scene normal of] {vector:normal} [through] {UI scene transform:transform}:
+    set result to the UI scene normal vector of normal through transform
     set magnitude to the length of result
     require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "Scene normals must be finite nonzero directions"
     return result / magnitude

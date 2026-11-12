@@ -67,6 +67,8 @@ def main():
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_transform_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_model_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/scene_baking_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/scene_rotation_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services', 'shader_uniforms']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]

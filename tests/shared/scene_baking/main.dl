@@ -1,0 +1,80 @@
+import ../../../ui/scene_baking.dl
+import ../../../ui/scene_normals.dl
+import ../../../ui/scene_surfaces.dl
+
+to check baked number {a number:actual} equals {a number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.00001) reporting "A baked scene mesh component changed."
+
+require condition ((the size of linear UI paint) = 12) reporting "Mesh colors must use a portable float32 RGB stream."
+require condition ((the size of UI mesh vertex) = 32) reporting "A color stream changed the existing position/normal/UV layout."
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+require condition ((the length of mesh's colors) = (the length of mesh's vertices)) reporting "A mesh has incomplete vertex colors."
+for each color in mesh's colors:
+    check baked number (color's red) equals 1.0
+    check baked number (color's green) equals 1.0
+    check baked number (color's blue) equals 1.0
+set red to linear UI ink from (UI ink 255 0 0)
+set gray to linear UI ink from (UI ink 128 128 128)
+check baked number (gray's red) equals 0.21586050011389926
+check baked number (gray's green) equals (gray's red)
+set batch to a UI mesh builder
+set identity to a UI scene transform from (an identity graphics matrix)
+append UI mesh mesh through identity tinted red to batch
+set shifted to a UI scene transform from (a graphics translation by x 3.0 y 0.0 z 0.0)
+append UI mesh mesh through shifted tinted gray to batch
+set baked to a completed UI mesh from batch
+require condition (((the length of baked's vertices) = 48) and ((the length of baked's indices) = 72)) reporting "Mesh baking changed indexed geometry or repeated a draw's vertices."
+require condition ((the length of baked's colors) = 48) reporting "Mesh baking lost its separate color stream."
+check baked number (baked's bounds' minimum's x) equals -0.5
+check baked number (baked's bounds' maximum's x) equals 3.5
+check baked number ((the item at 0 in baked's colors)'s red) equals 1.0
+check baked number ((the item at 0 in baked's colors)'s blue) equals 0.0
+check baked number ((the item at 24 in baked's colors)'s green) equals (gray's green)
+set again to a UI mesh builder
+append UI mesh baked through identity tinted (linear UI ink red 0.5 green 1.0 blue 1.0) to again
+set copy to a completed UI mesh from again
+check baked number ((the item at 0 in copy's colors)'s red) equals 0.5
+check baked number ((the item at 24 in copy's colors)'s red) equals (gray's red * 0.5)
+check baked number ((the item at 0 in baked's colors)'s red) equals 1.0
+
+# Mirrored baking fixes triangle winding while preserving transformed normals.
+set batch to a UI mesh builder
+set mirrored to a UI scene transform from (a graphics scale by x -2.0 y 3.0 z 4.0)
+append UI mesh mesh through mirrored tinted gray to batch
+set baked to a completed UI mesh from batch
+set index to 0
+loop while index < the length of baked's indices:
+    set first to the item at (the item at index in baked's indices) in baked's vertices
+    set second to the item at (the item at (index + 1) in baked's indices) in baked's vertices
+    set third to the item at (the item at (index + 2) in baked's indices) in baked's vertices
+    set edge to (the UI mesh position of second) - (the UI mesh position of first)
+    set side to (the UI mesh position of third) - (the UI mesh position of first)
+    require condition ((the dot product of (the cross product of edge and side) and (the UI mesh normal of first)) > 0.0) reporting "Mirrored baking left an inward-facing triangle."
+    set index to index + 3
+
+# Shared normals are area-weighted and accumulated into float32 vertex storage.
+set vertices to an empty list of UI mesh vertex
+set indices to an empty list of a 32 bit unsigned integer
+set zero to a new vector with x 0.0, y 0.0 and z 0.0
+for each point in [(a new vector with x 0.0, y 0.0 and z 0.0), (a new vector with x 2.0, y 0.0 and z 0.0), (a new vector with x 0.0, y 1.0 and z 0.0), (a new vector with x 0.0, y 0.0 and z 1.0), (a new vector with x 9.0, y 9.0 and z 9.0)]:
+    append UI mesh vertex at point normal zero uv 0.0 0.0 to vertices
+append UI mesh triangle 0 1 2 to indices
+append UI mesh triangle 0 3 1 to indices
+append UI mesh triangle 0 0 0 to indices
+recalculate UI mesh normals in vertices using indices
+set normal to the UI mesh normal of (the item at 0 in vertices)
+check baked number (normal's x) equals 0.0
+check baked number (normal's y) equals (1.0 / the square root of 2.0)
+check baked number (normal's z) equals (normal's y)
+check baked number (the length of (the UI mesh normal of (the item at 4 in vertices))) equals 0.0
+set custom to a UI scene mesh taking vertices vertices and indices indices
+free vertices
+free indices
+set batch to a UI mesh builder
+append UI mesh custom through identity tinted gray to batch
+set custom to a completed UI mesh from batch
+check baked number (the length of (the UI mesh normal of (the item at 4 in custom's vertices))) equals 0.0
+set batch to a UI mesh builder
+set empty to a completed UI mesh from batch
+require condition (((the length of empty's vertices) = 0) and ((the length of empty's colors) = 0)) reporting "An empty mesh batch did not remain a valid owning value."
+print line "Scene meshes batch indexed geometry with linear vertex colors, transformed normals, mirrored winding and area-weighted normal generation."

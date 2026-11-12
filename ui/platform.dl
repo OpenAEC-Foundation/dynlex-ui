@@ -2,6 +2,7 @@
 import view.dl
 import transforms.dl
 import operation_values.dl
+import colors.dl
 
 to get the width of {a value:message} using {UI font:typeface}:
     set text to the string form of message
@@ -19,9 +20,7 @@ to release UI font {a pointer to UI font:typeface}:
 to get the UI color channel {integer:channel} in {a pointer to UI view:view}:
     set value to (channel as a floating-point number) / 255.0
     if view's linear colors:
-        if value <= 0.04045:
-            return value / 12.92
-        return ((value + 0.055) / 1.055) raised to the power of 2.4
+        return the linear UI channel from value
     return value
 
 to start triangles in {UI frame:frame}:

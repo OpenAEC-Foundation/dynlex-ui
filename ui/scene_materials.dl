@@ -1,5 +1,5 @@
 # Material data belongs to DynLex; applications supply any custom shader flags.
-import geometry.dl
+import colors.dl
 import lib/check.dl
 
 class:
@@ -21,12 +21,9 @@ to get [UI ink from RGB] {integer:encoded}:
     require condition (0 <= encoded <= 16777215) reporting "An RGB color must fit in twenty-four bits"
     return UI ink (((encoded >> 16) & 255) as an integer) (((encoded >> 8) & 255) as an integer) ((encoded & 255) as an integer)
 
-to [require UI scene color] {UI paint:color}:
-    require condition ((0 <= color's red <= 255) and ((0 <= color's green <= 255) and (0 <= color's blue <= 255))) reporting "Scene color channels must be between zero and 255"
-
 to [require UI scene material] {UI scene material:material}:
-    require UI scene color (material's color)
-    require UI scene color (material's emission)
+    require UI color (material's color)
+    require UI color (material's emission)
     require condition ((0.0 <= material's roughness <= 1.0) and ((0.0 <= material's metalness <= 1.0) and (0.0 <= material's opacity <= 1.0))) reporting "Scene roughness, metalness and opacity must be between zero and one"
     require condition ((material's emission strength >= 0.0) and ((material's emission strength as a 32 bit floating-point number) is finite)) reporting "Scene emission strength must be a finite nonnegative float32 value"
 

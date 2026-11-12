@@ -1,0 +1,53 @@
+# Quaternion orientations reuse core vectors while keeping scene matrices portable.
+import lib/quaternion.dl
+import scene_poses.dl
+
+to get [the UI scene rotation from direction] {vector:first} [to direction] {vector:second}:
+    set from to the UI scene vector form of first
+    set target to the UI scene vector form of second
+    set length to the length of from
+    set magnitude to the length of target
+    require condition (((length is finite) and (length > 0.0)) and ((magnitude is finite) and (magnitude > 0.0))) reporting "Scene rotations require finite nonzero directions"
+    set from to from / length
+    set target to target / magnitude
+    set scalar to (the dot product of from and target) + 1.0
+    if scalar < 0.00000001:
+        if (the absolute value of from's x) > (the absolute value of from's z):
+            return (a new quaternion with w 0.0, x (0.0 - from's y), y (from's x) and z 0.0) normalized
+        return (a new quaternion with w 0.0, x 0.0, y (0.0 - from's z) and z (from's y)) normalized
+    set cross to the cross product of from and target
+    return (a new quaternion with w scalar, x (cross's x), y (cross's y) and z (cross's z)) normalized
+
+to get [a UI scene matrix at] {vector:position} [oriented] {quaternion:rotation} [scaled] {vector:scale}:
+    require finite UI scene vector position
+    require finite UI scene vector scale
+    set magnitude to the length of rotation
+    require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "Scene orientations require finite nonzero quaternions"
+    set unit to rotation normalized
+    set x to (unit's x) as a 64 bit floating-point number
+    set y to (unit's y) as a 64 bit floating-point number
+    set z to (unit's z) as a 64 bit floating-point number
+    set w to (unit's w) as a 64 bit floating-point number
+    set xx to x * (x + x)
+    set xy to x * (y + y)
+    set xz to x * (z + z)
+    set yy to y * (y + y)
+    set yz to y * (z + z)
+    set zz to z * (z + z)
+    set wx to w * (x + x)
+    set wy to w * (y + y)
+    set wz to w * (z + z)
+    set matrix to an identity graphics matrix
+    store (((1.0 - (yy + zz)) * (scale's x)) as a 32 bit floating-point number) into matrix at 0
+    store (((xy + wz) * (scale's x)) as a 32 bit floating-point number) into matrix at 1
+    store (((xz - wy) * (scale's x)) as a 32 bit floating-point number) into matrix at 2
+    store (((xy - wz) * (scale's y)) as a 32 bit floating-point number) into matrix at 4
+    store (((1.0 - (xx + zz)) * (scale's y)) as a 32 bit floating-point number) into matrix at 5
+    store (((yz + wx) * (scale's y)) as a 32 bit floating-point number) into matrix at 6
+    store (((xz + wy) * (scale's z)) as a 32 bit floating-point number) into matrix at 8
+    store (((yz - wx) * (scale's z)) as a 32 bit floating-point number) into matrix at 9
+    store (((1.0 - (xx + yy)) * (scale's z)) as a 32 bit floating-point number) into matrix at 10
+    store ((position's x) as a 32 bit floating-point number) into matrix at 12
+    store ((position's y) as a 32 bit floating-point number) into matrix at 13
+    store ((position's z) as a 32 bit floating-point number) into matrix at 14
+    return matrix

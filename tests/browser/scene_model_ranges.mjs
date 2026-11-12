@@ -40,7 +40,7 @@ print line "Accepted model"
       const instance=await WebAssembly.instantiate(module,runtime);
       let failure;try{instance.exports.main();}catch(error){failure=error;}
       if(accepted) {assert.ifError(failure);assert.equal(chunks.join(''),'Accepted model\n');}
-      else {assert(failure,`Accepted ${value} in ${configuration.body}`);assert.match(chunks.join(''),/scene|RGB/i);}
+      else {assert(failure,`Accepted ${value} in ${configuration.body}`);assert.match(chunks.join(''),/scene|RGB|color/i);}
     }
   }
   console.log('Scene models reject invalid poses, materials, colors, topology and missing or ambiguous named parts at both optimizations.');

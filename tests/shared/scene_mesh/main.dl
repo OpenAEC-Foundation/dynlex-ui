@@ -65,6 +65,7 @@ check mesh open has 22 vertices and 20 triangles
 set cone to a UI cylinder mesh with top 0.0 bottom 1.0 height 1.0 around 7 sides capped true
 check mesh cone has 25 vertices and 14 triangles
 check mesh cone fits x 1.0 y 0.5 z 1.0
+require condition ((the item at 2 in cone's indices) = 9) reporting "A cone tip lost the next segment's surface normal."
 set cone to a UI cylinder mesh with top 1.0 bottom 0.0 height 1.0 around 7 sides capped true
 check mesh cone has 25 vertices and 14 triangles
 set stump to a UI cylinder mesh with top 0.1 bottom 0.16 height 0.19 around 9 sides capped true
@@ -94,6 +95,7 @@ set copy to sphere
 set sphere to a UI sphere mesh with 10 slices and 8 stacks
 check mesh copy has 12 vertices and 6 triangles
 check mesh sphere has 99 vertices and 140 triangles
+require condition (((the item at 0 in sphere's indices) = 0) and (((the item at 30 in sphere's indices) = 12) and ((the item at 32 in sphere's indices) = 23))) reporting "Sphere latitude rows use inconsistent triangle diagonals."
 set vertex to the item at 44 in sphere's vertices
 check mesh number (vertex's x) equals -1.0
 check mesh number (vertex's y) equals 0.0

@@ -57,6 +57,10 @@ A `UI mesh vertex` stores eight float32 components in this order: `x`, `y`, `z`,
 `nx`, `ny`, `nz`, `u`, `v`. Its 32-byte interleaved layout supplies position at
 byte 0, normal at byte 12 and UV at byte 24. Indices are uint32 triangle lists.
 The geometry is independent of materials, scene instances and GPU resources.
+Every mesh also owns a `colors` sequence with one `linear UI paint` per vertex.
+That separate twelve-byte RGB stream uses linear float32 components; untinted
+primitives contain explicit white colors. Its vertex-buffer layout is stride 12,
+with one `float32x3` attribute at byte 0. Vertex colors multiply the material color.
 
 ```dynlex
 import ui/scene_surfaces.dl
@@ -194,3 +198,45 @@ bounds, then picks its nearest visible, pickable mesh. `the UI scene selection
 from ray in actor including backfaces false` returns `part` and `hit`. A miss has
 part -1 and `hit` with its hit flag false. These model and instance APIs prepare
 scene data; they do not replace material shaders or GPU scene submission.
+
+## Baking and smooth normals
+
+`ui/scene_baking.dl` merges reusable meshes into one indexed mesh. It transforms
+positions and inverse-transpose normals, multiplies source vertex colors by a
+linear tint and adjusts winding when the transform mirrors the geometry.
+The completed mesh owns its data independently of all sources.
+
+```dynlex
+import ui/scene_baking.dl
+import ui/scene_surfaces.dl
+
+set source to a UI box mesh with 1 by 1 by 1 segments
+set batch to a UI mesh builder
+set transform to a UI scene transform from (an identity graphics matrix)
+append UI mesh source through transform tinted (linear UI ink from (UI ink 199 122 67)) to batch
+set combined to a completed UI mesh from batch
+```
+
+Completing a builder consumes and closes it. Use `close UI mesh builder batch`
+to discard an unfinished builder. The colored mesh constructor requires
+exactly one finite RGB value per vertex; incomplete colors and invalid triangle
+indices fail explicitly. `ui/colors.dl` shares the linear RGB type and sRGB
+conversion with ordinary UI painting. `linear UI ink from color` decodes an
+eight-bit sRGB paint once. `linear UI ink red r green g blue b` accepts finite
+float32 linear components directly.
+
+`ui/scene_normals.dl` supplies `recalculate UI mesh normals in vertices using
+indices` for mutable vertex/index builders. It accumulates area-weighted face
+normals in float32 storage, then normalizes each vertex. Unused vertices and
+vertices incident only to degenerate faces retain zero normals. Those are valid
+mesh data and survive baking. The raw inverse-transpose operation is available
+as `the UI scene normal vector of value through transform`.
+
+## Quaternion orientations
+
+`ui/scene_rotations.dl` reuses core quaternions for geometry aligned between
+directions. `the UI scene rotation from direction first to direction second`
+normalizes finite nonzero inputs and chooses a perpendicular half-turn axis for
+opposite directions. `a UI scene matrix at position oriented rotation scaled
+scale` composes the resulting orientation with translation and nonuniform scale.
+Quaternion inputs must have a finite nonzero magnitude.

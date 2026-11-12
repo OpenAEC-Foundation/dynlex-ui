@@ -1,0 +1,24 @@
+import ../../../ui/scene_rotations.dl
+
+to check oriented point {vector:actual} equals {vector:expected}:
+    require condition ((the length of (actual - expected)) < 0.00001) reporting "A scene quaternion orientation changed."
+
+set origin to a new vector with x 0.0, y 0.0 and z 0.0
+set one to a new vector with x 1.0, y 1.0 and z 1.0
+set up to a new vector with x 0.0, y 1.0 and z 0.0
+for each direction in [up, (a new vector with x 0.0, y -1.0 and z 0.0), (a new vector with x 0.0, y 0.0 and z 1.0), (a new vector with x 2.0, y 4.0 and z 3.0)]:
+    set rotation to the UI scene rotation from direction (up * 2.0) to direction direction
+    check oriented point (up rotated by rotation) equals (direction normalized)
+    set matrix to a UI scene matrix at origin oriented rotation scaled one
+    set transform to a UI scene transform from matrix
+    check oriented point (the UI scene direction of up through transform) equals (direction normalized)
+set rotation to the UI scene rotation from direction up to direction (a new vector with x 0.0, y 0.0 and z 1.0)
+set matrix to a UI scene matrix at (a new vector with x 2.0, y 3.0 and z 4.0) oriented rotation scaled (a new vector with x 2.0, y 3.0 and z 4.0)
+set transform to a UI scene transform from matrix
+check oriented point (the UI scene position of up through transform) equals (a new vector with x 2.0, y 3.0 and z 7.0)
+set normal to a new vector with x 0.0, y 0.0 and z 1.0
+check oriented point (the UI scene normal of normal through transform) equals (a new vector with x 0.0, y -1.0 and z 0.0)
+set x to a new vector with x 1, y 0 and z 0
+set rotation to the UI scene rotation from direction x to direction (a new vector with x -2, y 0 and z 0)
+check oriented point ((a new vector with x 1.0, y 0.0 and z 0.0) rotated by rotation) equals (a new vector with x -1.0, y 0.0 and z 0.0)
+print line "Scene quaternion orientations align finite directions, preserve opposite axes and compose portable scaled transforms."

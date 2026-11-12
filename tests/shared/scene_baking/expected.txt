@@ -1,0 +1,1 @@
+Scene meshes batch indexed geometry with linear vertex colors, transformed normals, mirrored winding and area-weighted normal generation.

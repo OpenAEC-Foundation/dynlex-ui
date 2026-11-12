@@ -1,0 +1,28 @@
+# Linear RGB data is shared by ordinary UI drawing and programmable scenes.
+import geometry.dl
+import lib/check.dl
+
+class:
+    patterns:
+        linear UI paint
+    members:
+        red as a 32 bit floating-point number
+        green as a 32 bit floating-point number
+        blue as a 32 bit floating-point number
+
+to [require UI color] {UI paint:color}:
+    require condition ((0 <= color's red <= 255) and ((0 <= color's green <= 255) and (0 <= color's blue <= 255))) reporting "UI color channels must be between zero and 255"
+
+to get [the linear UI channel from] {floating-point number:value}:
+    if value <= 0.04045:
+        return value / 12.92
+    return ((value + 0.055) / 1.055) raised to the power of 2.4
+
+to get [linear UI ink red] {a number:red} [green] {a number:green} [blue] {a number:blue}:
+    set result to @intrinsic("construct", linear UI paint, red as a 32 bit floating-point number, green as a 32 bit floating-point number, blue as a 32 bit floating-point number)
+    require condition ((result's red is finite) and ((result's green is finite) and (result's blue is finite))) reporting "Linear UI color components must be finite float32 values"
+    return result
+
+to get [linear UI ink from] {UI paint:color}:
+    require UI color color
+    return linear UI ink red (the linear UI channel from ((color's red as a floating-point number) / 255.0)) green (the linear UI channel from ((color's green as a floating-point number) / 255.0)) blue (the linear UI channel from ((color's blue as a floating-point number) / 255.0))

@@ -2,14 +2,6 @@ import platform.dl
 import text.dl
 import geometry.dl
 
-class:
-    patterns:
-        linear UI paint
-    members:
-        red as a 32 bit floating-point number
-        green as a 32 bit floating-point number
-        blue as a 32 bit floating-point number
-
 to get the UI [corner point] {integer:index} of {integer:steps} on {UI bounds:box} rounded by {floating-point number:radius} expanded by {floating-point number:fringe}:
     set corner to index / steps
     set step to index mod steps

@@ -1,6 +1,7 @@
 # Immutable, indexed geometry shared by renderers, scene instances and CPU picking.
 import lib/sequence.dl
 import scene_camera.dl
+import colors.dl
 
 class:
     patterns:
@@ -17,6 +18,7 @@ class:
 
 UI mesh vertices means: the type of (an empty sequence of UI mesh vertex)
 UI mesh indices means: the type of (an empty sequence of a 32 bit unsigned integer)
+UI mesh colors means: the type of (an empty sequence of linear UI paint)
 
 class:
     patterns:
@@ -32,12 +34,16 @@ class:
         vertices as UI mesh vertices
         indices as UI mesh indices
         bounds as UI mesh bounds
+        colors as UI mesh colors
 
 to get [the UI mesh position of] {UI mesh vertex:vertex}:
     return a new vector with x (vertex's x as a 64 bit floating-point number), y (vertex's y as a 64 bit floating-point number) and z (vertex's z as a 64 bit floating-point number)
 
 to get [the UI mesh normal of] {UI mesh vertex:vertex}:
     return a new vector with x (vertex's nx as a 64 bit floating-point number), y (vertex's ny as a 64 bit floating-point number) and z (vertex's nz as a 64 bit floating-point number)
+
+to [require UI mesh vertex] {UI mesh vertex:vertex}:
+    require condition (((vertex's x is finite) and ((vertex's y is finite) and (vertex's z is finite))) and (((vertex's nx is finite) and ((vertex's ny is finite) and (vertex's nz is finite))) and ((vertex's u is finite) and (vertex's v is finite)))) reporting "Scene mesh components must be finite float32 values"
 
 to [append UI mesh vertex at] {vector:position} [normal] {vector:normal} [uv] {floating-point number:u} {floating-point number:v} [to] {a pointer to a list:vertices}:
     set vertex to a new UI mesh vertex
@@ -49,7 +55,7 @@ to [append UI mesh vertex at] {vector:position} [normal] {vector:normal} [uv] {f
     set vertex's nz to (the z of normal) as a 32 bit floating-point number
     set vertex's u to u as a 32 bit floating-point number
     set vertex's v to v as a 32 bit floating-point number
-    require condition (((vertex's x is finite) and ((vertex's y is finite) and (vertex's z is finite))) and (((vertex's nx is finite) and ((vertex's ny is finite) and (vertex's nz is finite))) and ((vertex's u is finite) and (vertex's v is finite)))) reporting "Scene mesh components must be finite float32 values"
+    require UI mesh vertex vertex
     append vertex to vertices
 
 to [append UI mesh triangle] {integer:first} {integer:second} {integer:third} [to] {a pointer to a list:indices}:
@@ -58,19 +64,36 @@ to [append UI mesh triangle] {integer:first} {integer:second} {integer:third} [t
     append (second as a 32 bit unsigned integer) to indices
     append (third as a 32 bit unsigned integer) to indices
 
-# Transfer storage from reusable builders, leaving both builders valid and empty.
-to get [a UI scene mesh taking vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+to [require UI mesh triangles in] {a pointer to a list:indices} [using] {a pointer to a list:vertices}:
     require condition (((the length of indices) % 3) = 0) reporting "Scene mesh triangles require three indices"
     for each index in indices:
         require condition (index < (the length of vertices)) reporting "A scene mesh index does not reference a vertex"
+
+# Transfer complete streams, leaving their builders valid and empty.
+to get [a UI scene mesh taking vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices} [and colors] {a pointer to a list:colors}:
+    require UI mesh triangles in indices using vertices
+    require condition ((the length of colors) = (the length of vertices)) reporting "A scene mesh requires one color per vertex"
+    for each color in colors:
+        require condition ((color's red is finite) and ((color's green is finite) and (color's blue is finite))) reporting "Scene mesh colors must be finite float32 values"
     set bounds to a new UI mesh bounds
     if (the length of vertices) > 0:
         set first to the UI mesh position of (the item at 0 in vertices)
         set bounds' minimum to first
         set bounds' maximum to first
         for each vertex in vertices:
+            require UI mesh vertex vertex
             set low to bounds' minimum
             set high to bounds' maximum
             set bounds' minimum to a new vector with x (the minimum of (the x of low) and (vertex's x)), y (the minimum of (the y of low) and (vertex's y)) and z (the minimum of (the z of low) and (vertex's z))
             set bounds' maximum to a new vector with x (the maximum of (the x of high) and (vertex's x)), y (the maximum of (the y of high) and (vertex's y)) and z (the maximum of (the z of high) and (vertex's z))
-    return @intrinsic("construct", UI scene mesh, (a sequence taking the items from vertices), (a sequence taking the items from indices), bounds)
+    return @intrinsic("construct", UI scene mesh, (a sequence taking the items from vertices), (a sequence taking the items from indices), bounds, (a sequence taking the items from colors))
+
+# Untinted geometry has an explicit white color stream, including empty meshes.
+to get [a UI scene mesh taking vertices] {a pointer to a list:vertices} [and indices] {a pointer to a list:indices}:
+    set colors to an empty list of linear UI paint
+    set white to linear UI ink red 1.0 green 1.0 blue 1.0
+    loop count from 0 to (the length of vertices):
+        append white to colors
+    set result to a UI scene mesh taking vertices vertices and indices indices and colors colors
+    free colors
+    return result

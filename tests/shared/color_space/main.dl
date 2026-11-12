@@ -1,0 +1,23 @@
+import ../../../ui/shapes.dl
+
+to check color channel {a number:actual} equals {a number:expected}:
+    require condition ((the absolute value of (actual - expected)) < 0.000001) reporting "Shared sRGB conversion or linear paint data changed."
+
+set view to a new UI view
+set target to the address of view
+set view's linear colors to false
+check color channel (the UI color channel 128 in target) equals (128.0 / 255.0)
+set view's linear colors to true
+check color channel (the UI color channel 0 in target) equals 0.0
+check color channel (the UI color channel 255 in target) equals 1.0
+check color channel (the UI color channel 128 in target) equals 0.21586050011389926
+check color channel (the UI color channel 10 in target) equals ((10.0 / 255.0) / 12.92)
+set gray to linear UI ink from (UI ink 128 128 128)
+check color channel (gray's red) equals (the UI color channel 128 in target)
+set first to linear UI ink red 0.0 green 0.2 blue 0.4
+set second to linear UI ink red 1.0 green 0.6 blue 0.8
+set mixed to linear UI ink between first and second at 0.5
+check color channel (mixed's red) equals 0.5
+check color channel (mixed's green) equals 0.4
+check color channel (mixed's blue) equals 0.6
+print line "UI painting and scene data share sRGB conversion and portable linear RGB values."

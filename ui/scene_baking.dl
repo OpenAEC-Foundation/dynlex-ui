@@ -1,0 +1,51 @@
+# Merge reusable source meshes into one indexed, colored draw without host geometry code.
+import scene_mesh.dl
+import scene_transforms.dl
+
+UI mesh vertex list means: the type of (an empty list of UI mesh vertex)
+UI mesh index list means: the type of (an empty list of a 32 bit unsigned integer)
+UI mesh color list means: the type of (an empty list of linear UI paint)
+
+class:
+    patterns:
+        UI mesh builder
+    members:
+        vertices as UI mesh vertex list
+        indices as UI mesh index list
+        colors as UI mesh color list
+
+to get [a UI mesh builder]:
+    return storage for one slot initialized with @intrinsic("construct", UI mesh builder, an empty list of UI mesh vertex, an empty list of a 32 bit unsigned integer, an empty list of linear UI paint)
+
+to [append UI mesh] {UI scene mesh:mesh} [through] {UI scene transform:transform} [tinted] {linear UI paint:tint} [to] {a pointer to UI mesh builder:builder}:
+    set base to the length of (builder's vertices)
+    set index to 0
+    for each vertex in mesh's vertices:
+        set point to the UI scene position of (the UI mesh position of vertex) through transform
+        set normal to (the UI scene normal vector of (the UI mesh normal of vertex) through transform) normalized
+        append UI mesh vertex at point normal normal uv (vertex's u as a floating-point number) (vertex's v as a floating-point number) to (builder's vertices)
+        set source to the item at index in mesh's colors
+        append (linear UI ink red (source's red * tint's red) green (source's green * tint's green) blue (source's blue * tint's blue)) to (builder's colors)
+        increment index
+    set index to 0
+    loop while index < the length of mesh's indices:
+        set first to (the item at index in mesh's indices) as an integer
+        set second to (the item at (index + 1) in mesh's indices) as an integer
+        set third to (the item at (index + 2) in mesh's indices) as an integer
+        if transform's handedness > 0.0:
+            append UI mesh triangle (base + first) (base + second) (base + third) to (builder's indices)
+        else:
+            append UI mesh triangle (base + first) (base + third) (base + second) to (builder's indices)
+        set index to index + 3
+
+to [close UI mesh builder] {a pointer to UI mesh builder:builder}:
+    free builder's vertices
+    free builder's indices
+    free builder's colors
+    destroy the value at builder
+    deallocate builder
+
+to get [a completed UI mesh from] {a pointer to UI mesh builder:builder}:
+    set result to a UI scene mesh taking vertices (builder's vertices) and indices (builder's indices) and colors (builder's colors)
+    close UI mesh builder builder
+    return result

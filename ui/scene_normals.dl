@@ -1,0 +1,38 @@
+# Area-weighted smooth normals retain zero for unused or wholly degenerate vertices.
+import scene_mesh.dl
+
+to [recalculate UI mesh normals in] {a pointer to a list:vertices} [using] {a pointer to a list:indices}:
+    require UI mesh triangles in indices using vertices
+    set index to 0
+    loop while index < the length of vertices:
+        set vertex to the item at index in vertices
+        set vertex's nx to 0.0 as a 32 bit floating-point number
+        set vertex's ny to 0.0 as a 32 bit floating-point number
+        set vertex's nz to 0.0 as a 32 bit floating-point number
+        replace item at index index in vertices with vertex
+        increment index
+    set index to 0
+    loop while index < the length of indices:
+        set first to the item at index in indices
+        set second to the item at (index + 1) in indices
+        set third to the item at (index + 2) in indices
+        set a to the UI mesh position of (the item at first in vertices)
+        set b to the UI mesh position of (the item at second in vertices)
+        set c to the UI mesh position of (the item at third in vertices)
+        set area to the cross product of (c - b) and (a - b)
+        for each corner in [first,second,third]:
+            set vertex to the item at corner in vertices
+            set vertex's nx to (vertex's nx + area's x) as a 32 bit floating-point number
+            set vertex's ny to (vertex's ny + area's y) as a 32 bit floating-point number
+            set vertex's nz to (vertex's nz + area's z) as a 32 bit floating-point number
+            replace item at index corner in vertices with vertex
+        set index to index + 3
+    set index to 0
+    loop while index < the length of vertices:
+        set vertex to the item at index in vertices
+        set normal to (the UI mesh normal of vertex) normalized
+        set vertex's nx to normal's x as a 32 bit floating-point number
+        set vertex's ny to normal's y as a 32 bit floating-point number
+        set vertex's nz to normal's z as a 32 bit floating-point number
+        replace item at index index in vertices with vertex
+        increment index

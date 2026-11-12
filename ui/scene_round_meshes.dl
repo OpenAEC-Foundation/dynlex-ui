@@ -28,9 +28,9 @@ to get [a UI sphere mesh with] {integer:slices} [slices and] {integer:stacks} [s
             set first to row * (slices + 1) + column
             set next to first + slices + 1
             if row > 0:
-                append UI mesh triangle first next (first + 1) to indices
+                append UI mesh triangle (first + 1) first (next + 1) to indices
             if row < (stacks - 1):
-                append UI mesh triangle (first + 1) next (next + 1) to indices
+                append UI mesh triangle first next (next + 1) to indices
             increment column
         increment row
     set result to a UI scene mesh taking vertices vertices and indices indices
@@ -86,10 +86,10 @@ to get [a UI cylinder mesh with top] {floating-point number:top} [bottom] {float
     set side to 0
     loop while side < sides:
         set next to side + sides + 1
-        if bottom > 0.0:
-            append UI mesh triangle side (side + 1) next to indices
         if top > 0.0:
-            append UI mesh triangle (side + 1) (next + 1) next to indices
+            append UI mesh triangle next side (next + 1) to indices
+        if bottom > 0.0:
+            append UI mesh triangle side (side + 1) (next + 1) to indices
         increment side
     if capped:
         if top > 0.0:
