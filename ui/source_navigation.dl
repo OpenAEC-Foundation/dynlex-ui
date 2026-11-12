@@ -8,8 +8,7 @@ to [request a UI source definition in] {a pointer to UI source tools:tools}:
     loop while editor's node != tools's node:
         set editor to editor's next
     set navigation to the address of (tools's navigation)
-    cancel UI source navigation navigation
-    dismiss UI source tools tools
+    begin UI source interaction in tools
     set navigation's editor to editor
     set navigation's document to editor's document
     set navigation's query to request UI source feature "textDocument/definition" at byte (tools's view's selection's caret) in (editor's document)
@@ -48,8 +47,7 @@ to [update UI source navigation in] {a pointer to UI source tools:tools}:
     if result's kind = the JSON null kind:
         if navigation's phase = 2:
             set tools's mode to 2
-            set tools's message to "Source unavailable."
-            set tools's view's damaged to true
+            show UI choice popover (the address of (tools's choices)) reporting "Source unavailable." with hint "Esc close" in (tools's view)
         cancel UI source navigation navigation
         return nothing
     if navigation's phase = 1:
@@ -68,8 +66,7 @@ to [update UI source navigation in] {a pointer to UI source tools:tools}:
             else:
                 cancel UI source navigation navigation
                 set tools's mode to 2
-                set tools's message to "Source unavailable."
-                set tools's view's damaged to true
+                show UI choice popover (the address of (tools's choices)) reporting "Source unavailable." with hint "Esc close" in (tools's view)
             return nothing
         set parameters to an LSP text document identifier for (navigation's uri)
         set navigation's query to request UI source feature "dynlex/readDocument" with parameters parameters in (navigation's document)

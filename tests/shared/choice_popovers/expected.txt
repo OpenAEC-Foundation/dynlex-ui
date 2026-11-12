@@ -1,0 +1,1 @@
+Choice popovers share bounded rendering, disabled rows, scrolling and keyboard capture without changing editor focus.

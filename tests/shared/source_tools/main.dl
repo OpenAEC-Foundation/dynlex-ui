@@ -44,7 +44,7 @@ loop while index < the length of labels:
     ignore update UI view (the address of view)
     set surface to view's window as a pointer to test UI surface
     require condition (surface's drawn contains "↑ ↓ choose") reporting "The shared source popup was not rendered."
-    require condition (workspace's tools' rows = 1) reporting "The popup did not retain its visible item count."
+    require condition (workspace's tools' choices' rows = 1) reporting "The popup did not retain its visible item count."
     queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
     process UI input in (the address of view)
     set value to the UI value for (editor's node) in window

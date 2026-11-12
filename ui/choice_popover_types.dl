@@ -1,0 +1,103 @@
+import overlays.dl
+import document_declarations.dl
+
+class:
+    patterns:
+        UI choice
+    members:
+        label as a string
+        enabled as a boolean
+        next as a pointer to UI choice
+
+class:
+    patterns:
+        UI choice popover
+    members:
+        first item as a pointer to UI choice
+        last item as a pointer to UI choice
+        count as an integer
+        selected as an integer
+        first as an integer
+        rows as an integer
+        row height as a floating-point number
+        bounds as UI bounds
+        visible as a boolean
+        accepts tab as a boolean
+        message as a string
+        hint as a string
+        surface as UI layout
+
+to get [a UI choice popover]:
+    set result to a new UI choice popover
+    set result's selected to -1
+    set result's surface's node to a UI container of kind 41 containing no UI children
+    return result
+
+to get [the UI choice at] {integer:index} [in] {a pointer to UI choice popover:popup}:
+    require condition (0 <= index < popup's count) reporting "A choice index is outside its list"
+    set item to popup's first item
+    set position to 0
+    loop while position < index:
+        set item to item's next
+        increment position
+    return item
+
+to [add UI choice] {string:label} [enabled] {boolean:enabled} [to] {a pointer to UI choice popover:popup}:
+    set item to storage for one slot initialized with (a new UI choice)
+    set item's label to label
+    set item's enabled to enabled
+    if popup's count = 0:
+        set popup's first item to item
+    else:
+        set popup's last item's next to item
+    set popup's last item to item
+    if (popup's selected < 0) and enabled:
+        set popup's selected to popup's count
+    increment popup's count
+
+to [dismiss UI choice popover] {a pointer to UI choice popover:popup} [in] {a pointer to UI view:view}:
+    if popup's visible:
+        set view's damaged to true
+    set popup's visible to false
+    set popup's rows to 0
+    set popup's bounds to UI box at 0 0 sized 0 0
+    retire UI floating layout (the address of (popup's surface))
+
+to [release UI choices in] {a pointer to UI choice popover:popup}:
+    set item to popup's first item
+    loop while item != @intrinsic("construct", a pointer to UI choice):
+        set next to item's next
+        destroy the value at item
+        deallocate item
+        set item to next
+    set popup's first item and popup's last item to @intrinsic("construct", a pointer to UI choice)
+    set popup's count to 0
+    set popup's selected to -1
+
+to [clear UI choice popover] {a pointer to UI choice popover:popup} [in] {a pointer to UI view:view}:
+    dismiss UI choice popover popup in view
+    release UI choices in popup
+    set the value at popup to a UI choice popover
+
+to [show UI choice popover] {a pointer to UI choice popover:popup} [reporting] {string:message} [with hint] {string:hint} [in] {a pointer to UI view:view}:
+    set popup's message to message
+    set popup's hint to hint
+    set popup's visible to true
+    set view's damaged to true
+
+to [move UI choice selection in] {a pointer to UI choice popover:popup} [by] {integer:direction} [wrapping] {boolean:wrap}:
+    set index to popup's selected
+    set remaining to popup's count
+    loop while remaining > 0:
+        set index to index + direction
+        if wrap:
+            set index to (index + popup's count) mod popup's count
+        else if (index < 0) or (index >= popup's count):
+            if (popup's selected < 0) or (popup's selected >= popup's count):
+                set popup's selected to -1
+            return nothing
+        if (the UI choice at index in popup)'s enabled:
+            set popup's selected to index
+            return nothing
+        decrement remaining
+    set popup's selected to -1

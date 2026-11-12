@@ -1,0 +1,109 @@
+# Source inspection is independent of application behavior and source writability.
+import source_tool_focus.dl
+
+to [request UI source inspection] {string:method} [with] {a pointer to JSON value:parameters} [as mode] {integer:mode} [reporting] {string:message} [in] {a pointer to UI source tools:tools}:
+    begin UI source interaction in tools
+    set tools's query to request UI source feature method with parameters parameters in (tools's document)
+    set tools's generation to 0
+    set tools's position to tools's view's selection's caret
+    set tools's mode to mode
+    show UI choice popover (the address of (tools's choices)) reporting message with hint "↑ ↓ choose · Enter open · Esc close" in (tools's view)
+
+to [request a UI source outline in] {a pointer to UI source tools:tools}:
+    set parameters to a JSON object containing [JSON child "textDocument" is (an LSP text document identifier for (tools's document's uri))]
+    request UI source inspection "textDocument/documentSymbol" with parameters as mode 3 reporting "Finding sections…" in tools
+    free parameters
+
+to [request UI source instances in] {a pointer to UI source tools:tools}:
+    set parameters to an LSP text document identifier for (tools's document's uri)
+    request UI source inspection "dynlex/instantiationsInDocument" with parameters as mode 4 reporting "Finding inferred instances…" in tools
+    free parameters
+
+to [append UI source outline] {a pointer to JSON value:symbols} [from] {a pointer to UI source document:document} [nested] {integer:depth} [into] {a pointer to JSON value:items}:
+    set index to 0
+    loop while index < symbols's length:
+        set symbol to the JSON value at index index in symbols
+        set label to the string form of ""
+        set level to 0
+        loop while level < depth:
+            set label to label + "  "
+            increment level
+        set item to a JSON object containing [JSON text "label" is (label + (the JSON text named "name" in symbol)), JSON child "range" is (a copy of JSON-RPC node (the JSON member named "selectionRange" in symbol))]
+        set span to the UI source range of item in document
+        set nested to depth
+        if span's visible:
+            add item to the JSON array items
+            increment nested
+        else:
+            free item
+        if symbol has JSON member named "children":
+            append UI source outline (the JSON member named "children" in symbol) from document nested nested into items
+        increment index
+
+to [collect UI source inspection choices in] {a pointer to UI source tools:tools}:
+    free tools's items
+    set tools's items to a new JSON-RPC array
+    clear UI choice popover (the address of (tools's choices)) in (tools's view)
+    set result to tools's query's result
+    set current to the string form of ""
+    if result's kind != the JSON null kind:
+        require condition (result's kind = the JSON array kind) reporting "Source inspection must return an array"
+        if tools's mode = 3:
+            append UI source outline result from (tools's document) nested 0 into (tools's items)
+        else:
+            set index to 0
+            set found to false
+            loop while (index < result's length) and (found = false):
+                set entry to the JSON value at index index in result
+                set span to the UI source range of entry in (tools's document)
+                if (span's visible) and (span's start <= tools's position <= span's end):
+                    set found to true
+                    set tools's selection key to the JSON text named "selectionKey" in entry
+                    set current to the JSON text named "currentKey" in entry
+                    free tools's items
+                    set tools's items to a copy of JSON-RPC node (the JSON member named "options" in entry)
+                increment index
+    set index to 0
+    loop while index < tools's items's length:
+        set item to the JSON value at index index in (tools's items)
+        add UI choice (the JSON text named "label" in item) enabled true to (the address of (tools's choices))
+        if tools's mode = 4:
+            if (the JSON text named "key" in item) = current:
+                set tools's choices' selected to index
+        increment index
+    set message to "No sections in this source." if (tools's mode = 3), else "No inferred instances at the caret."
+    set hint to "↑ ↓ choose · Enter open · Esc close" if (tools's mode = 3), else "↑ ↓ choose · Enter select · Esc close"
+    show UI choice popover (the address of (tools's choices)) reporting message with hint hint in (tools's view)
+
+to [accept UI source inspection in] {a pointer to UI source tools:tools}:
+    if (tools's query is current for UI source document (tools's document)) = false:
+        dismiss UI source tools tools
+        return nothing
+    set item to the JSON value at index (tools's choices' selected) in (tools's items)
+    if tools's mode = 3:
+        set workspace to tools's workspace as a pointer to UI source workspace
+        set editor to workspace's editors
+        loop while editor's node != tools's node:
+            set editor to editor's next
+        set span to the UI source range of item in (tools's document)
+        visit UI source document (tools's document) selecting (span's start) through (span's end) in editor in (tools's view)
+    else:
+        require condition (tools's mode = 4) reporting "An unknown source inspection choice was accepted"
+        set parameters to a JSON object containing [JSON text "selectionKey" is (tools's selection key), JSON text "instantiationKey" is (the JSON text named "key" in item)]
+        set tools's selection query to notify UI source feature "dynlex/selectInstantiation" with parameters parameters in (tools's document)
+        set tools's selection document to tools's document
+        set tools's selection generation to tools's selection query's generation
+        free parameters
+    dismiss UI source tools tools
+
+to [update UI source instance selection in] {a pointer to UI source tools:tools}:
+    set query to tools's selection query
+    if query = @intrinsic("construct", a pointer to UI source query):
+        return nothing
+    set current to (query's generation = tools's selection generation) and (query is current for UI source document (tools's selection document))
+    if current and (query's ready):
+        increment tools's selection document's token epoch
+        dismiss UI source hover (the address of (tools's hover)) in (tools's view)
+    if (current = false) or (query's ready):
+        set tools's selection query to @intrinsic("construct", a pointer to UI source query)
+        set tools's selection document to @intrinsic("construct", a pointer to UI source document)

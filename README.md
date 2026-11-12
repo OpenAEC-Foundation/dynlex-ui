@@ -110,7 +110,11 @@ The same workspace can contain plain editors and editors with hidden vocabulary
 imports. No application-specific completion handlers are needed. F12 follows definitions
 into retained read-only imported sources; Alt+Left returns to the preceding file
 and selection. `source pane "Plan" containing text using appearance` composes the
-same editor with scoped Back/Main file controls and a filename. Applications read
+same editor with scoped Back/Main file, Outline and Instances controls and a
+filename. F9 opens the nested document outline; F8 chooses the inferred instance
+at the caret. Both inspection tools work on read-only sources and preserve
+editing focus. Instance selection refreshes colors and hover values after the
+language service acknowledges it. Applications read
 `the UI main source of editor in workspace at seconds seconds` for Run or Save,
 so opening a definition never changes the program they execute. Program loads
 use `load UI main source of editor in view from text at seconds seconds`; this

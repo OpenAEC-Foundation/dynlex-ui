@@ -272,13 +272,30 @@ cleanup releases the projects belonging to its controls.
 
 Import `ui/source_panes.dl` for `source pane "Plan" containing text using
 appearance`. This is an ordinary immutable description containing an editor,
-filename, Back and Main file buttons. A workspace scopes those controls to their
+filename, Back, Main file, Outline and Instances buttons. A workspace scopes those controls to their
 pane. Bare editors and panes use identical document and interaction code.
 Enable `ui/source_tools.dl` once per workspace for completion and F12 definition
 navigation; Alt+Left returns through its location history. Visits retain each
 file's independent undo/redo, annotations, Unicode selection and scroll position.
 Imported sources are read-only; the main source's own read-only policy is restored
 on return.
+
+F9 opens an outline of authored sections, including nested declarations. Choosing
+a section visits its selection range through the same Unicode and protected
+context mapping as definition navigation. F8 lists inferred instances at the
+caret and initially selects the compiler's current instance. Choosing another
+instance notifies the language service, then refreshes semantic colors and hover
+facts after acknowledgement. Both tools support read-only imports. Stale results
+and acknowledgements are discarded when their source or project changes.
+
+`ui/choice_popovers.dl` supplies the same choice surface for completion and
+inspection, without a JSON or language-service dependency. Callers add labels and
+enabled states, supply placement, a borrowed view font and appearance, then handle
+input results: 0 passes through, 1 consumes input, 2 activates the selected row,
+and 3 requests dismissal. Arrows, Home/End, Page Up/Down, wheel and pointer input
+share selection and scrolling. Disabled rows are skipped; an invisible menu
+cannot activate a choice. Dismissal retires its hit geometry. Release owned rows
+with `clear UI choice popover popup in view` before freeing the caller's state.
 
 Source tools also provide pointer hover inspection in every registered source
 control. Requests follow the document's protected-prefix/Unicode mapping and are

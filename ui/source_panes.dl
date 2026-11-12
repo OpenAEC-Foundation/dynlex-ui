@@ -23,6 +23,8 @@ source pane {C string:name} containing {C string:source} using {UI appearance re
     (a UI container of kind 41 containing [
         (button "Back") wearing UI source action appearance,
         (button "Main file") wearing UI source action appearance,
+        (button "Outline") wearing UI source action appearance,
+        (button "Instances") wearing UI source action appearance,
         paragraph "Location" containing name using UI source location appearance
     ]) wearing UI source header appearance,
     editor name containing source using (the UI source content appearance using appearance)

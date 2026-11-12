@@ -21,12 +21,13 @@ to get [the UI source tool anchor in] {a pointer to UI source tools:tools}:
 
 to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     set tools to context as a pointer to UI source tools
-    retire UI floating layout (the address of (tools's surface))
+    set popup to the address of (tools's choices)
+    retire UI floating layout (the address of (popup's surface))
     paint UI source hover in tools on frame
     if tools's mode = 0:
         return nothing
-    set tools's rows to 0
-    set tools's bounds to UI box at 0 0 sized 0 0
+    set popup's rows to 0
+    set popup's bounds to UI box at 0 0 sized 0 0
     set view to frame's view
     set layout to the UI layout for element (tools's node) in (view's layout)
     if layout's paint generation != view's paint count:
@@ -36,67 +37,18 @@ to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     if (viewport's width <= 0.0) or (viewport's height <= 0.0):
         return nothing
     set typeface to layout's typeface
-    set tools's row height to the maximum of 28.0 and (typeface's size + 12.0)
-    # Short code fields use a popover beside the field; multiline editors keep
-    # the menu within their own surface so surrounding actions stay exposed.
-    if viewport's height < (tools's row height + 50.0):
+    set height to the maximum of 28.0 and (typeface's size + 12.0)
+    # Short code fields use space beside the field; multiline editors retain
+    # their tools within the editor so neighboring application actions stay exposed.
+    if viewport's height < (height + 50.0):
         set above to the maximum of 0.0 and ((viewport's y - surface's y) - 8.0)
         set below to the maximum of 0.0 and (((surface's y + surface's height) - (viewport's y + viewport's height)) - 8.0)
-        if (below >= (tools's row height + 50.0)) or (below >= above):
+        if (below >= (height + 50.0)) or (below >= above):
             set viewport to UI box at (surface's x) (viewport's y + viewport's height + 8.0) sized (surface's width) below
         else:
             set viewport to UI box at (surface's x) (surface's y) sized (surface's width) above
-    set available to ((viewport's height - 50.0) / tools's row height) as an integer
-    if tools's mode = 1:
+    if tools's mode != 2:
         if (tools's query is current for UI source document (tools's document)) = false:
             return nothing
-    if (viewport's width <= 16.0) or (available < 1):
-        return nothing
-    set width to the minimum of 440.0 and (viewport's width - 16.0)
-    set rows to the minimum of 8 and (tools's items's length)
-    set rows to the minimum of rows and available
-    set tools's rows to rows
-    set height to ((the maximum of 1 and rows) * tools's row height) + 34.0
-    set anchor to the UI source tool anchor in tools
-    set left to the maximum of (viewport's x + 8.0) and (the minimum of (anchor's x) and (((viewport's x + viewport's width) - width) - 8.0))
-    set top to anchor's y
-    if (top + height) > ((viewport's y + viewport's height) - 8.0):
-        set top to (anchor's y - height) - 24.0
-    set top to the maximum of (viewport's y + 8.0) and (the minimum of top and (((viewport's y + viewport's height) - height) - 8.0))
-    set box to UI box at left top sized width height
-    set tools's bounds to box
-    set tools's overlay's layout to the address of (tools's surface)
-    record UI floating layout (the address of (tools's surface)) in box on frame
-    set background to layout's appearance's background
-    set foreground to layout's appearance's foreground
-    set outline to UI ink between background and foreground at 0.2
-    set selected to UI ink between background and foreground at 0.12
-    set muted to UI ink between background and foreground at 0.65
-    if tools's selected < tools's first:
-        set tools's first to tools's selected
-    if tools's selected >= (tools's first + rows):
-        set tools's first to (tools's selected - rows) + 1
-    draw a UI shadow under box with radius 7.0 softness 8.0 strength 14 in (UI ink 0 0 0) on frame
-    draw a rounded UI box box with radius 7.0 in outline on frame
-    draw a rounded UI box (UI box at (left + 1.0) (top + 1.0) sized (width - 2.0) (height - 2.0)) with radius 6.0 in background on frame
-    set clip to a UI clip restricted to (UI box at (left + 6.0) (top + 5.0) sized (width - 12.0) (height - 10.0)) in view on frame
-    set {previous selectable} to view's selectable
-    set view's selectable to false
-    set baseline to ((tools's row height + typeface's size) / 2.0) - 2.0
-    if tools's mode = 2:
-        draw UI text (tools's message) at (left + 12.0) ((top + 6.0) + baseline) with typeface in foreground on frame
-    else if tools's query's ready = false:
-        draw UI text "Finding suggestions…" at (left + 12.0) ((top + 6.0) + baseline) with typeface in muted on frame
-    set row to 0
-    loop while row < rows:
-        set index to tools's first + row
-        set item to the JSON value at index index in (tools's items)
-        set y to (top + 6.0) + (row * tools's row height)
-        if index = tools's selected:
-            draw a rounded UI box (UI box at (left + 5.0) y sized (width - 10.0) (tools's row height)) with radius 4.0 in selected on frame
-        draw UI text (the JSON text named "label" in item) at (left + 12.0) (y + baseline) with typeface in foreground on frame
-        increment row
-    set footer to "↑ ↓ choose  ·  Enter insert  ·  Esc close" if (tools's mode = 1), else "Esc close"
-    draw UI text footer at (left + 12.0) (top + height - 10.0) with (view's small) in muted on frame
-    restore UI clip clip in view on frame
-    set view's selectable to previous selectable
+    set tools's overlay's layout to the address of (popup's surface)
+    paint UI choice popover popup anchored at (the UI source tool anchor in tools) within viewport using typeface styled (layout's appearance) on frame

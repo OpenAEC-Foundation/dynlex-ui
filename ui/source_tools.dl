@@ -7,47 +7,8 @@ import source_tools_rendering.dl
 import source_navigation.dl
 import source_pane_actions.dl
 import source_hover.dl
-
-to get [focus UI source tools] {a pointer to UI source tools:tools}:
-    set workspace to tools's workspace as a pointer to UI source workspace
-    set view to tools's view
-    if (workspace's client's phase = 8) or (view's active = false):
-        dismiss UI source tools tools
-        set tools's edited to false
-        set tools's composed to false
-        return false
-    set editor to workspace's editors
-    loop while editor != @intrinsic("construct", a pointer to UI source editor):
-        if editor's node = view's text focus:
-            if ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) and (editor's document's available)) and (the UI element (editor's node) is enabled in (view's instance)):
-                set layout to the UI layout for element (editor's node) in (view's layout)
-                require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source editor is missing its view layout"
-                if view's selection's caret source = (the address of (layout's text source)):
-                    set value to the UI value for (editor's node) in (view's instance)
-                    if editor's document's writable:
-                        edit UI source document (editor's document) to (value's text) at (view's seconds) seconds
-                    remember the UI source location of editor in view
-                    if (tools's node != editor's node) or (tools's document != editor's document):
-                        dismiss UI source tools tools
-                        set tools's edited to false
-                        set tools's composed to false
-                    else if tools's source != value's text:
-                        if value's undo = @intrinsic("construct", a pointer to UI text edit):
-                            set tools's edited to false
-                        else if value's undo's after != value's text:
-                            set tools's edited to false
-                    set tools's node to editor's node
-                    set tools's document to editor's document
-                    set tools's source to value's text
-                    return true
-        set editor to editor's next
-    dismiss UI source tools tools
-    set tools's node to @intrinsic("construct", UI reference)
-    set tools's document to @intrinsic("construct", a pointer to UI source document)
-    set tools's source to ""
-    set tools's edited to false
-    set tools's composed to false
-    return false
+import source_tool_focus.dl
+import source_inspection.dl
 
 to [request UI source completions in] {a pointer to UI source tools:tools}:
     if ((tools's document's writable = false) or (tools's document's available = false)) or ((the UI element (tools's node) accepts edits in (tools's view's instance)) = false):
@@ -55,13 +16,12 @@ to [request UI source completions in] {a pointer to UI source tools:tools}:
         set tools's edited to false
         return nothing
     set tools's position to tools's view's selection's caret
-    set tools's query to request UI source feature "textDocument/completion" at byte (tools's position) in (tools's document)
     set tools's generation to 0
-    set tools's selected and tools's first to 0
+    begin UI source interaction in tools
+    set tools's query to request UI source feature "textDocument/completion" at byte (tools's position) in (tools's document)
     set tools's mode to 1
-    set tools's edited to false
-    free tools's items
-    set tools's items to a new JSON-RPC array
+    set tools's choices' accepts tab to true
+    show UI choice popover (the address of (tools's choices)) reporting "Finding suggestions…" with hint "↑ ↓ choose  ·  Enter insert  ·  Esc close" in (tools's view)
     animate UI view (tools's view)
 
 to [accept the UI source completion in] {a pointer to UI source tools:tools}:
@@ -69,7 +29,7 @@ to [accept the UI source completion in] {a pointer to UI source tools:tools}:
     if (query's ready = false) or ((query is current for UI source document (tools's document)) = false):
         dismiss UI source tools tools
         return nothing
-    set item to the JSON value at index (tools's selected) in (tools's items)
+    set item to the JSON value at index (tools's choices' selected) in (tools's items)
     set change to the UI source completion change for item at byte (tools's position) in (tools's document)
     set command to a new JSON-RPC null
     if item has JSON member named "command":
@@ -81,7 +41,7 @@ to [accept the UI source completion in] {a pointer to UI source tools:tools}:
     dismiss UI source tools tools
     if change's succeeded = false:
         set tools's mode to 2
-        set tools's message to change's reason
+        show UI choice popover (the address of (tools's choices)) reporting (change's reason) with hint "Esc close" in (tools's view)
     if change's succeeded and (command's kind != the JSON null kind):
         set name to the JSON text named "command" in command
         if name = "editor.action.triggerSuggest":
@@ -106,8 +66,7 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
         set editor to (tools's workspace as a pointer to UI source workspace)'s editors
         loop while editor's node != tools's node:
             set editor to editor's next
-        cancel UI source navigation (the address of (tools's navigation))
-        dismiss UI source tools tools
+        begin UI source interaction in tools
         return go back in UI source editor editor in view
     if (view's selection's composing) or (view's input kind = 10):
         dismiss UI source tools tools
@@ -121,19 +80,27 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
     if (view's key press = 301) and (view's modifiers = 0):
         request a UI source definition in tools
         return true
-    if (tools's document's writable = false) or ((the UI element (tools's node) accepts edits in (view's instance)) = false):
-        if (tools's mode = 1) or (view's key press = 256):
+    if (view's key press = 298) and (view's modifiers = 0):
+        request a UI source outline in tools
+        return true
+    if (view's key press = 297) and (view's modifiers = 0):
+        request UI source instances in tools
+        return true
+    set editable to (tools's document's writable) and (the UI element (tools's node) accepts edits in (view's instance))
+    if editable = false:
+        if tools's mode = 1:
             dismiss UI source tools tools
         set tools's edited to false
-        return false
     set opened to tools's mode = 1
-    if tools's mode = 1:
-        if ((tools's query is current for UI source document (tools's document)) = false) or (tools's position != view's selection's caret):
+    if (tools's mode != 0) and (tools's mode != 2):
+        if ((tools's query is current for UI source document (tools's document)) = false) or ((tools's mode != 3) and (tools's position != view's selection's caret)):
             dismiss UI source tools tools
     set command to ((view's modifiers bitwise and 10) != 0) and ((view's modifiers bitwise and 4) = 0)
     if command and (view's key press = 32):
-        request UI source completions in tools
-        return true
+        if editable:
+            request UI source completions in tools
+            return true
+        return false
     if (view's input kind = 4) or (view's input kind = 13):
         set inserted to the string form of ""
         if view's input kind = 4:
@@ -145,49 +112,29 @@ to get [read UI source tools] {a pointer:context} [in] {a pointer to UI view:vie
                 if (value's undo's before = previous) and (value's undo's after = value's text):
                     set inserted to the UI source insertion from previous to (value's text)
         dismiss UI source tools tools
-        set tools's edited to (UI source text inserted can trigger completion) or (tools's composed and (UI source text inserted completes a composition))
+        set tools's edited to editable and ((UI source text inserted can trigger completion) or (tools's composed and (UI source text inserted completes a composition)))
         set tools's composed to false
         set tools's deadline to view's seconds + 0.12
         return false
     if (view's key press = 259) or (view's key press = 261):
         dismiss UI source tools tools
-        set tools's edited to opened
+        set tools's edited to editable and opened
         set tools's deadline to view's seconds + 0.12
         return false
     if tools's mode = 0:
         return false
-    set count to tools's items's length
-    if view's key press = 256:
+    set decision to read UI choice popover (the address of (tools's choices)) in view
+    if decision = 3:
         dismiss UI source tools tools
         set tools's edited to false
+        return view's key press = 256
+    if decision = 2:
+        if tools's mode = 1:
+            accept the UI source completion in tools
+        else:
+            accept UI source inspection in tools
         return true
-    if ((view's key press = 264) or (view's key press = 265)) and ((count > 0) and (tools's rows > 0)):
-        set direction to 1 if (view's key press = 264), else -1
-        set tools's selected to (tools's selected + count + direction) mod count
-        set view's damaged to true
-        return true
-    if ((view's key press = 257) or (view's key press = 258)) and ((count > 0) and (tools's rows > 0)):
-        accept the UI source completion in tools
-        return true
-    set cursor to the UI cursor in view
-    if cursor is inside (tools's bounds):
-        if (view's input kind = 1) or (view's input kind = 2):
-            set row to (((cursor's y - tools's bounds' y) - 6.0) / tools's row height) as an integer
-            set selected to tools's first + row
-            if (cursor's y >= (tools's bounds' y + 6.0)) and ((0 <= row < tools's rows) and (selected < count)):
-                set tools's selected to selected
-                set view's damaged to true
-                if (view's input kind = 2) and view's down:
-                    accept the UI source completion in tools
-            return true
-        if view's input kind = 5:
-            set direction to 1 if (view's scroll y > 0.0), else -1
-            set tools's selected to the minimum of (the maximum of 0 and (tools's selected + direction)) and (the maximum of 0 and (count - 1))
-            set view's damaged to true
-            return true
-    if ((view's input kind = 2) and view's down) or (view's key press >= 0):
-        dismiss UI source tools tools
-    return false
+    return decision = 1
 
 to [close UI source tools] {a pointer:context} [in] {a pointer to UI view:view}:
     set tools to context as a pointer to UI source tools
@@ -203,7 +150,7 @@ to [enable UI source tools for] {a pointer to UI source workspace:workspace} [in
     set tools's workspace to workspace as a pointer
     set tools's view to view
     set tools's hover's popover to a UI text popover containing ""
-    set tools's surface's node to a UI container of kind 41 containing no UI children
+    set tools's choices to a UI choice popover
     set tools's items to a new JSON-RPC array
     set tools's overlay to a UI overlay in view with context (tools as a pointer) handling input ((the function named "read UI source tools $ in $") as a pointer) painting ((the function named "paint UI source tools $ on $") as a pointer) closing ((the function named "close UI source tools $ in $") as a pointer)
     bind UI source panes in workspace
@@ -214,23 +161,34 @@ to [update UI source tools in] {a pointer to UI source workspace:workspace}:
         return nothing
     set view to tools's view
     synchronize UI source workspace workspace at (view's seconds) seconds
+    update UI source instance selection in tools
     update UI source navigation in tools
     update UI source hover in tools
     if (focus UI source tools tools) = false:
         return nothing
-    if tools's mode = 1:
-        if ((tools's query is current for UI source document (tools's document)) = false) or (tools's position != view's selection's caret):
+    if (tools's mode != 0) and (tools's mode != 2):
+        if ((tools's query is current for UI source document (tools's document)) = false) or ((tools's mode != 3) and (tools's position != view's selection's caret)):
             dismiss UI source tools tools
     if tools's edited and (view's selection's composing = false):
         if view's seconds >= tools's deadline:
             request UI source completions in tools
         else:
             animate UI view view
-    if (tools's mode = 1) and (tools's query's ready):
+    if ((tools's mode = 1) or ((tools's mode = 3) or (tools's mode = 4))) and (tools's query's ready):
         if tools's generation != tools's query's generation:
-            free tools's items
-            set tools's items to UI source completion items from (tools's query's result)
+            if tools's mode = 1:
+                free tools's items
+                set tools's items to UI source completion items from (tools's query's result)
+                clear UI choice popover (the address of (tools's choices)) in view
+                set tools's choices' accepts tab to true
+                set index to 0
+                loop while index < tools's items's length:
+                    add UI choice (the JSON text named "label" in (the JSON value at index index in (tools's items))) enabled true to (the address of (tools's choices))
+                    increment index
+                show UI choice popover (the address of (tools's choices)) reporting "" with hint "↑ ↓ choose  ·  Enter insert  ·  Esc close" in view
+            else:
+                collect UI source inspection choices in tools
             set tools's generation to tools's query's generation
             set view's damaged to true
-            if tools's items's length = 0:
+            if (tools's mode = 1) and (tools's items's length = 0):
                 dismiss UI source tools tools

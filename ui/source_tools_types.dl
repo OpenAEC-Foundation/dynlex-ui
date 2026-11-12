@@ -2,6 +2,7 @@ import overlays.dl
 import source_queries.dl
 import source_navigation_types.dl
 import source_hover_types.dl
+import choice_popovers.dl
 
 class:
     patterns:
@@ -17,19 +18,17 @@ class:
         items as a pointer to JSON value
         generation as an integer
         mode as an integer
-        selected as an integer
-        first as an integer
-        rows as an integer
-        row height as a floating-point number
         position as an integer
-        bounds as UI bounds
+        choices as UI choice popover
         edited as a boolean
         composed as a boolean
         deadline as a floating-point number
-        message as a string
         navigation as UI source navigation
         hover as UI source hover
-        surface as UI layout
+        selection key as a string
+        selection query as a pointer to UI source query
+        selection document as a pointer to UI source document
+        selection generation as an integer
 
 to [dismiss UI source tools] {a pointer to UI source tools:tools}:
     if (tools's mode = 0) and (tools's query = @intrinsic("construct", a pointer to UI source query)):
@@ -38,10 +37,17 @@ to [dismiss UI source tools] {a pointer to UI source tools:tools}:
         cancel UI source query (tools's query)
     set tools's query to @intrinsic("construct", a pointer to UI source query)
     set tools's mode to 0
-    retire UI floating layout (the address of (tools's surface))
+    clear UI choice popover (the address of (tools's choices)) in (tools's view)
     free tools's items
     set tools's items to a new JSON-RPC array
     set tools's view's damaged to true
+
+to [begin UI source interaction in] {a pointer to UI source tools:tools}:
+    dismiss UI source tools tools
+    cancel UI source navigation (the address of (tools's navigation))
+    dismiss UI source hover (the address of (tools's hover)) in (tools's view)
+    set tools's edited to false
+    set tools's composed to false
 
 to [free UI source tools] {a pointer to UI source tools:tools}:
     if tools = @intrinsic("construct", a pointer to UI source tools):
@@ -51,6 +57,7 @@ to [free UI source tools] {a pointer to UI source tools:tools}:
         clear UI text popover (the address of (tools's hover's popover)) in (tools's view)
         detach UI overlay (tools's overlay) in (tools's view)
     cancel UI source navigation (the address of (tools's navigation))
+    release UI choices in (the address of (tools's choices))
     free tools's items
     destroy the value at tools
     deallocate tools

@@ -41,15 +41,16 @@ set tools's items to a new JSON-RPC array
 set index to 0
 loop while index < 9:
     add (a JSON object containing [JSON text "label" is "suggestion"]) to the JSON array (tools's items)
+    add UI choice "suggestion" enabled true to (the address of (tools's choices))
     increment index
 set tools's query's ready to true
 set inspecting to true
 paint UI source tools (tools as a pointer) on (@intrinsic("construct", UI frame, the address of view, true))
 set inspecting to false
 set layout to the UI layout for element (tools's node) in (view's layout)
-set box to tools's bounds
+set box to tools's choices' bounds
 set clip to layout's hit bounds
-require condition (tools's row height >= 32.0) reporting "Suggestion rows clipped their editor's font size."
+require condition (tools's choices' row height >= 32.0) reporting "Suggestion rows clipped their editor's font size."
 require condition ((box's x >= clip's x) and ((box's x + box's width) <= (clip's x + clip's width))) reporting "A source popup extended horizontally beyond its editor."
 require condition ((box's y >= clip's y) and ((box's y + box's height) <= (clip's y + clip's height))) reporting "A source popup covered actions outside its editor."
 set layout's hit bounds' height to 40.0

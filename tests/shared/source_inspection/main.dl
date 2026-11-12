@@ -1,0 +1,106 @@
+import ../../helpers/driver.dl
+import ../../../ui/source_tools.dl
+import ../../../ui/source_panes.dl
+
+document editors:
+    source pane "Studio" containing "α\nβ\nbody" using no UI appearance
+    source pane "River" containing "α\nβ\nbody" using no UI appearance
+
+to [answer inspection query] {a pointer to UI source query:query} [with] {a pointer to JSON value:result}:
+    free query's result
+    set query's result to result
+    set query's queued to false
+    set query's ready to true
+
+set instance to an instance of editors
+set window to the address of instance
+set view to a UI view of window sized 900 by 900 using font "regular" with the test UI driver
+set workspace to a UI source workspace in window rooted at "file:///workspace"
+enable UI source tools for workspace in (the address of view)
+ignore update UI view (the address of view)
+set labels to ["Studio", "River"]
+set index to 0
+loop while index < the length of labels:
+    set editor to the UI source editor labeled (the item at index in labels) in workspace
+    set document to editor's document
+    set files to a new JSON-RPC object
+    configure UI source document document named "main.dl" at "file:///workspace/main.dl" prefixed by "# context\n\n" using UI CPU analysis with files files
+    free files
+    restore UI source location (editor's current) in editor in (the address of view)
+    set view's selection's anchor and view's selection's caret to 3
+    update UI source tools in workspace
+    set workspace's tools' edited to true
+    set workspace's tools' deadline to 0.0
+    if index = 0:
+        queue UI input of kind 3 key 298 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+        process UI input in (the address of view)
+    else:
+        activate (editor's outline) belonging to (editor's outline) in window
+    set tools to workspace's tools
+    set query to tools's query
+    require condition (query's method = "textDocument/documentSymbol") reporting "Outline was not shared by both editors."
+    set hidden to a JSON object containing [JSON text "name" is "context", JSON child "selectionRange" is (an LSP range from line 0 and character 0 to line 0 and character 1)]
+    set nested to a JSON object containing [JSON text "name" is "β", JSON child "selectionRange" is (an LSP range from line 3 and character 0 to line 3 and character 1)]
+    set outer to a JSON object containing [JSON text "name" is "α", JSON child "selectionRange" is (an LSP range from line 2 and character 0 to line 2 and character 1), JSON child "children" is (a JSON array containing [nested])]
+    answer inspection query query with (a JSON array containing [hidden, outer])
+    update UI source tools in workspace
+    ignore update UI view (the address of view)
+    require condition (tools's choices' count = 2) reporting "Outline included protected context or lost nested sections."
+    queue UI input of kind 3 key 264 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    require condition ((view's selection's anchor = 3) and (view's selection's caret = 5)) reporting "Outline navigation ignored Unicode or hidden context."
+    require condition (document's source = "α\nβ\nbody") reporting "Outline navigation modified the source."
+    set UI control (editor's node) read only true in window
+    if index = 0:
+        queue UI input of kind 3 key 297 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+        process UI input in (the address of view)
+    else:
+        activate (editor's instances) belonging to (editor's instances) in window
+    set query to tools's query
+    require condition (query's method = "dynlex/instantiationsInDocument") reporting "Read-only source could not inspect inferred instances."
+    require condition ((the JSON text named "uri" in (query's parameters)) = document's uri) reporting "Instance inspection used another editor's document."
+    set first to a JSON object containing [JSON text "key" is "instance:a", JSON text "label" is "echo {integer:value}"]
+    set second to a JSON object containing [JSON text "key" is "instance:b", JSON text "label" is "echo {string:value}"]
+    set entry to a JSON object containing [JSON text "selectionKey" is "source:β", JSON text "currentKey" is "instance:b", JSON child "range" is (an LSP range from line 3 and character 0 to line 3 and character 1), JSON child "options" is (a JSON array containing [first, second])]
+    answer inspection query query with (a JSON array containing [entry])
+    set snapshot to a copy of JSON-RPC node (query's result)
+    update UI source tools in workspace
+    ignore update UI view (the address of view)
+    require condition ((tools's choices' count = 2) and (tools's choices' selected = 1)) reporting "Instance choices did not preserve the compiler's current instance."
+    queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    set epoch to document's token epoch
+    queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    set selection to tools's selection query
+    require condition ((selection's method = "dynlex/selectInstantiation") and (selection's notification)) reporting "Instance selection did not notify the language service."
+    require condition (((the JSON text named "selectionKey" in (selection's parameters)) = "source:β") and ((the JSON text named "instantiationKey" in (selection's parameters)) = "instance:a")) reporting "The selected inferred instance was mapped incorrectly."
+    require condition (document's token epoch = epoch) reporting "Tokens were refreshed before the instance selection was acknowledged."
+    answer inspection query selection with (a new JSON-RPC null)
+    update UI source tools in workspace
+    require condition (document's token epoch = (epoch + 1)) reporting "Acknowledged instance selection did not refresh semantic colors."
+    require condition (tools's selection query = @intrinsic("construct", a pointer to UI source query)) reporting "Instance selection retained a completed request."
+    require condition ((tools's mode = 0) and (view's selection's caret = 5)) reporting "Instance inspection stole the source selection."
+    update UI source tools in workspace
+    require condition (document's token epoch = (epoch + 1)) reporting "A completed instance selection refreshed tokens more than once."
+    set UI control (editor's node) read only false in window
+    queue UI input of kind 3 key 297 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    answer inspection query (tools's query) with snapshot
+    update UI source tools in workspace
+    ignore update UI view (the address of view)
+    queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+    process UI input in (the address of view)
+    set selection to tools's selection query
+    set UI text of (editor's node) in window to "changed"
+    synchronize UI source workspace workspace at 2.0 seconds
+    answer inspection query selection with (a new JSON-RPC null)
+    update UI source tools in workspace
+    require condition ((tools's selection query = @intrinsic("construct", a pointer to UI source query)) and (document's token epoch = (epoch + 1))) reporting "An obsolete instance acknowledgement changed the edited document."
+    increment index
+free UI source workspace workspace
+close the address of view
+close window
+print line "Studio and River share nested outlines, Unicode navigation and acknowledged inferred-instance selection, including read-only imports."
