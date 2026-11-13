@@ -1,0 +1,1 @@
+Rounded fill contours stay convex and bounded across sharp corners, fractional sizes and inset collapse.

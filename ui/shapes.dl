@@ -7,13 +7,18 @@ to get the UI [corner point] {integer:index} of {integer:steps} on {UI bounds:bo
     set step to index mod steps
     set angle to (((corner * 90) + 180) as a floating-point number) + ((step as a floating-point number) * (90.0 / ((steps - 1) as a floating-point number)))
     set radians to angle * 0.017453292519943295
-    set centerX to (box's x as a floating-point number) + radius
-    set centerY to (box's y as a floating-point number) + radius
+    # Insetting a sharp corner moves its center instead of reversing its arc.
+    # A thin contour collapses at the centerline before its sides can cross.
+    set limit to (the maximum of 0.0 and (the minimum of (box's width) and (box's height))) / 2.0
+    set expansion to the maximum of fringe and (-limit)
+    set rounding to the maximum of 0.0 and ((the minimum of limit and (the maximum of 0.0 and radius)) + expansion)
+    set centerX to ((box's x as a floating-point number) - expansion) + rounding
+    set centerY to ((box's y as a floating-point number) - expansion) + rounding
     if corner = 1 or corner = 2:
-        set centerX to ((box's x + box's width) as a floating-point number) - radius
+        set centerX to (((box's x + box's width) as a floating-point number) + expansion) - rounding
     if corner = 2 or corner = 3:
-        set centerY to ((box's y + box's height) as a floating-point number) - radius
-    return @intrinsic("construct", UI point, centerX + (the cosine of radians) * (radius + fringe), centerY + (the sine of radians) * (radius + fringe))
+        set centerY to (((box's y + box's height) as a floating-point number) + expansion) - rounding
+    return @intrinsic("construct", UI point, centerX + (the cosine of radians) * rounding, centerY + (the sine of radians) * rounding)
 
 to get the linear UI [ink] of {UI paint:ink} on {UI frame:frame}:
     return @intrinsic("construct", linear UI paint, (the UI color channel (ink's red) in (frame's view)) as a 32 bit floating-point number, (the UI color channel (ink's green) in (frame's view)) as a 32 bit floating-point number, (the UI color channel (ink's blue) in (frame's view)) as a 32 bit floating-point number)
@@ -39,10 +44,12 @@ to add UI [vertex] {UI point:point} shaded from {linear UI paint:top} to {linear
 # Geometry carries a gradient and coverage; the same primitive draws crisp
 # surfaces and wide, translucent shadow fringes at fractional coordinates.
 to draw a rounded UI surface {UI bounds:box} with radius {floating-point number:radius} from {UI paint:top} to {UI paint:bottom} opacity {integer:opacity} feathered by {floating-point number:feather} on {UI frame:frame}:
+    if (box's width <= 0.0) or (box's height <= 0.0):
+        return nothing
     if frame's drawable:
         set upper to the linear UI ink of top on frame
         set lower to the linear UI ink of bottom on frame
-        set rounding to radius
+        set rounding to the maximum of 0.0 and radius
         set limit to (box's width as a floating-point number) / 2.0
         if box's height < box's width:
             set limit to (box's height as a floating-point number) / 2.0

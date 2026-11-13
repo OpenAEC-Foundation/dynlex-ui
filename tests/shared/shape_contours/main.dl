@@ -1,0 +1,47 @@
+import ../../../ui/shapes.dl
+
+to check the contour on {UI bounds:box} rounded by {floating-point number:radius} offset by {floating-point number:offset}:
+    set steps to 9
+    set count to steps * 4
+    set center to a UI point at (box's x + box's width / 2.0) and (box's y + box's height / 2.0)
+    set inset to the minimum of (the maximum of 0.0 and (-offset)) and ((the minimum of (box's width) and (box's height)) / 2.0)
+    set outset to the maximum of 0.0 and offset
+    set left to (box's x + inset) - outset
+    set top to (box's y + inset) - outset
+    set right to ((box's x + box's width) - inset) + outset
+    set bottom to ((box's y + box's height) - inset) + outset
+    set index to 0
+    loop while index < count:
+        set first to the UI corner point index of steps on box rounded by radius expanded by offset
+        set second to the UI corner point ((index + 1) mod count) of steps on box rounded by radius expanded by offset
+        set area to ((first's x - center's x) * (second's y - center's y)) - ((first's y - center's y) * (second's x - center's x))
+        require condition (area >= -0.000000001) reporting "A rounded contour reverses winding and overlaps its fill"
+        require condition ((first's x >= left - 0.000000001) and (first's x <= right + 0.000000001)) reporting "A rounded contour escapes its horizontal bounds"
+        require condition ((first's y >= top - 0.000000001) and (first's y <= bottom + 0.000000001)) reporting "A rounded contour escapes its vertical bounds"
+        increment index
+
+# A translucent square tab must not fold its inset arc toward the center.
+check the contour on (UI box at 0.25 0.75 sized 100.0 40.0) rounded by 0.0 offset by -0.5
+set widths to [0.0, 0.4, 0.8, 1.0, 20.0, 100.0]
+set radii to [-1.0, 0.0, 0.2, 0.5, 6.0, 60.0]
+set offsets to [-0.75, -0.5, 0.0, 0.75, 12.0]
+set horizontal to 0
+loop while horizontal < 6:
+    set vertical to 0
+    loop while vertical < 6:
+        set rounding to 0
+        loop while rounding < 6:
+            set expansion to 0
+            loop while expansion < 5:
+                check the contour on (UI box at 0.25 0.75 sized (the item at horizontal in widths) (the item at vertical in widths)) rounded by (the item at rounding in radii) offset by (the item at expansion in offsets)
+                increment expansion
+            increment rounding
+        increment vertical
+    increment horizontal
+
+# Empty surfaces cannot submit triangles or divide their gradient by zero.
+set frame to a new UI frame
+set frame's drawable to true
+draw a rounded UI surface (UI box at 0.0 0.0 sized 0.0 10.0) with radius 0.0 from (UI ink 0 0 0) to (UI ink 255 255 255) opacity 128 feathered by 0.75 on frame
+draw a rounded UI surface (UI box at 0.0 0.0 sized 10.0 0.0) with radius 0.0 from (UI ink 0 0 0) to (UI ink 255 255 255) opacity 128 feathered by 0.75 on frame
+print line "Rounded fill contours stay convex and bounded across sharp corners, fractional sizes and inset collapse."
