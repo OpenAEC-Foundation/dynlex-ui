@@ -1,7 +1,10 @@
 import view.dl
 import ribbon.dl
+import layout_visibility.dl
 
 to get the UI hit at {UI point:point} in {a pointer to UI layout:layout} during {integer:generation} for {a pointer to UI instance:instance}:
+    if (the UI layout layout is visible in instance) = false:
+        return 0 as a pointer to UI layout
     if layout's node's kind = 22:
         if layout's node != instance's page:
             return @intrinsic("construct", a pointer to UI layout)
@@ -11,6 +14,15 @@ to get the UI hit at {UI point:point} in {a pointer to UI layout:layout} during 
     if layout's node's kind = 29:
         if (the selected tab of (layout's parent) in instance) != layout's node:
             return found
+    if layout's node's kind = 49:
+        set selected to the selected UI child of (layout's node) in instance
+        set child to layout's first
+        loop while child's node != selected:
+            set child to child's next
+        set candidate to the UI hit at point in child during generation for instance
+        if candidate != (0 as a pointer to UI layout):
+            set found to candidate
+        return found
     set child to layout's first
     loop while child != @intrinsic("construct", a pointer to UI layout):
         set candidate to the UI hit at point in child during generation for instance

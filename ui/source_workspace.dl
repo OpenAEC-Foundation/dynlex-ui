@@ -100,7 +100,10 @@ to get [UI source element] {UI reference:target} [is active within] {UI referenc
     if target = node:
         return true
     if ((node's kind = 28) or (node's kind = 48)) or (node's kind = 49):
-        return UI source element target is active within (the selected UI child of node in instance) in instance
+        set selected to the selected UI child of node in instance
+        if selected = (0 as UI reference):
+            return false
+        return UI source element target is active within selected in instance
     set index to 0
     loop while index < node's count:
         if UI source element target is active within (the UI child at index in node) in instance:

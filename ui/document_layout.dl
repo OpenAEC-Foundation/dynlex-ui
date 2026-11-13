@@ -2,6 +2,7 @@ import document_declarations.dl
 import text_layout.dl
 import text.dl
 import images.dl
+import layout_visibility.dl
 
 to get a document UI layout for {UI reference:node} inside {UI reference:parent}:
     if (node's kind = 48) or (node's kind = 49):
@@ -105,6 +106,8 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             set layout's bounds' height to 24.0 + appearance's padding * 2.0
     else if node's kind = 49:
         set selected to the selected UI child of node in (view's instance)
+        if selected = (0 as UI reference):
+            return nothing
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
             reflow document UI layout child within inner inheriting appearance in view
@@ -135,7 +138,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
             reflow document UI layout child within inner inheriting appearance in view
-            if child's appearance's hidden = false:
+            if the UI layout child is visible in (view's instance):
                 set kind to child's node's kind
                 if (((((kind = 2) or (kind = 17)) or (kind = 34)) or (kind = 42)) or (kind = 43)) or (kind = 46):
                     set width to the minimum of inner and (the maximum of (child's appearance's minimum width) and (child's text width + child's appearance's padding * 2.0))
@@ -161,7 +164,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
             reflow document UI layout child within child width inheriting appearance in view
-            if child's appearance's hidden = false:
+            if the UI layout child is visible in (view's instance):
                 set child's bounds' x to child's bounds' x + appearance's padding + column * (child width + appearance's gap)
                 set child's bounds' y to row top
                 set row height to the maximum of row height and (child's bounds' height)

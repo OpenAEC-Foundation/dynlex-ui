@@ -4,6 +4,7 @@ import view.dl
 import ribbon_scroll.dl
 import focus.dl
 import popup_choices.dl
+import layout_visibility.dl
 
 to dismiss the UI popup in {a pointer to UI view:view}:
     clear UI choice popover (the address of (view's popup choices)) in view
@@ -21,6 +22,9 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
     set node to layout's node
     if (the UI element node is enabled in (view's instance)) = false:
         return nothing
+    if node's kind != 35:
+        if (the UI layout layout is active in view) = false:
+            return nothing
     if the UI element node is a text control:
         refresh UI focus in view
         set view's focus order to layout's order
@@ -42,6 +46,9 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
         set owner to view's popup
         require condition (layout's parent = owner's node) reporting "The menu item belongs to another popup"
         if (the UI element (owner's node) is enabled in (view's instance)) = false:
+            dismiss the UI popup in view
+            return nothing
+        if (the UI layout owner is active in view) = false:
             dismiss the UI popup in view
             return nothing
         if owner's node's kind = 34:
@@ -71,6 +78,9 @@ to get [process UI control popup input in] {a pointer to UI view:view}:
     if owner = @intrinsic("construct", a pointer to UI layout):
         return false
     if (the UI element (owner's node) is enabled in (view's instance)) = false:
+        dismiss the UI popup in view
+        return false
+    if (the UI layout owner is active in view) = false:
         dismiss the UI popup in view
         return false
     refresh UI popup choices in view

@@ -45,6 +45,12 @@ active panel; inactive panels retain their editor values and undo history.
 `the active UI editor within group in instance` resolves the selected editor
 without coupling a controller to the number or names of its tabs.
 
+A `view group` can select `-1` to show no panel. The group then leaves the
+document flow, including its padding and surrounding gaps. It keeps its controls,
+editor drafts and undo history for the next selection. Hidden panels cannot
+receive pointer hits, keyboard commands or popup choices. Tab groups always keep
+a selected tab; `-1` is specific to optional views.
+
 A `view group` selects a panel without adding tab headers. Its children can be
 any document elements; inactive panels retain their values and undo history and
 do not participate in painting or keyboard focus. This lets one set of tabs

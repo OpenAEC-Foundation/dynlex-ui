@@ -18,6 +18,8 @@ def main():
     parser.add_argument('--dynlex', type=Path, required=True)
     parser.add_argument('--native', action='store_true')
     parser.add_argument('--browser', action='store_true')
+    parser.add_argument('--compile-timeout', type=float, default=180,
+                        help='Seconds allowed for each compilation (default: 180).')
     parser.add_argument('--case', action='append', choices=list(cases),
                         help='Run only this shared fixture; repeat to select several (default: all).')
     args = parser.parse_args()
@@ -38,7 +40,7 @@ def main():
             for optimization in ['-O0', '-O2']:
                 output = Path(temporary) / 'case.out'
                 result = subprocess.run([str(compiler), str(source), optimization, '-o', str(output)],
-                                        cwd=project, text=True, capture_output=True, timeout=60)
+                                        cwd=project, text=True, capture_output=True, timeout=args.compile_timeout)
                 if result.returncode or result.stderr:
                     raise RuntimeError(f'{source}: {result.stdout}{result.stderr}')
                 result = subprocess.run([str(output)], cwd=project, text=True, capture_output=True, timeout=30)
@@ -67,7 +69,7 @@ def main():
         subprocess.run(['node', 'tests/browser/shader_passes.mjs'], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_value_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        for fixture in ['paint_updates', 'shader_api', 'shader_resources', 'shader_attachments', 'shader_graph', 'option_models', 'scene_tone', 'shader_pipelines', 'scene_draws', 'scene_orbit', 'scene_motion', 'scene_attachments', 'scene_lighting', 'scene_sampling']:
+        for fixture in ['optional_views', 'paint_updates', 'shader_api', 'shader_resources', 'shader_attachments', 'shader_graph', 'option_models', 'scene_tone', 'shader_pipelines', 'scene_draws', 'scene_orbit', 'scene_motion', 'scene_attachments', 'scene_lighting', 'scene_sampling']:
             subprocess.run(['node', 'tests/browser/shared_frontends.mjs', str(args.dynlex.resolve()), fixture],
                            cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)

@@ -15,7 +15,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
     set available to the UI element (layout's node) is enabled in (view's instance)
     if available = false:
         set layout's hover to 0.0
-    if appearance's hidden:
+    if (the UI layout layout is visible in (view's instance)) = false:
         return nothing
     increment view's paint serial
     set layout's paint serial to view's paint serial

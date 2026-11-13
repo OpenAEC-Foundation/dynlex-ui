@@ -1,0 +1,53 @@
+# Conditional panels keep their data while leaving layout and interaction.
+import view.dl
+import tabs.dl
+
+to get [the UI layout] {a pointer to UI layout:layout} [is visible in] {a pointer to UI instance:instance}:
+    if layout's appearance's hidden:
+        return false
+    set node to layout's node
+    if (node's kind = 22) and (node != instance's page):
+        return false
+    if node's kind = 49:
+        return (the selected UI child of node in instance) != (0 as UI reference)
+    return true
+
+# 0: not owned by this tree; 1: retained but hidden; 2: active.
+to get [the UI activation scope of] {a pointer to UI layout:target} [inside] {a pointer to UI layout:layout} [visible] {boolean:visible} [in] {a pointer to UI instance:instance}:
+    set active to visible and (the UI layout layout is visible in instance)
+    if target = layout:
+        return 2 if active, else 1
+    set node to layout's node
+    set selected to 0 as UI reference
+    set kind to node's kind
+    if ((kind = 28) or (kind = 48)) or (kind = 49):
+        set selected to the selected UI child of node in instance
+    set child to layout's first
+    loop while child != (0 as a pointer to UI layout):
+        set shown to active
+        if kind = 49:
+            set shown to shown and (child's node = selected)
+        if ((kind = 28) or (kind = 48)) and (child's node's kind = 29):
+            # Every tab header is interactive; only its selected body is.
+            if target = child:
+                return 2 if shown and (the UI layout child is visible in instance), else 1
+            set shown to shown and (child's node = selected)
+        set result to the UI activation scope of target inside child visible shown in instance
+        if result != 0:
+            return result
+        set child to child's next
+    return 0
+
+to get [the UI layout] {a pointer to UI layout:layout} [is active in] {a pointer to UI view:view}:
+    set scope to the UI activation scope of layout inside (view's layout) visible true in (view's instance)
+    if scope != 0:
+        return scope = 2
+    set overlay to view's overlays
+    loop while overlay != (0 as a pointer to UI overlay):
+        if overlay's layout != (0 as a pointer to UI layout):
+            set scope to the UI activation scope of layout inside (overlay's layout) visible true in (view's instance)
+            if scope != 0:
+                return scope = 2
+        set overlay to overlay's next
+    require condition false reporting "The activation target is outside its view"
+    return false

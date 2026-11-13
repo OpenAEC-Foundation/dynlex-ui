@@ -2,6 +2,7 @@
 import view.dl
 import ribbon_scroll.dl
 import text.dl
+import layout_visibility.dl
 
 to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     if (the UI element (layout's node) is enabled in (view's instance)) = false:
@@ -17,7 +18,7 @@ to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view
 
 to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     set kind to layout's node's kind
-    if layout's appearance's hidden:
+    if (the UI layout layout is visible in (view's instance)) = false:
         return nothing
     if kind = 22:
         if layout's node != view's instance's page:

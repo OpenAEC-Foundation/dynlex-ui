@@ -22,6 +22,8 @@ to get the selected tab of {UI reference:group} in {a pointer to UI instance:ins
 to get the selected UI child of {UI reference:group} in {a pointer to UI instance:instance}:
     require condition (group's count > 0) reporting "A selection group requires at least one view"
     set index to (the UI value for group in instance)'s number
+    if (group's kind = 49) and (index = -1):
+        return 0 as UI reference
     require condition ((index >= 0) and (index < group's count)) reporting "The selected view is outside its description"
     return the UI child at index in group
 
@@ -31,7 +33,10 @@ to get the active UI editor within {UI reference:node} in {a pointer to UI insta
     if node's kind = 48:
         return the active UI editor within (the selected tab of node in instance) in instance
     if node's kind = 49:
-        return the active UI editor within (the selected UI child of node in instance) in instance
+        set selected to the selected UI child of node in instance
+        if selected = (0 as UI reference):
+            return selected
+        return the active UI editor within selected in instance
     set index to 0
     loop while index < node's count:
         set found to the active UI editor within (the UI child at index in node) in instance
