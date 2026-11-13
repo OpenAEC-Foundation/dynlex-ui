@@ -45,12 +45,12 @@ class:
 
 a UI scene camera at {vector:position} aimed at {vector:target} with angle {floating-point number:angle} aspect {floating-point number:aspect} near {floating-point number:near} far {floating-point number:far} means: @intrinsic("construct", UI scene camera, (the UI scene vector form of position), (the UI scene vector form of target), (a new vector with x 0.0, y 1.0 and z 0.0), angle, aspect, near, far)
 
-to get [the UI scene view matrix for] {UI scene camera:camera}:
-    set forward to camera's target - camera's position
+to get [the UI scene view matrix from] {vector:position} [toward] {vector:target} [with up] {vector:vertical}:
+    set forward to target - position
     set magnitude to the length of forward
     require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "A scene camera requires a finite position distinct from its target"
     set forward to forward normalized
-    set right to the cross product of forward and (camera's up)
+    set right to the cross product of forward and vertical
     set magnitude to the length of right
     require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "A scene camera requires a finite up direction not parallel to its view"
     set right to right normalized
@@ -65,10 +65,13 @@ to get [the UI scene view matrix for] {UI scene camera:camera}:
     store ((the z of right) as a 32 bit floating-point number) into result at 8
     store ((the z of up) as a 32 bit floating-point number) into result at 9
     store ((0.0 - the z of forward) as a 32 bit floating-point number) into result at 10
-    store ((0.0 - the dot product of right and (camera's position)) as a 32 bit floating-point number) into result at 12
-    store ((0.0 - the dot product of up and (camera's position)) as a 32 bit floating-point number) into result at 13
-    store ((the dot product of forward and (camera's position)) as a 32 bit floating-point number) into result at 14
+    store ((0.0 - the dot product of right and position) as a 32 bit floating-point number) into result at 12
+    store ((0.0 - the dot product of up and position) as a 32 bit floating-point number) into result at 13
+    store ((the dot product of forward and position) as a 32 bit floating-point number) into result at 14
     return result
+
+to get [the UI scene view matrix for] {UI scene camera:camera}:
+    return the UI scene view matrix from (camera's position) toward (camera's target) with up (camera's up)
 
 to get [the UI scene projection matrix for] {UI scene camera:camera}:
     return a graphics perspective projection with angle (camera's angle) aspect (camera's aspect) near (camera's near) far (camera's far)

@@ -55,6 +55,15 @@ check scene number (the z of (ray's direction)) equals 0.0
 
 set eye to a new vector with x 0.0, y 10.0 and z 10.0
 set camera to a UI scene camera at eye aimed at origin with angle 35.0 aspect 2.0 near 0.1 far 150.0
+set up to a new vector with x 0.3, y 1.0 and z 0.1
+set camera's up to up
+set view to the UI scene view matrix from eye toward origin with up up
+set wrapped to the UI scene view matrix for camera
+loop index from 0 to 16:
+    check scene number (the item at index in view) equals (the item at index in wrapped)
+check scene number (the length of (eye - (a new vector with x 0.0, y 10.0 and z 10.0))) equals 0.0
+check scene number (the x of up) equals 0.3
+set camera's up to a new vector with x 0.0, y 1.0 and z 0.0
 set ray to the UI scene ray at (a UI point at 220.0 and 130.0) through camera in viewport
 set hit to the UI scene hit from ray on ground at 0.0
 require condition (hit's hit) reporting "The center ray missed the ground."
