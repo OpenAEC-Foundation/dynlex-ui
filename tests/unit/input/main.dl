@@ -19,6 +19,15 @@ queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (t
 queue UI input of kind 6 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
 ignore update UI view (the address of view)
 require condition (count = 2) reporting "Enter was dispatched more than once"
+queue UI input of kind 2 key 3 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's down = false) and (count = 2)) reporting "A secondary press activated a primary control"
+queue UI input of kind 2 key 2 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 5 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((view's down = false) and (count = 2)) reporting "A middle press activated a primary control"
+queue UI input of kind 2 key 4 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
 queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
 ignore update UI view (the address of view)
 queue UI input of kind 1 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)

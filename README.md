@@ -82,6 +82,9 @@ A view paints on first use, changes, resize or an active transition. Native wind
 wait for events while idle; browser canvases stop requesting animation frames.
 Transitions snap to their destination and stop. All queued inputs are processed,
 including a press/release pair received before the next paint.
+Pointer-button events share native identities on both platforms: primary is 0,
+secondary is 1 and middle is 2. Input kind 2 encodes `button * 2 + pressed` in its
+key; observers can use secondary and middle drags without activating controls.
 
 Text selection and editing use UTF-8 scalar boundaries and measured advances on
 both platforms. Clipboard copy/cut/paste and browser IME composition are supported.

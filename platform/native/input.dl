@@ -9,12 +9,11 @@ to receive native UI motion from {a pointer:handle} at {floating-point number:x}
     queue UI input of kind 1 key 0 at x y with modifiers 0 containing "" in (surface's view)
 
 to receive native UI button from {a pointer:handle} numbered {integer:button} action {integer:action} modifiers {integer:modifiers}:
-    if button = 0:
-        set surface to the native UI surface for handle handle
-        set x and y to 0.0
-        @intrinsic("call", "glfw", "glfwGetCursorPos", nothing, handle, the address of x, the address of y)
-        queue UI input of kind 1 key 0 at x y with modifiers modifiers containing "" in (surface's view)
-        queue UI input of kind 2 key action at 0.0 0.0 with modifiers modifiers containing "" in (surface's view)
+    set surface to the native UI surface for handle handle
+    set x and y to 0.0
+    @intrinsic("call", "glfw", "glfwGetCursorPos", nothing, handle, the address of x, the address of y)
+    queue UI input of kind 1 key 0 at x y with modifiers modifiers containing "" in (surface's view)
+    queue UI input of kind 2 key (button * 2 + action) at 0.0 0.0 with modifiers modifiers containing "" in (surface's view)
 
 to receive native UI key from {a pointer:handle} numbered {integer:key} scan {integer:scan} action {integer:action} modifiers {integer:modifiers}:
     if key >= 0:

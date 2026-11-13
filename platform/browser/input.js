@@ -73,16 +73,17 @@ export function connectInput(surface, send, schedule) {
     if (!canvas.hasPointerCapture(event.pointerId)) send(1, 0, -1, -1, modifiers(event));
   }, options);
   canvas.addEventListener("pointerdown", event => {
-    if (event.button !== 0) return;
     event.preventDefault(); canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(event.pointerId); motion(event);
-    send(2, 1, 0, 0, modifiers(event));
+    const button = event.button === 1 ? 2 : event.button === 2 ? 1 : event.button;
+    send(2, button * 2 + 1, 0, 0, modifiers(event));
   }, options);
   canvas.addEventListener("pointerup", event => {
-    if (event.button !== 0) return;
-    motion(event); send(2, 0, 0, 0, modifiers(event));
-    canvas.releasePointerCapture(event.pointerId);
+    const button = event.button === 1 ? 2 : event.button === 2 ? 1 : event.button;
+    motion(event); send(2, button * 2, 0, 0, modifiers(event));
+    if (event.buttons === 0) canvas.releasePointerCapture(event.pointerId);
   }, options);
+  canvas.addEventListener('contextmenu', event => event.preventDefault(), options);
   canvas.addEventListener("pointercancel", () => send(7), options);
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
