@@ -146,6 +146,7 @@ export function createShaderGeometry(description, transfer) {
     bufferBytes(slot) { active(); return stream(slot).byteLength; },
     bufferRecords(slot) { active(); return shaderBufferRecords(layouts[slot],stream(slot).byteLength); },
     get indexCount() { active(); return indices.byteLength/4; },
+    get indexValues() { active(); return indexData; },
     get commands() {
       active();
       if (dirty) {

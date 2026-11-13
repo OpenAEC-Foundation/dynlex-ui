@@ -112,16 +112,71 @@ async function verifyOrientation(backend,stages) {
     if(errors.length) throw errors[0];
   } finally {shader.close();gpu.releaseSurface(surface);gpu.close();}
 }
+async function verifyInterfaces(backend,stages) {
+  const vertex=stages['interfaces-vertex'],fragment=stages['interfaces-fragment'];
+  const errors=[],gpu=await createGpu(error=>errors.push(error));
+  const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;
+  const surface=gpu.surface(canvas),context=new OffscreenCanvas(32,32).getContext('2d');
+  const buffers=[
+    {arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]},
+    {arrayStride:4,stepMode:'vertex',attributes:[{shaderLocation:1,offset:0,format:'float32'}]},
+    {arrayStride:4,stepMode:'vertex',attributes:[{shaderLocation:2,offset:0,format:'uint32'}]},
+    {arrayStride:8,stepMode:'vertex',attributes:[{shaderLocation:3,offset:0,format:'sint32x2'}]}
+  ];
+  // Different clip W makes perspective interpolation differs from flat values.
+  const positions=[[-1,-1,0.5,1],[-2,6,1,2],[12,-4,2,4]];
+  try {
+    for(const winding of ['ccw','cw']) for(const indexed of [false,true]) {
+      const state={...shaderState(),frontFace:winding};
+      const program=shaderProgram([shaderPass({vertex:vertex[backend],fragment:fragment[backend],
+        vertexBuffers:buffers,draws:[{...draw(3),indexed,first:indexed?1:0}],state,...metadata(vertex,fragment)})]);
+      const shader=await gpu.shader(surface,program);
+      try {
+        shader.vertexBuffer(0,0,new Float32Array(positions.flat()));
+        shader.vertexBuffer(0,1,new Float32Array([0.25,0.5,1]));
+        shader.vertexBuffer(0,2,new Uint32Array([4294967295,0,0]));
+        shader.vertexBuffer(0,3,new Int32Array([-9,12,-8,0,-7,1]));
+        if(indexed) shader.indexBuffer(0,new Uint32Array([99,0,1,2,99]));
+        const quad=[];
+        for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) quad.push(x*32,y*32,x,y,1,1,1,1);
+        for(let mode=0;mode<2;mode++) {
+          shader.uniformBuffer(0,0,0,1,1,1,new Uint8Array(new Int32Array([mode,0,0,0]).buffer));
+          const image=shader.render(32,32);
+          gpu.begin(surface,[0,0,0]);gpu.triangles(surface,new Float32Array(quad),image,{x:0,y:0,width:32,height:32});gpu.present(surface,32,32,1);
+          context.drawImage(canvas,0,0);
+          for(const [x,y] of [[4,6],[15,17],[25,12]]) {
+            const second=(y+0.5)/64,third=(x+0.5)/64,first=1-second-third;
+            const blue=mode===0?(first*0.25+second*0.25+third*0.25)/(first+second/2+third/4):
+              0.25;
+            check([...context.getImageData(x,y,1,1).data],[0.5,winding==='ccw'?0.75:0.125,blue],
+              backend+' typed subset, signed/unsigned, face '+winding+' indexed '+indexed+' interpolation '+mode);
+          }
+        }
+      } finally {shader.close();}
+    }
+    if(errors.length) throw errors[0];
+    if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Typed interfaces produced a WebGL API error');
+  } finally {gpu.releaseSurface(surface);gpu.close();}
+}
 export async function verifyShaderGraph() {
   const [fixture,stages]=await Promise.all(['resources','graph'].map(name=>fetch(`/${name}.json`).then(response=>response.json())));
   const original=Object.getOwnPropertyDescriptor(Navigator.prototype,'gpu');
   try {
     await verify('webgpu',fixture,stages);
     await verifyOrientation('webgpu',stages);
+    await verifyInterfaces('webgpu',stages);
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     Object.defineProperty(Navigator.prototype,'gpu',{configurable:true,get:()=>undefined});
     await verify('webgl',fixture,stages);
     await verifyOrientation('webgl',stages);
+    await verifyInterfaces('webgl',stages);
+    const originalExtension=WebGL2RenderingContext.prototype.getExtension;
+    try {
+      WebGL2RenderingContext.prototype.getExtension=function(name) {
+        return name==='WEBGL_provoking_vertex'?null:originalExtension.call(this,name);
+      };
+      await verifyInterfaces('webgl',stages);
+    } finally {WebGL2RenderingContext.prototype.getExtension=originalExtension;}
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     return ['webgpu','webgl'];
   } finally {if(original) Object.defineProperty(Navigator.prototype,'gpu',original);else delete Navigator.prototype.gpu;}

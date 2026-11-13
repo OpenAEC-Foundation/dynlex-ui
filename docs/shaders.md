@@ -1,5 +1,13 @@
 # Programmable shader surfaces
 
+Typed stage values use explicit matching locations. Smooth float values interpolate
+in perspective; flat float and integer values use the primitive's first vertex on
+both WebGPU and WebGL2. The WebGL driver selects that convention when the context
+provides `WEBGL_provoking_vertex`, and otherwise lowers list primitives to equivalent
+cyclic index order. This preserves winding and original vertex IDs. Prepared indices
+are cached until draw ranges or uploaded indices change. Fragment front-face input
+follows the same face convention on both APIs.
+
 `ui/shaders.dl` supplies platform-independent buffer, draw and texture operations.
 A view's `UI driver` holds a `UI shader operations` provider. The browser provider
 implements those operations on the selected WebGPU or WebGL2 device. The native

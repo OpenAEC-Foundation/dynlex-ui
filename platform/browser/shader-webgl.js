@@ -4,6 +4,7 @@ import { createShaderUniforms } from './shader-uniforms.js';
 import {createShaderAssets} from './shader-assets.js';
 import {webGlShaderAssetDriver} from './shader-assets-webgl.js';
 import {createWebGlShaderTargets} from './shader-targets-webgl.js';
+import {createWebGlPrimitiveDraws} from './shader-provoking-webgl.js';
 
 const fullscreen = `#version 300 es
 precision highp float;
@@ -33,6 +34,7 @@ const emptyFragment='#version 300 es\nprecision highp float;void main(){}';
 
 export function createWebGlShader(gl,descriptor,target) {
   const assets=createShaderAssets(descriptor.assets,webGlShaderAssetDriver(gl)),passes=[];
+  const provoking=gl.getExtension('WEBGL_provoking_vertex');
   let output=null,closed=false;
   const targetFor=usage=>usage==='vertex'?gl.ARRAY_BUFFER:gl.ELEMENT_ARRAY_BUFFER;
   const transfer={
@@ -48,6 +50,7 @@ export function createWebGlShader(gl,descriptor,target) {
   };
   const dispose=pass=>{
     if(pass.uniforms!==null) pass.uniforms.close();
+    if(pass.primitives!==null) pass.primitives.close();
     pass.geometry.close();pass.targets.close();gl.deleteVertexArray(pass.array);gl.deleteProgram(pass.program);
   };
   const comparison={never:gl.NEVER,less:gl.LESS,'less-equal':gl.LEQUAL,equal:gl.EQUAL,'not-equal':gl.NOTEQUAL,
@@ -60,6 +63,7 @@ export function createWebGlShader(gl,descriptor,target) {
   try {
     for(const description of descriptor.passes) {
       const pass={description,geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,slots:new Map(),textures:[],
+        primitives:provoking===null?createWebGlPrimitiveDraws(description.topology,transfer):null,
         targets:createWebGlShaderTargets(gl,assets,description.color,description.depth),
         topology:{'triangle-list':gl.TRIANGLES,'line-list':gl.LINES,'point-list':gl.POINTS}[description.topology]};
       passes.push(pass);
@@ -122,7 +126,8 @@ export function createWebGlShader(gl,descriptor,target) {
       if(!Number.isInteger(width)||!Number.isInteger(height)||width<=0||height<=0||Math.max(width,height)>gl.getParameter(gl.MAX_TEXTURE_SIZE))
         throw new Error('Shader target dimensions exceed device limits');
       for(const pass of passes) pass.uniforms.requireReady();
-      const plans=passes.map(pass=>pass.geometry.commands);
+      const plans=passes.map(pass=>pass.primitives===null?pass.geometry.commands:pass.primitives.prepare(pass.geometry));
+      if(provoking!==null) provoking.provokingVertexWEBGL(provoking.FIRST_VERTEX_CONVENTION_WEBGL);
       assets.resize(width,height);
       const record=assets.image(descriptor.output);
       if(output===null||output.texture!==record.storage) output=target(record);
@@ -159,7 +164,7 @@ export function createWebGlShader(gl,descriptor,target) {
               gl.vertexAttribDivisor(attribute.shaderLocation,layout.stepMode==='instance'?1:0);
             }
           }
-          if(command.indexed) {gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,pass.geometry.indices.buffer);gl.drawElementsInstanced(pass.topology,command.count,gl.UNSIGNED_INT,command.first*4,command.instances);}
+          if(command.indexed) {gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,pass.primitives===null?pass.geometry.indices.buffer:pass.primitives.buffer);gl.drawElementsInstanced(pass.topology,command.count,gl.UNSIGNED_INT,command.first*4,command.instances);}
           else gl.drawArraysInstanced(pass.topology,command.first,command.count,command.instances);
         }
         pass.targets.end();

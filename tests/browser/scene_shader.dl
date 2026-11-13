@@ -61,6 +61,7 @@ if this is a vertex shader:
         set red to zero's x + 0.25
         set green to zero's y + 0.5
         set blue to zero's z + 0.75
-    set the shader interpolant named "scene_color" with an x coordinate of red, a y coordinate of green, a z coordinate of blue and a w coordinate of 1.0
+    set the smooth shader interpolant named "scene_color" at location 0 to ([red, green, blue, 1.0] as an aggregate of 4 floating-point number values)
 else:
-    set the fragment color with a red channel of (the shader interpolant x named "scene_color"), a green channel of (the shader interpolant y named "scene_color"), a blue channel of (the shader interpolant z named "scene_color") and an alpha channel of 1.0
+    set color to the smooth shader interpolant named "scene_color" at location 0 of type an aggregate of 4 floating-point number values
+    set the fragment color with a red channel of (the element at 0 in color), a green channel of (the element at 1 in color), a blue channel of (the element at 2 in color) and an alpha channel of 1.0

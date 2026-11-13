@@ -23,7 +23,8 @@ await fs.copyFile(path.join(core,'web/graphics-backend.js'),path.join(output,'pl
 const sources={},jobs=[
   {entry:'tests/browser/shader_graph_vertex.dl',kind:'shader',stage:'vertex',output:'graph-vertex'},
   {entry:'tests/browser/shader_graph_post.dl',kind:'shader',stage:'fragment',output:'graph-post'},
-  {entry:'tests/browser/shader_graph_pattern.dl',kind:'shader',stage:'fragment',output:'graph-pattern'}
+  {entry:'tests/browser/shader_graph_pattern.dl',kind:'shader',stage:'fragment',output:'graph-pattern'},
+  ...['vertex','fragment'].map(stage=>({entry:'tests/browser/shader_interfaces.dl',kind:'shader',stage,output:'interfaces-'+stage}))
 ];
 for(const {entry} of jobs) {
   const graph=JSON.parse(execFileSync(path.join(core,'build/dynlex'),[entry,'--dump-dependencies'],{cwd:root,encoding:'utf8',timeout:30000}));
