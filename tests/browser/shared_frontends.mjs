@@ -11,11 +11,22 @@ const fixture=process.argv[3];
 assert(fixture,'Pass a shared fixture name after the compiler checkout');
 const entry=`tests/shared/${fixture}/main.dl`;
 const expected=await fs.readFile(path.join(root,`tests/shared/${fixture}/expected.txt`),'utf8');
+const directory=path.join(root,'tests/shared',fixture),files=await fs.readdir(directory);
+const assets=files.includes('assets.json')?await JSON.parse(await fs.readFile(path.join(directory,'assets.json'),'utf8')):[];
+const assetBytes=await Promise.all(assets.map(async name=>[name,await fs.readFile(path.join(root,name))]));
 const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(
   pathToFileURL(path.join(core,'src/web/ide/public/compiler/runtimeImports.js')));
 const {observeAllocations}=await import(pathToFileURL(path.join(core,'tests/web/allocation_probe.mjs')));
 async function verify(bytes,label) {
-  const chunks=[],runtime=buildRuntimeImports(chunks,createRuntimeFilesystem(),inspectRuntimeWasmLayout(bytes));
+  const chunks=[],filesystem=createRuntimeFilesystem();
+  for(const [name,bytes] of assetBytes) {
+    filesystem.files.set(name,{data:new Uint8Array(bytes),modificationTime:filesystem.lastTimestamp});
+    let parent=path.posix.dirname(name);
+    while(parent!=='.'&&parent!=='/'&&parent!=='') {
+      filesystem.directories.set(parent,filesystem.lastTimestamp);parent=path.posix.dirname(parent);
+    }
+  }
+  const runtime=buildRuntimeImports(chunks,filesystem,inspectRuntimeWasmLayout(bytes));
   const allocations=observeAllocations(runtime,1024*1024);
   const {instance}=await WebAssembly.instantiate(bytes,runtime);
   try {instance.exports.main();} catch(error) {throw new Error(chunks.join(''),{cause:error});}

@@ -1,0 +1,51 @@
+import ../../../ui/scene_lighting.dl
+import lib/check.dl
+import lib/filesystem.dl
+import lib/json.dl
+
+to get [the lighting reference vector named] {a value:name} [in] {a pointer to JSON value:entry}:
+    set values to the JSON member named name in entry
+    return a new vector with x (the JSON number at index 0 in values), y (the JSON number at index 1 in values) and z (the JSON number at index 2 in values)
+
+to [check lighting vector] {vector:actual} [against] {a value:name} [in] {a pointer to JSON value:entry}:
+    set expected to the lighting reference vector named name in entry
+    set error to the length of (actual - expected)
+    set limit to 0.0001 * (the maximum of 1.0 and (the length of expected))
+    require condition (error < limit) reporting "Physical lighting differs from the original rendered GLSL reference"
+
+read the file at "tests/shared/scene_lighting/reference.json" and set input to it
+require condition (input succeeded) reporting "Lighting reference data is missing"
+parse (input's contents) as JSON and set document to it
+require condition (document succeeded) reporting "Lighting reference data is invalid"
+set cases to the JSON member named "cases" in (document's value)
+loop index from 0 to (cases's length):
+    set entry to the JSON value at index index in cases
+    set normal to the lighting reference vector named "normal" in entry
+    set view to the lighting reference vector named "view" in entry
+    set light to the lighting reference vector named "light" in entry
+    set base to the lighting reference vector named "specular" in entry
+    set roughness to the JSON number named "roughness" in entry
+    set first to the lighting reference vector named "dfgView" in entry
+    set second to the lighting reference vector named "dfgLight" in entry
+    set half to (light + view) normalized
+    set cosine to (the dot product of view and half) clamped between 0.0 and 1.0
+    check lighting vector (the UI scene Fresnel from base at cosine cosine) against "fresnel" in entry
+    set single to the UI scene GGX reflection on normal viewed along view lit along light with Fresnel base roughness roughness
+    check lighting vector single against "ggx" in entry
+    set multiple to the UI scene direct scattering compensation from base integrated for view first light second
+    check lighting vector (single + multiple) against "multiple" in entry
+    set sky to the lighting reference vector named "sky" in entry
+    set ground to the lighting reference vector named "ground" in entry
+    check lighting vector (the UI scene hemisphere light on normal from sky sky ground ground along (a new vector with x 0.0, y 1.0 and z 0.0)) against "hemisphere" in entry
+    set color to the lighting reference vector named "albedo" in entry
+    set metalness to the JSON number named "metalness" in entry
+    set radiance to the lighting reference vector named "radiance" in entry
+    set irradiance to the lighting reference vector named "irradiance" in entry
+    check lighting vector (the UI scene environment specular on color at metalness metalness integrated as first reflecting radiance lit by irradiance) against "environmentSpecular" in entry
+    check lighting vector (the UI scene environment diffuse on color at metalness metalness integrated as first lit by irradiance) against "environmentDiffuse" in entry
+    set diffuse to the UI scene diffuse reflectance of color at metalness metalness
+    check lighting vector (diffuse * irradiance) against "indirectDiffuse" in entry
+    set cosine to (the dot product of normal and light) clamped between 0.0 and 1.0
+    check lighting vector (((diffuse + (single + multiple)) * radiance) * cosine) against "direct" in entry
+free document's value
+print line "Physical scene lighting preserves rendered GGX, Fresnel, multiple scattering, hemispheres, metals and dielectric energy across native and GPU vector forms."

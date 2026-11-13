@@ -15,7 +15,7 @@ await prepareScene(core,output);
 await fs.copyFile(path.join(output,'scene-buffers.json'),path.join(output,'__tests__/scene-buffers.json'));
 execFileSync(process.execPath,[path.join(core,'tests/web/shader_uniforms.mjs'),path.join(core,'build-web'),
   path.join(output,'__tests__/shader-uniforms.json')],{cwd:root,stdio:'inherit',timeout:60000});
-for(const name of ['shader_graph_rendering.mjs','shader_fixtures.mjs','rendering.mjs','scene_rendering.mjs','pipeline_rendering.mjs'])
+for(const name of ['shader_graph_rendering.mjs','shader_fixtures.mjs','rendering.mjs','scene_rendering.mjs','pipeline_rendering.mjs','lighting_rendering.mjs'])
   await fs.copyFile(path.join(root,'tests/browser',name),path.join(output,'__tests__',name));
 await fs.copyFile(path.join(root,'tests/browser/shader_resources.html'),path.join(output,'index.html'));
 await fs.cp(path.join(root,'platform/browser'),path.join(output,'platform'),{recursive:true});
@@ -25,6 +25,7 @@ const sources={},jobs=[
   {entry:'tests/browser/shader_graph_post.dl',kind:'shader',stage:'fragment',output:'graph-post'},
   {entry:'tests/browser/shader_graph_pattern.dl',kind:'shader',stage:'fragment',output:'graph-pattern'},
   {entry:'tests/browser/scene_tone.dl',kind:'shader',stage:'fragment',output:'scene-tone'},
+  {entry:'tests/browser/scene_lighting.dl',kind:'shader',stage:'fragment',output:'scene-lighting'},
   ...['vertex','fragment'].map(stage=>({entry:'tests/browser/shader_interfaces.dl',kind:'shader',stage,output:'interfaces-'+stage})),
   ...['vertex','fragment'].map(stage=>({entry:'tests/browser/shader_pipelines.dl',kind:'shader',stage,output:'pipelines-'+stage}))
 ];
@@ -49,3 +50,4 @@ for(const job of jobs) artifacts[job.output]={
 };
 await fs.writeFile(path.join(output,'graph.json'),JSON.stringify(artifacts));
 await fs.copyFile(path.join(root,'tests/shared/scene_tone/reference.json'),path.join(output,'tone-reference.json'));
+await fs.copyFile(path.join(root,'tests/shared/scene_lighting/reference.json'),path.join(output,'lighting-reference.json'));

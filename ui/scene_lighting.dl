@@ -1,0 +1,77 @@
+# Isotropic GGX lighting and multiple scattering used by physical scene materials.
+# Derived from Three.js ShaderChunk; MIT notice: assets/licenses/threejs.txt.
+import lib/vector.dl
+
+the UI scene white radiance means: a new vector with x 1.0, y 1.0 and z 1.0
+the UI scene reciprocal pi means: 0.3183098861837907
+
+to get [the UI scene Fresnel from] {vector:base} [at cosine] {floating-point number:cosine}:
+    set factor to 2.0 raised to the power of (((cosine * -5.55473) - 6.98316) * cosine)
+    return base * (1.0 - factor) + (the UI scene white radiance) * factor
+
+to get [the UI scene GGX visibility at alpha] {floating-point number:alpha} [light cosine] {floating-point number:light} [view cosine] {floating-point number:view}:
+    set squared to alpha * alpha
+    set first to light * (the square root of (squared + (1.0 - squared) * (view * view)))
+    set second to view * (the square root of (squared + (1.0 - squared) * (light * light)))
+    return 0.5 / (the maximum of (first + second) and 0.000001)
+
+to get [the UI scene GGX distribution at alpha] {floating-point number:alpha} [half cosine] {floating-point number:cosine}:
+    set squared to alpha * alpha
+    set denominator to (cosine * cosine) * (squared - 1.0) + 1.0
+    return ((the UI scene reciprocal pi) * squared) / (denominator * denominator)
+
+to get [the UI scene GGX reflection on] {vector:normal} [viewed along] {vector:view} [lit along] {vector:light} [with Fresnel] {vector:base} [roughness] {floating-point number:roughness}:
+    set half to (light + view) normalized
+    set alpha to roughness * roughness
+    set nl to (the dot product of normal and light) clamped between 0.0 and 1.0
+    set nv to (the dot product of normal and view) clamped between 0.0 and 1.0
+    set nh to (the dot product of normal and half) clamped between 0.0 and 1.0
+    set vh to (the dot product of view and half) clamped between 0.0 and 1.0
+    set fresnel to the UI scene Fresnel from base at cosine vh
+    set visibility to the UI scene GGX visibility at alpha alpha light cosine nl view cosine nv
+    set distribution to the UI scene GGX distribution at alpha alpha half cosine nh
+    return fresnel * (visibility * distribution)
+
+to get [the UI scene single scattering from] {vector:base} [integrated as] {vector:coefficients}:
+    return base * (the x of coefficients) + (the UI scene white radiance) * (the y of coefficients)
+
+to get [the UI scene average Fresnel from] {vector:base}:
+    return base + ((the UI scene white radiance) - base) * 0.047619
+
+to get [the UI scene multiple scattering from] {vector:base} [integrated as] {vector:coefficients}:
+    set single to the UI scene single scattering from base integrated as coefficients
+    set average to the UI scene average Fresnel from base
+    set missing to 1.0 - ((the x of coefficients) + (the y of coefficients))
+    return ((single * average) / ((the UI scene white radiance) - average * missing)) * missing
+
+to get [the UI scene direct scattering compensation from] {vector:base} [integrated for view] {vector:view} [light] {vector:light}:
+    set first to the UI scene single scattering from base integrated as view
+    set second to the UI scene single scattering from base integrated as light
+    set average to the UI scene average Fresnel from base
+    set missing to (1.0 - ((the x of view) + (the y of view))) * (1.0 - ((the x of light) + (the y of light)))
+    set numerator to (first * second) * average
+    set denominator to ((the UI scene white radiance) - average * missing) + 0.000001
+    return (numerator / denominator) * missing
+
+to get [the UI scene diffuse reflectance of] {vector:color} [at metalness] {floating-point number:metalness}:
+    return color * ((1.0 - metalness) * (the UI scene reciprocal pi))
+
+to get [the UI scene hemisphere light on] {vector:normal} [from sky] {vector:sky} [ground] {vector:ground} [along] {vector:up}:
+    set weight to 0.5 * (the dot product of normal and up) + 0.5
+    return ground * (1.0 - weight) + sky * weight
+
+to get [the UI scene environment diffuse on] {vector:color} [at metalness] {floating-point number:metalness} [integrated as] {vector:coefficients} [lit by] {vector:irradiance}:
+    set dielectric to (the UI scene white radiance) * 0.04
+    set scattering to (the UI scene single scattering from dielectric integrated as coefficients) + (the UI scene multiple scattering from dielectric integrated as coefficients)
+    set diffuse to (color * (1.0 - metalness)) * ((the UI scene white radiance) - scattering)
+    return (diffuse * irradiance) * (the UI scene reciprocal pi)
+
+to get [the UI scene environment specular on] {vector:color} [at metalness] {floating-point number:metalness} [integrated as] {vector:coefficients} [reflecting] {vector:radiance} [lit by] {vector:irradiance}:
+    set dielectric to (the UI scene white radiance) * 0.04
+    set first to the UI scene single scattering from dielectric integrated as coefficients
+    set second to the UI scene single scattering from color integrated as coefficients
+    set single to first * (1.0 - metalness) + second * metalness
+    set first to the UI scene multiple scattering from dielectric integrated as coefficients
+    set second to the UI scene multiple scattering from color integrated as coefficients
+    set multiple to first * (1.0 - metalness) + second * metalness
+    return radiance * single + ((irradiance * multiple) * (the UI scene reciprocal pi))

@@ -1,0 +1,1 @@
+Physical scene lighting preserves rendered GGX, Fresnel, multiple scattering, hemispheres, metals and dielectric energy across native and GPU vector forms.

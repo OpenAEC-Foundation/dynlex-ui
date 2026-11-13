@@ -407,3 +407,26 @@ The result is linear RGB in the range zero to one. Write it to an sRGB render
 target without applying a second display conversion. The fit retains the exposure
 scale and both color-space matrices, including colored highlights and HDR values.
 Its Three.js MIT notice is included in SDK and application distributions.
+
+`ui/scene_lighting.dl` shares isotropic GGX lighting between CPU code and shaders.
+It includes correlated Smith visibility, Schlick Fresnel, direct multiple
+scattering, Lambert diffuse, hemisphere irradiance and environment energy
+partitioning for dielectric and metallic surfaces. Colors and light intensities
+are linear RGB; directions are normalized and roughness is greater than zero.
+
+```dynlex
+set specular to the UI scene GGX reflection on normal viewed along view lit along light with Fresnel base roughness roughness
+set compensation to the UI scene direct scattering compensation from base integrated for view viewCoefficients light lightCoefficients
+set diffuse to the UI scene diffuse reflectance of color at metalness metalness
+set reflected to ((diffuse + specular + compensation) * radiance) * lightCosine
+```
+
+The coefficient vectors contain the DFG lookup's A and B terms in x and y; z is
+unused. Sample the lookup at roughness and the clamped normal/view cosine, and
+again at roughness and the normal/light cosine for direct compensation. The
+environment diffuse and specular functions preserve dielectric Fresnel 0.04,
+metal color and multiple scattering separately. They accept environment
+irradiance and prefiltered radiance; sampling and scene-specific effects remain
+with the material shader. Tests compare both CPU and GPU results against recorded
+float pixels from the original Three.js functions, rather than regenerating
+expected values from the DynLex implementation.
