@@ -1,0 +1,1 @@
+Shader resources preserve target dimensions, formats, cube faces, mip levels and independent sampler settings.

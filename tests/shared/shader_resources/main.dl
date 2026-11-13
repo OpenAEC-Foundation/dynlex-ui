@@ -1,0 +1,42 @@
+import ../../../ui/shader_resources.dl
+
+require condition ((the maximum UI shader image levels for 8 by 2) = 4) reporting "Mip extents used the shorter dimension"
+require condition ((the maximum UI shader image levels for 1 by 1) = 1) reporting "A one-pixel image lost its base level"
+require condition ((the maximum UI shader image levels for 2147483647 by 1) = 31) reporting "Large dimensions were narrowed before validation"
+
+set paint to a UI shader image named "paint" storing "rgba8unorm-srgb" sized 8 by 2 with 4 levels
+require condition ((the JSON text named "kind" in paint) = "texture") reporting "An image lost its resource kind"
+require condition ((the JSON text named "dimension" in paint) = "2d") reporting "A 2D image acquired cube coordinates"
+require condition ((the JSON number named "levels" in paint) = 4) reporting "The authored mip chain changed"
+require condition ((the JSON number named "samples" in paint) = 1) reporting "A sampled image acquired multisample storage"
+set extent to the JSON member named "size" in paint
+require condition (((the JSON text named "kind" in extent) = "fixed") and (((the JSON number named "width" in extent) = 8) and ((the JSON number named "height" in extent) = 2))) reporting "Fixed image dimensions changed"
+
+set sky to a UI shader cube image named "sky" storing "rgba16float" sized 16 with 5 levels
+require condition (((the JSON text named "dimension" in sky) = "cube") and ((the JSON number named "layers" in sky) = 6)) reporting "A cube image lost its six faces"
+set extent to the JSON member named "size" in sky
+require condition (((the JSON number named "width" in extent) = 16) and ((the JSON number named "height" in extent) = 16)) reporting "Cube faces became nonsquare"
+
+set scene to a UI shader frame image named "scene" storing "rgba16float"
+require condition ((the JSON text named "kind" in (the JSON member named "size" in scene)) = "frame") reporting "A frame-sized target became a fixed image"
+set shadow to a UI shader image named "shadow" storing "depth32float" sized 2048 by 2048 with 1 level
+require condition ((the JSON text named "format" in shadow) = "depth32float") reporting "A depth target acquired color storage"
+
+set smooth to a UI shader smooth sampler named "smooth"
+set pixel to a UI shader pixel sampler named "pixel"
+set comparison to a UI shader shadow sampler named "comparison"
+require condition (((the JSON text named "minFilter" in smooth) = "linear") and ((the JSON text named "compare" in smooth) = "none")) reporting "Ordinary filtering became depth comparison"
+require condition (((the JSON text named "minFilter" in pixel) = "nearest") and ((the JSON text named "mipmapFilter" in pixel) = "nearest")) reporting "Pixel filtering introduced interpolated samples"
+require condition (((the JSON text named "compare" in comparison) = "less-equal") and ((the JSON text named "magFilter" in comparison) = "linear")) reporting "Shadow filtering lost its depth comparison"
+set repeat to a UI shader sampler named "water" minifying "linear" magnifying "linear" mipmapping "linear" wrapping "repeat" "mirror-repeat" "clamp-to-edge" comparing "none"
+require condition (((the JSON text named "addressModeU" in repeat) = "repeat") and ((the JSON text named "addressModeV" in repeat) = "mirror-repeat")) reporting "Sampler axes were collapsed into one wrap mode"
+
+free paint
+free sky
+free scene
+free shadow
+free smooth
+free pixel
+free comparison
+free repeat
+print line "Shader resources preserve target dimensions, formats, cube faces, mip levels and independent sampler settings."

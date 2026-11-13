@@ -115,6 +115,44 @@ object. A pass includes a `draws` array, which may initially be empty while DynL
 prepares its buffers. Zero-count draws produce no primitives. Nonempty draws must
 fit every bound vertex and instance stream and the requested index range.
 
+## Images, samplers and attachment data
+
+`ui/shader_resources.dl` describes named color/depth images and independent
+samplers as ordinary data. Images can use fixed or frame-sized extents, six cube
+faces, mip levels, and one or four samples. Formats are `rgba8unorm`,
+`rgba8unorm-srgb`, `rgba16float`, `depth24plus` and `depth32float`.
+`ui/shader_attachments.dl` adds subresource views, color/depth load and store
+operations, resolve targets and independent culling/depth/blend state.
+
+```dynlex
+import ui/shader_attachments.dl
+
+set samples to a UI shader frame image named "samples" storing "rgba16float" with 4 samples
+set output to a UI shader frame image named "output" storing "rgba16float"
+set target to a UI shader image view of "samples" at level 0 layer 0
+set resolve to a UI shader image view of "output" at level 0 layer 0
+set color to a UI shader color attachment using target resolving into resolve loading "clear" storing "discard" cleared to [0.0,0.0,0.0,1.0]
+set state to a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less" blending "opaque"
+
+free samples
+free output
+free color
+free state
+```
+
+Constructing these descriptions creates no GPU objects. Container construction
+transfers ownership of supplied JSON children, including the target and resolve
+views above. Color clears preserve finite HDR values rather than clamping them
+to display colors; depth clears lie between zero and one.
+
+The browser asset bank owns the corresponding image/sampler storage. It allocates
+fixed images once, replaces frame-sized images on resize and retires each handle
+once. Uploads name a complete mip level and cube face. Color uploads use raw RGBA
+bytes or IEEE half-float components; depth images are written by render passes.
+Image definitions remain immutable and can be inspected before frame storage is
+allocated. The current program adapter still uses its single output/depth target;
+connecting these descriptions and asset storage to its pass graph is in progress.
+
 ## Verification
 
 `tests/shared/shader_api` verifies the DynLex operation table and six-word ABI at
@@ -133,3 +171,11 @@ unsigned arithmetic cases also verify conversions, division, remainders, shifts
 and extrema through both shader backends. Its direct invocation
 is `node tests/browser/run.mjs <application directory> <graphics mode> <compiler checkout>`;
 `scripts/test.py --browser --dynlex <compiler checkout>` supplies that argument.
+
+`tests/shared/shader_resources` and `tests/shared/shader_attachments` check the
+description data at O0/O2. `tests/browser/shader_resource_descriptions.mjs` also
+checks native-emitted Wasm and the shipped browser compiler, including zero
+retained allocations. `shader_assets.mjs` verifies resource ownership and resize
+failure cleanup. `prepare_resources.mjs` and `shader_resources_browser.mjs` compile
+actual DynLex shaders/descriptions and compare WebGPU/WebGL pixels for separate
+samplers, cube faces/mips, sRGB/HDR and filtered shadow comparisons on private Xvfb.

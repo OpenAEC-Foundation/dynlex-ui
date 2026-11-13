@@ -1,0 +1,15 @@
+import ../../ui/shader_resources.dl
+
+set assets to a JSON array containing [
+    a UI shader image named "paint" storing "rgba8unorm" sized 2 by 2 with 1 level,
+    a UI shader image named "ink" storing "rgba8unorm-srgb" sized 1 by 1 with 1 level,
+    a UI shader image named "hdr" storing "rgba16float" sized 1 by 1 with 1 level,
+    a UI shader cube image named "sky" storing "rgba16float" sized 2 with 2 levels,
+    a UI shader image named "shadow" storing "depth32float" sized 4 by 4 with 1 level,
+    a UI shader frame image named "scene" storing "rgba16float",
+    a UI shader pixel sampler named "pixel",
+    a UI shader smooth sampler named "smooth",
+    a UI shader shadow sampler named "comparison"
+]
+print line the compact JSON form of assets
+free assets

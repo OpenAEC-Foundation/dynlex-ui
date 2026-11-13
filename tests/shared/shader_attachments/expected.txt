@@ -1,0 +1,1 @@
+Shader attachments preserve subresources, resolves, HDR clears, load/store operations and independent raster state.

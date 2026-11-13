@@ -1,0 +1,32 @@
+import ../../../ui/shader_attachments.dl
+
+set cube to a UI shader image view of "sky" at level 3 layer 5
+set color to a UI shader color attachment using cube resolving into (a new JSON-RPC null) loading "clear" storing "store" cleared to [2.0,-0.5,0.25,1.0]
+set view to the JSON member named "view" in color
+require condition (((the JSON text named "image" in view) = "sky") and (((the JSON number named "level" in view) = 3) and ((the JSON number named "layer" in view) = 5))) reporting "An attachment lost its cube face or mip level"
+set channels to the JSON member named "clear" in color
+require condition (((the JSON number at index 0 in channels) = 2.0) and ((the JSON number at index 1 in channels) = -0.5)) reporting "HDR clear values were clamped to display colors"
+require condition ((the kind of (the JSON member named "resolve" in color)) = the JSON null kind) reporting "An ordinary image acquired an implicit resolve target"
+free color
+
+set target to a UI shader image view of "samples" at level 0 layer 0
+set resolved to a UI shader image view of "output" at level 0 layer 0
+set color to a UI shader color attachment using target resolving into resolved loading "load" storing "discard" cleared to [0.0,0.0,0.0,1.0]
+require condition (((the JSON text named "load" in color) = "load") and ((the JSON text named "store" in color) = "discard")) reporting "Attachment load and store operations were coupled"
+require condition ((the JSON text named "image" in (the JSON member named "resolve" in color)) = "output") reporting "The resolve target was replaced by the multisample image"
+free color
+
+set depth to a UI shader depth attachment using (a UI shader image view of "shadow" at level 0 layer 0) loading "clear" storing "store" cleared to 0.75
+require condition ((the JSON number named "clear" in depth) = 0.75) reporting "The shadow depth clear value changed"
+free depth
+
+set state to a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less-equal" blending "alpha"
+require condition (((the JSON text named "cullMode" in state) = "back") and ((the JSON text named "frontFace" in state) = "ccw")) reporting "Raster orientation was lost"
+require condition (((the JSON boolean named "depthWrite" in state) = true) and ((the JSON text named "depthCompare" in state) = "less-equal")) reporting "Depth testing was coupled to blending"
+require condition ((the JSON text named "blend" in state) = "alpha") reporting "Alpha blending was replaced by additive blending"
+free state
+
+set image to a UI shader frame image named "samples" storing "rgba16float" with 4 samples
+require condition (((the JSON number named "samples" in image) = 4) and ((the JSON text named "kind" in (the JSON member named "size" in image)) = "frame")) reporting "A multisample frame target lost its resize policy"
+free image
+print line "Shader attachments preserve subresources, resolves, HDR clears, load/store operations and independent raster state."

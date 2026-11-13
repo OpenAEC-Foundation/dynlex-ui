@@ -1,0 +1,29 @@
+import lib/shader.dl
+
+set paint to the shader image named "paint" at binding 1
+set ink to the shader image named "ink" at binding 2
+set hdr to the shader image named "hdr" at binding 3
+set sky to the shader cube image named "sky" at binding 4
+set shadow to the shader depth image named "shadow" at binding 5
+set pixel to the shader sampler named "pixel" at binding 6
+set smooth to the shader sampler named "smooth" at binding 11
+set comparison to the shader comparison sampler named "comparison" at binding 12
+set uv to the shader uniform named "uv" at binding 0 as @intrinsic("vector", 2)
+set direction to the shader uniform named "direction" at binding 7 as @intrinsic("vector", 3)
+set level to the shader uniform named "level" at binding 8 as a 32 bit floating-point number
+set reference to the shader uniform named "reference" at binding 9 as a 32 bit floating-point number
+set mode to the shader uniform named "mode" at binding 10 as a 32 bit floating-point number
+if mode = 0.0:
+    set first to the sample from paint using pixel at uv with level level
+    set second to the sample from paint using smooth at uv with level level
+    @intrinsic("shader output", @intrinsic("construct", @intrinsic("vector", 4), @intrinsic("extract element", first, 0), @intrinsic("extract element", second, 0), 0.0, 1.0))
+else if mode = 1.0:
+    @intrinsic("shader output", the sample from sky using smooth at direction with level level)
+else if mode = 2.0:
+    set visibility to the visibility from shadow using comparison at uv with depth reference
+    @intrinsic("shader output", @intrinsic("construct", @intrinsic("vector", 4), visibility, visibility, visibility, 1.0))
+else if mode = 3.0:
+    @intrinsic("shader output", the sample from ink using smooth at uv with level level)
+else:
+    set value to the sample from hdr using smooth at uv with level level
+    @intrinsic("shader output", @intrinsic("construct", @intrinsic("vector", 4), (@intrinsic("extract element", value, 0)) * 0.25, ((@intrinsic("extract element", value, 1)) * 0.25) + 0.5, (@intrinsic("extract element", value, 2)) * 0.25, 1.0))

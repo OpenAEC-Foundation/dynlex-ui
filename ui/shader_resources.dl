@@ -1,0 +1,76 @@
+# Portable GPU resource descriptions. The program owns their platform objects.
+import shader_types.dl
+
+{C string:value} [is a UI shader color format] means: ((value = "rgba8unorm") or (value = "rgba8unorm-srgb")) or (value = "rgba16float")
+{C string:value} [is a UI shader depth format] means: (value = "depth24plus") or (value = "depth32float")
+{C string:value} [is a UI shader filter] means: (value = "nearest") or (value = "linear")
+{C string:value} [is a UI shader wrap mode] means: ((value = "clamp-to-edge") or (value = "repeat")) or (value = "mirror-repeat")
+{C string:value} [is a UI shader comparison] means: (((value = "none") or (value = "never")) or ((value = "less") or (value = "less-equal"))) or ((((value = "equal") or (value = "not-equal")) or ((value = "greater") or (value = "greater-equal"))) or (value = "always"))
+
+to get [the maximum UI shader image levels for] {integer:width} [by] {integer:height}:
+    require condition (((width is a valid UI operation integer) and (height is a valid UI operation integer)) and ((width > 0) and (height > 0))) reporting "Shader image dimensions must be positive platform operation integers"
+    set span to the maximum of width and height
+    set levels to 1
+    loop while span > 1:
+        set span to span / 2
+        increment levels
+    return levels
+
+to get [the UI shader image extent sized] {integer:width} [by] {integer:height} [following frame] {boolean:frame}:
+    if frame:
+        return a JSON object containing [JSON text "kind" is "frame"]
+    return a JSON object containing [JSON text "kind" is "fixed", JSON number "width" is width, JSON number "height" is height]
+
+to get [a UI shader image description named] {C string:name} [storing] {C string:format} [sized] {integer:width} [by] {integer:height} [with] {integer:levels} [levels and] {integer:samples} [samples as cube] {boolean:cube} [following frame] {boolean:frame}:
+    set title to the string form of name
+    require condition (title's length > 0) reporting "A shader resource requires a name"
+    require condition ((format is a UI shader color format) or (format is a UI shader depth format)) reporting "Unknown shader image format"
+    require condition ((samples = 1) or (samples = 4)) reporting "Portable shader images support one or four samples"
+    require condition (((samples = 1) or (levels = 1)) and ((cube = false) or (samples = 1))) reporting "Multisample images require one level and cannot be cubes"
+    if frame:
+        require condition ((cube = false) and (levels = 1)) reporting "Frame images require a 2D base level"
+    else:
+        require condition ((levels > 0) and (levels <= (the maximum UI shader image levels for width by height))) reporting "Shader image levels exceed the complete mip chain"
+    if cube:
+        require condition ((width = height) and (format is a UI shader color format)) reporting "Cube images require square color faces"
+    return a JSON object containing [
+        JSON text "kind" is "texture", JSON text "name" is title, JSON text "format" is format,
+        JSON text "dimension" is ("cube" if cube, else "2d"),
+        JSON number "layers" is (6 if cube, else 1), JSON number "levels" is levels, JSON number "samples" is samples,
+        JSON child "size" is (the UI shader image extent sized width by height following frame frame)
+    ]
+
+to get [a UI shader image named] {C string:name} [storing] {C string:format} [sized] {integer:width} [by] {integer:height} [with] {integer:count} [levels|level]:
+    return a UI shader image description named name storing format sized width by height with count levels and 1 samples as cube false following frame false
+
+to get [a UI shader cube image named] {C string:name} [storing] {C string:format} [sized] {integer:size} [with] {integer:count} [levels|level]:
+    return a UI shader image description named name storing format sized size by size with count levels and 1 samples as cube true following frame false
+
+to get [a UI shader frame image named] {C string:name} [storing] {C string:format}:
+    return a UI shader image description named name storing format sized 0 by 0 with 1 levels and 1 samples as cube false following frame true
+
+to get [a UI shader frame image named] {C string:name} [storing] {C string:format} [with] {integer:count} [samples]:
+    return a UI shader image description named name storing format sized 0 by 0 with 1 levels and count samples as cube false following frame true
+
+to get [a UI shader sampler named] {C string:name} [minifying] {C string:minimum} [magnifying] {C string:maximum} [mipmapping] {C string:mipmap} [wrapping] {C string:horizontal} {C string:vertical} {C string:depth} [comparing] {C string:comparison}:
+    set title to the string form of name
+    require condition (title's length > 0) reporting "A shader resource requires a name"
+    require condition (((minimum is a UI shader filter) and (maximum is a UI shader filter)) and (mipmap is a UI shader filter)) reporting "Unknown shader sampler filter"
+    require condition (((horizontal is a UI shader wrap mode) and (vertical is a UI shader wrap mode)) and (depth is a UI shader wrap mode)) reporting "Unknown shader sampler wrap mode"
+    require condition (comparison is a UI shader comparison) reporting "Unknown shader sampler comparison"
+    return a JSON object containing [
+        JSON text "kind" is "sampler", JSON text "name" is title,
+        JSON text "minFilter" is minimum, JSON text "magFilter" is maximum, JSON text "mipmapFilter" is mipmap,
+        JSON text "addressModeU" is horizontal, JSON text "addressModeV" is vertical, JSON text "addressModeW" is depth,
+        JSON text "compare" is comparison, JSON number "lodMinClamp" is 0, JSON number "lodMaxClamp" is 32,
+        JSON number "maxAnisotropy" is 1
+    ]
+
+to get [a UI shader smooth sampler named] {C string:name}:
+    return a UI shader sampler named name minifying "linear" magnifying "linear" mipmapping "linear" wrapping "clamp-to-edge" "clamp-to-edge" "clamp-to-edge" comparing "none"
+
+to get [a UI shader pixel sampler named] {C string:name}:
+    return a UI shader sampler named name minifying "nearest" magnifying "nearest" mipmapping "nearest" wrapping "clamp-to-edge" "clamp-to-edge" "clamp-to-edge" comparing "none"
+
+to get [a UI shader shadow sampler named] {C string:name}:
+    return a UI shader sampler named name minifying "linear" magnifying "linear" mipmapping "linear" wrapping "clamp-to-edge" "clamp-to-edge" "clamp-to-edge" comparing "less-equal"

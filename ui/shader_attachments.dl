@@ -1,0 +1,40 @@
+# Render-pass data. Constructing a description allocates no GPU resources.
+import shader_resources.dl
+import lib/json_rpc_values.dl
+
+to get [a UI shader image view of] {C string:name} [at level] {integer:level} [layer] {integer:layer}:
+    set title to the string form of name
+    require condition (title's length > 0) reporting "A shader image view requires a resource name"
+    return a JSON object containing [JSON text "image" is title, JSON number "level" is (a UI operation integer from level), JSON number "layer" is (a UI operation integer from layer)]
+
+to [require UI shader attachment loading] {C string:load} [storing] {C string:store}:
+    require condition ((load = "clear") or (load = "load")) reporting "Unknown shader attachment load operation"
+    require condition ((store = "store") or (store = "discard")) reporting "Unknown shader attachment store operation"
+
+to get [a UI shader clear component from] {a number:value}:
+    set component to value as a 32 bit floating-point number
+    require condition (component is finite) reporting "Shader attachment clear values must be finite float32 numbers"
+    return component
+
+to get [a UI shader color attachment using] {a pointer to JSON value:view} [resolving into] {a pointer to JSON value:resolve} [loading] {C string:load} [storing] {C string:store} [cleared to] {an array:channels}:
+    require UI shader attachment loading load storing store
+    require condition ((the length of channels) = 4) reporting "A shader color clear requires four components"
+    set clear to a new JSON-RPC array
+    set index to 0
+    loop while index < 4:
+        add (a new JSON number from (a UI shader clear component from (the item at index in channels))) to the JSON array clear
+        increment index
+    return a JSON object containing [JSON child "view" is view, JSON child "resolve" is resolve, JSON text "load" is load, JSON text "store" is store, JSON child "clear" is clear]
+
+to get [a UI shader depth attachment using] {a pointer to JSON value:view} [loading] {C string:load} [storing] {C string:store} [cleared to] {a number:value}:
+    require UI shader attachment loading load storing store
+    set clear to a UI shader clear component from value
+    require condition (0.0 <= clear <= 1.0) reporting "A shader depth clear must be between zero and one"
+    return a JSON object containing [JSON child "view" is view, JSON text "load" is load, JSON text "store" is store, JSON number "clear" is clear]
+
+to get [a UI shader raster state culling] {C string:cull} [facing] {C string:face} [writing depth] {boolean:write} [comparing] {C string:compare} [blending] {C string:blend}:
+    require condition (((cull = "none") or (cull = "front")) or (cull = "back")) reporting "Unknown shader culling mode"
+    require condition ((face = "cw") or (face = "ccw")) reporting "Unknown shader front-face orientation"
+    require condition ((compare is a UI shader comparison) and (compare != "none")) reporting "Unknown shader depth comparison"
+    require condition (((blend = "opaque") or (blend = "additive")) or ((blend = "alpha") or (blend = "premultiplied"))) reporting "Unknown shader blending mode"
+    return a JSON object containing [JSON text "cullMode" is cull, JSON text "frontFace" is face, JSON flag "depthWrite" is write, JSON text "depthCompare" is compare, JSON text "blend" is blend]
