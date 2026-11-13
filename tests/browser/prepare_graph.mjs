@@ -24,6 +24,7 @@ const sources={},jobs=[
   {entry:'tests/browser/shader_graph_vertex.dl',kind:'shader',stage:'vertex',output:'graph-vertex'},
   {entry:'tests/browser/shader_graph_post.dl',kind:'shader',stage:'fragment',output:'graph-post'},
   {entry:'tests/browser/shader_graph_pattern.dl',kind:'shader',stage:'fragment',output:'graph-pattern'},
+  {entry:'tests/browser/scene_tone.dl',kind:'shader',stage:'fragment',output:'scene-tone'},
   ...['vertex','fragment'].map(stage=>({entry:'tests/browser/shader_interfaces.dl',kind:'shader',stage,output:'interfaces-'+stage}))
 ];
 for(const {entry} of jobs) {
@@ -46,3 +47,4 @@ for(const job of jobs) artifacts[job.output]={
   reflection:JSON.parse(await fs.readFile(path.join(output,job.output+'.json'),'utf8'))
 };
 await fs.writeFile(path.join(output,'graph.json'),JSON.stringify(artifacts));
+await fs.copyFile(path.join(root,'tests/shared/scene_tone/reference.json'),path.join(output,'tone-reference.json'));

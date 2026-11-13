@@ -1,0 +1,24 @@
+import ../../../ui/scene_tone.dl
+import lib/check.dl
+
+to check filmic color {vector:color} at exposure {floating-point number:exposure} equals {vector:expected}:
+    set actual to the UI scene filmic color from color at exposure exposure
+    require condition ((the absolute value of ((the x of actual) - (the x of expected))) < 0.000002) reporting "Filmic red changed."
+    require condition ((the absolute value of ((the y of actual) - (the y of expected))) < 0.000002) reporting "Filmic green changed."
+    require condition ((the absolute value of ((the z of actual) - (the z of expected))) < 0.000002) reporting "Filmic blue changed."
+
+# Existing ACES RRT/ODT reference, in linear space before display encoding.
+check filmic color (a new vector with x 0.0, y 0.0 and z 0.0) at exposure 1.14 equals (a new vector with x 0.0, y 0.0 and z 0.0)
+check filmic color (a new vector with x 0.18, y 0.18 and z 0.18) at exposure 1.14 equals (a new vector with x 0.24995324128290553, y 0.24995324128290575 and z 0.24995074175049273)
+check filmic color (a new vector with x 1.0, y 1.0 and z 1.0) at exposure 1.14 equals (a new vector with x 0.7928553275882616, y 0.7928553275882618 and z 0.7928473990349858)
+check filmic color (a new vector with x 4.0, y 4.0 and z 4.0) at exposure 1.14 equals (a new vector with x 0.9601981651545763, y 0.9601981651545767 and z 0.9601885631729251)
+check filmic color (a new vector with x 65000.0, y 65000.0 and z 65000.0) at exposure 1.14 equals (a new vector with x 1.0, y 1.0 and z 1.0)
+check filmic color (a new vector with x 0.8, y 0.4 and z 0.2) at exposure 1.14 equals (a new vector with x 0.7659030333553184, y 0.5367641678089504 and z 0.3319673175520256)
+check filmic color (a new vector with x 0.1, y 10.0 and z 3.0) at exposure 1.14 equals (a new vector with x 0.9373713651734522, y 0.9958774800547585 and z 0.9555746894938616)
+check filmic color (a new vector with x 4.0, y 0.05 and z 0.0) at exposure 1.14 equals (a new vector with x 1.0, y 0.43291967561197564 and z 0.12233544085919901)
+check filmic color (a new vector with x 0.0, y 0.0 and z 1.0) at exposure 1.14 equals (a new vector with x 0.0006019240305118185, y 0.0 and z 0.8089555778129687)
+check filmic color (a new vector with x -1.0, y 0.2 and z 2.0) at exposure 1.14 equals (a new vector with x 1.0, y 0.0691265724721637 and z 0.9315175079855936)
+check filmic color (a new vector with x 0.8, y 0.4 and z 0.2) at exposure 0.0 equals (a new vector with x 0.0, y 0.0 and z 0.0)
+check filmic color (a new vector with x 0.8, y 0.4 and z 0.2) at exposure 0.5 equals (a new vector with x 0.47933814013001164, y 0.24962794092574725 and z 0.11518913132287023)
+check filmic color (a new vector with x 0.8, y 0.4 and z 0.2) at exposure 2.0 equals (a new vector with x 0.8798960537381437, y 0.7159077863155244 and z 0.5352083180059266)
+print line "Filmic colors preserve the existing ACES fit across HDR, color, exposure and black."

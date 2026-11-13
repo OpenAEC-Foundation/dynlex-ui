@@ -17,6 +17,8 @@ class ApplicationNotices(unittest.TestCase):
             project, compiler = root / 'ui', root / 'compiler'
             (project / 'assets/icons').mkdir(parents=True)
             (project / 'assets/fonts').mkdir()
+            (project / 'assets/licenses').mkdir()
+            (project / 'assets/licenses/custom.txt').write_bytes(b'Asset library notice\n')
             (project / 'LICENSE.md').write_bytes(b'UI notice\n')
             (project / 'assets/icons/LICENSE').write_bytes(b'Icon notice\n')
             (project / 'assets/fonts/LICENSE-Font').write_bytes(b'Font notice\n')
@@ -28,7 +30,7 @@ class ApplicationNotices(unittest.TestCase):
             destination = root / 'application.out.licenses'
             write_notices(project, compiler, destination)
             expected = {'ui.txt': b'UI notice\n', 'icons.txt': b'Icon notice\n',
-                        'LICENSE-Font.txt': b'Font notice\n', 'unicode.txt': b'Unicode notice\n'}
+                        'LICENSE-Font.txt': b'Font notice\n', 'unicode.txt': b'Unicode notice\n', 'custom.txt': b'Asset library notice\n'}
             self.assertEqual({file.name: file.read_bytes() for file in destination.iterdir()}, expected)
             self.assertEqual((root / 'LICENSE.md').read_bytes(), b'Caller-owned notice\n')
 

@@ -1,0 +1,26 @@
+# ACES RRT/ODT fit used by Three.js, translated into the shared vector vocabulary.
+# MIT notice: assets/licenses/threejs.txt. The result remains linear RGB; the
+# render target performs display encoding after this exposure and tone mapping.
+import lib/vector.dl
+
+to get [the UI scene filmic response of] {floating-point number:value}:
+    set numerator to value * (value + 0.0245786) - 0.000090537
+    set denominator to value * (0.983729 * value + 0.4329510) + 0.238081
+    return numerator / denominator
+
+to get [the UI scene filmic color from] {vector:radiance} [at exposure] {floating-point number:exposure}:
+    set scale to exposure / 0.6
+    set red to (the x of radiance) * scale
+    set green to (the y of radiance) * scale
+    set blue to (the z of radiance) * scale
+    set input to a new vector with x ((0.59719 * red + 0.35458 * green) + 0.04823 * blue), y ((0.07600 * red + 0.90834 * green) + 0.01566 * blue) and z ((0.02840 * red + 0.13383 * green) + 0.83777 * blue)
+    set first to the UI scene filmic response of (the x of input)
+    set second to the UI scene filmic response of (the y of input)
+    set third to the UI scene filmic response of (the z of input)
+    set red to (1.60475 * first - 0.53108 * second) - 0.07367 * third
+    set green to ((0.0 - 0.10208 * first) + 1.10813 * second) - 0.00605 * third
+    set blue to ((0.0 - 0.00327 * first) - 0.07276 * second) + 1.07602 * third
+    clamp red between 0.0 and 1.0
+    clamp green between 0.0 and 1.0
+    clamp blue between 0.0 and 1.0
+    return a new vector with x red, y green and z blue

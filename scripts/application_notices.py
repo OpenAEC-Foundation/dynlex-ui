@@ -12,6 +12,8 @@ def write_notices(project, compiler, destination):
                'icons.txt': (project / 'assets/icons/LICENSE').read_bytes()}
     for source in (project / 'assets/fonts').glob('LICENSE*'):
         notices[source.name + '.txt'] = source.read_bytes()
+    for source in (project / 'assets/licenses').glob('*'):
+        notices[source.name] = source.read_bytes()
     notices.update(compiler_notices(compiler))
     destination.mkdir(parents=True, exist_ok=True)
     for name, data in notices.items():

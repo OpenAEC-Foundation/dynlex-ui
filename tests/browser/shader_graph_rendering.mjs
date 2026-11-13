@@ -158,6 +158,25 @@ async function verifyInterfaces(backend,stages) {
     if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Typed interfaces produced a WebGL API error');
   } finally {gpu.releaseSurface(surface);gpu.close();}
 }
+async function verifyToneMapping(backend,stages) {
+  const fragment=stages['scene-tone'],cases=await fetch('/tone-reference.json').then(response=>response.json());
+  const errors=[],gpu=await createGpu(error=>errors.push(error)),canvas=document.createElement('canvas');
+  canvas.width=4;canvas.height=4;
+  const surface=gpu.surface(canvas),context=new OffscreenCanvas(4,4).getContext('2d');
+  const shader=await gpu.shader(surface,shaderProgram([shaderPass({fragment:fragment[backend],draws:[draw(3)],...metadata(fragment)})]));
+  try {
+    const quad=[];
+    for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) quad.push(x*4,y*4,x,y,1,1,1,1);
+    for(const {color,exposure,expected} of cases) {
+      shader.uniformBuffer(0,0,0,0,1,4,new Uint8Array(new Float32Array([...color,exposure]).buffer));
+      const image=shader.render(4,4);
+      gpu.begin(surface,[0,0,0]);gpu.triangles(surface,new Float32Array(quad),image,{x:0,y:0,width:4,height:4});gpu.present(surface,4,4,1);
+      context.drawImage(canvas,0,0);
+      check([...context.getImageData(2,2,1,1).data],expected,backend+' ACES radiance '+color+' exposure '+exposure);
+    }
+    if(errors.length) throw errors[0];
+  } finally {shader.close();gpu.releaseSurface(surface);gpu.close();}
+}
 export async function verifyShaderGraph() {
   const [fixture,stages]=await Promise.all(['resources','graph'].map(name=>fetch(`/${name}.json`).then(response=>response.json())));
   const original=Object.getOwnPropertyDescriptor(Navigator.prototype,'gpu');
@@ -165,11 +184,13 @@ export async function verifyShaderGraph() {
     await verify('webgpu',fixture,stages);
     await verifyOrientation('webgpu',stages);
     await verifyInterfaces('webgpu',stages);
+    await verifyToneMapping('webgpu',stages);
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     Object.defineProperty(Navigator.prototype,'gpu',{configurable:true,get:()=>undefined});
     await verify('webgl',fixture,stages);
     await verifyOrientation('webgl',stages);
     await verifyInterfaces('webgl',stages);
+    await verifyToneMapping('webgl',stages);
     const originalExtension=WebGL2RenderingContext.prototype.getExtension;
     try {
       WebGL2RenderingContext.prototype.getExtension=function(name) {

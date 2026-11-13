@@ -312,3 +312,18 @@ GPU shaders as well as CPU code. `set the x coordinate of value to component`
 (and the equivalent y/z operations) updates a vector on either target without
 changing a copy. Applications still supply their material
 lighting, effects, face culling, depth-write policy and transparency ordering.
+
+`ui/scene_tone.dl` supplies the ACES RRT/ODT fit used by the existing Farm renderer.
+The same vector function works in CPU code and GPU shaders:
+
+```dynlex
+import ui/scene_tone.dl
+
+set radiance to a new vector with x 3.0, y 1.0 and z 0.2
+set color to the UI scene filmic color from radiance at exposure 1.14
+```
+
+The result is linear RGB in the range zero to one. Write it to an sRGB render
+target without applying a second display conversion. The fit retains the exposure
+scale and both color-space matrices, including colored highlights and HDR values.
+Its Three.js MIT notice is included in SDK and application distributions.

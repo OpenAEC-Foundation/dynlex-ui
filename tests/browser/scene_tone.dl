@@ -1,0 +1,7 @@
+import ../../ui/scene_tone.dl
+import lib/shader.dl
+
+set incoming to the shader uniform named "radiance_exposure" at binding 0 as an aggregate of 4 floating-point number values
+set radiance to a new vector with x (the element at 0 in incoming), y (the element at 1 in incoming) and z (the element at 2 in incoming)
+set color to the UI scene filmic color from radiance at exposure (the element at 3 in incoming)
+set the fragment color with a red channel of (the x of color), a green channel of (the y of color), a blue channel of (the z of color) and an alpha channel of 1.0
