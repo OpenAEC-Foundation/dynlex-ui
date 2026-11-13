@@ -1,0 +1,33 @@
+import ../../ui/scene_sampling.dl
+import lib/json_builders.dl
+
+to get [the sampling JSON vector from] {vector:value}:
+    return a JSON array containing [a new JSON number from (the x of value), a new JSON number from (the y of value), a new JSON number from (the z of value)]
+
+set cubes to a new JSON value of kind the JSON array kind
+set lookup to a new JSON value of kind the JSON array kind
+loop face from 0 to 6:
+    loop y from 0 to 4:
+        loop x from 0 to 4:
+            set direction to the UI scene cube direction on face face at ((x + 0.5) / 4.0) ((y + 0.5) / 4.0)
+            set entry to a JSON object containing [
+                JSON child "direction" is (the sampling JSON vector from direction),
+                JSON child "color" is (the sampling JSON vector from (direction * 0.5 + 0.5))
+            ]
+            add entry to the JSON array cubes
+loop y from 0 to 4:
+    loop x from 0 to 4:
+        set roughness to (x + 0.5) / 4.0
+        set cosine to (y + 0.5) / 4.0
+        set coefficients to the UI scene DFG coefficients at roughness roughness view cosine cosine using 128 samples
+        set entry to a JSON object containing [
+            JSON number "roughness" is roughness, JSON number "cosine" is cosine,
+            JSON child "coefficients" is (the sampling JSON vector from coefficients)
+        ]
+        add entry to the JSON array lookup
+set result to a JSON object containing [
+    JSON child "cube" is cubes,
+    JSON child "lookup" is lookup
+]
+print line the compact JSON form of result
+free result

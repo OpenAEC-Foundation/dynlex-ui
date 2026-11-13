@@ -10,5 +10,8 @@ try {
   const result=await evaluate(`import('/__tests__/shader_graph_rendering.mjs').then(module=>module.verifyShaderGraph())`);
   assert.deepEqual(result,['webgpu','webgl']);
   assert.deepEqual(consoleErrors,[]);assert.deepEqual(runtimeExceptions,[]);
-  console.log('Public shader graph pixels pass on WebGPU/WebGL: physical lighting, depth-only shadows, HDR/MSAA resolve, postprocessing, culling, sampler aliases, resize and UI composition.');
+  console.log('Public shader graph pixels pass on WebGPU/WebGL: physical lighting, generated cubes/DFG, idle bake skipping, depth-only shadows, HDR/MSAA resolve, postprocessing, culling, sampler aliases, resize and UI composition.');
+} catch(error) {
+  console.error('Shader graph console errors:',JSON.stringify(consoleErrors));
+  throw error;
 } finally {closeBrowserSession();}

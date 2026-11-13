@@ -1,0 +1,42 @@
+import ../../../ui/scene_sampling.dl
+import lib/check.dl
+import lib/filesystem.dl
+import lib/json.dl
+
+to [check sample vector] {vector:actual} [against] {vector:expected}:
+    require condition ((the length of (actual - expected)) < 0.00001) reporting "A shared environment sample has the wrong direction"
+
+for each index in [0,1,2,3,5,16,65536,2147483648]:
+    set expected to 0.0
+    set weight to 0.5
+    set bits to index
+    loop bit from 0 to 32:
+        if (bits modulo 2) = 1:
+            set expected to expected + weight
+        set bits to bits / 2
+        set weight to weight * 0.5
+    require condition ((the absolute value of ((the UI scene radical inverse of index) - expected)) < 0.00000001) reporting "The Hammersley sequence must reverse unsigned 32-bit indices"
+set axes to [(a new vector with x 1.0, y 0.0 and z 0.0), (a new vector with x -1.0, y 0.0 and z 0.0), (a new vector with x 0.0, y 1.0 and z 0.0), (a new vector with x 0.0, y -1.0 and z 0.0), (a new vector with x 0.0, y 0.0 and z 1.0), (a new vector with x 0.0, y 0.0 and z -1.0)]
+loop face from 0 to 6:
+    check sample vector (the UI scene cube direction on face face at 0.5 0.5) against (the item at face in axes)
+check sample vector (the UI scene cube direction on face 0 at 0.25 0.75) against ((a new vector with x 1.0, y -0.5 and z 0.5) normalized)
+check sample vector (the UI scene cube direction on face 2 at 0.25 0.75) against ((a new vector with x -0.5, y 1.0 and z 0.5) normalized)
+check sample vector (the UI scene cube direction on face 5 at 0.25 0.75) against ((a new vector with x 0.5, y -0.5 and z -1.0) normalized)
+for each normal in axes:
+    set local to (a new vector with x 0.3, y 0.4 and z 0.5) normalized
+    set world to the UI scene tangent vector local around normal
+    require condition ((the absolute value of ((the length of world) - 1.0)) < 0.00001) reporting "An environment tangent basis must be orthonormal"
+    require condition ((the absolute value of ((the dot product of world and normal) - (the z of local))) < 0.00001) reporting "A tangent sample must preserve its normal cosine"
+for each cosine in [0.1,0.5,1.0]:
+    set coefficients to the UI scene DFG coefficients at roughness 0.0 view cosine cosine using 128 samples
+    set fresnel to (1.0 - cosine) raised to the power of 5.0
+    check sample vector coefficients against (a new vector with x (1.0 - fresnel), y fresnel and z 0.0)
+read the file at "tests/shared/scene_sampling/integration.json" and set input to it
+require condition (input succeeded) reporting "Environment integration parameters are missing"
+parse (input's contents) as JSON and set document to it
+require condition (document succeeded) reporting "Environment integration parameters are invalid"
+set count to (the JSON number named "samples" in (document's value)) as an integer
+set coefficients to the UI scene DFG coefficients at roughness 1.0 view cosine 1.0 using count samples
+require condition ((the absolute value of (((the x of coefficients) + (the y of coefficients)) - 0.3068528194400547)) < 0.0003) reporting "Rough GGX at normal incidence must integrate to one minus ln(2)"
+free document's value
+print line "Environment sampling preserves unsigned Hammersley bits, cube orientation, tangent frames, mirror Fresnel and the analytic rough GGX integral."

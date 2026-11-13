@@ -4,6 +4,7 @@ import {verifyRendering,verifyShaderBuffers,verifyShaderUniforms,verifyCompiledS
 import {verifySceneBuffers} from './scene_rendering.mjs';
 import {verifyPipelineDraws} from './pipeline_rendering.mjs';
 import {verifyLighting} from './lighting_rendering.mjs';
+import {verifyEnvironmentSampling} from './sampling_rendering.mjs';
 
 const draw=count=>({count,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0});
 const layout={arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]};
@@ -188,6 +189,7 @@ export async function verifyShaderGraph() {
     await verifyInterfaces('webgpu',stages);
     await verifyToneMapping('webgpu',stages);
     await verifyLighting('webgpu',stages);
+    await verifyEnvironmentSampling('webgpu',stages);
     await verifyPipelineDraws('webgpu',stages);
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     Object.defineProperty(Navigator.prototype,'gpu',{configurable:true,get:()=>undefined});
@@ -196,6 +198,7 @@ export async function verifyShaderGraph() {
     await verifyInterfaces('webgl',stages);
     await verifyToneMapping('webgl',stages);
     await verifyLighting('webgl',stages);
+    await verifyEnvironmentSampling('webgl',stages);
     await verifyPipelineDraws('webgl',stages);
     const originalExtension=WebGL2RenderingContext.prototype.getExtension;
     try {

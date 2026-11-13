@@ -5,6 +5,7 @@ import {createShaderAssets} from './shader-assets.js';
 import {webGlShaderAssetDriver} from './shader-assets-webgl.js';
 import {createWebGlShaderTargets} from './shader-targets-webgl.js';
 import {createWebGlPrimitiveDraws} from './shader-provoking-webgl.js';
+import {shaderPassHasWork} from './shader-passes.js';
 
 const fullscreen = `#version 300 es
 precision highp float;
@@ -132,6 +133,7 @@ export function createWebGlShader(gl,descriptor,target) {
       const record=assets.image(descriptor.output);
       if(output===null||output.texture!==record.storage) output=target(record);
       for(const [index,pass] of passes.entries()) {
+        if(!shaderPassHasWork(pass.description,plans[index])) continue;
         pass.targets.begin();gl.useProgram(pass.program);gl.bindVertexArray(pass.array);
         for(const binding of pass.uniforms.bindings) gl.bindBufferBase(gl.UNIFORM_BUFFER,pass.slots.get(binding.buffer),binding.buffer);
         for(const [unit,binding] of pass.textures.entries()) {

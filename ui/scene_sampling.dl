@@ -1,0 +1,63 @@
+# Split-sum environment integration. See docs/scenes.md for the derivation.
+import scene_lighting.dl
+
+to get [the UI scene radical inverse of] {integer:index}:
+    set bits to index as a 32 bit unsigned integer
+    set bits to (bits << 16) | (bits >> 16)
+    set bits to ((bits & (1431655765 as a 32 bit unsigned integer)) << 1) | ((bits & (2863311530 as a 32 bit unsigned integer)) >> 1)
+    set bits to ((bits & (858993459 as a 32 bit unsigned integer)) << 2) | ((bits & (3435973836 as a 32 bit unsigned integer)) >> 2)
+    set bits to ((bits & (252645135 as a 32 bit unsigned integer)) << 4) | ((bits & (4042322160 as a 32 bit unsigned integer)) >> 4)
+    set bits to ((bits & (16711935 as a 32 bit unsigned integer)) << 8) | ((bits & (4278255360 as a 32 bit unsigned integer)) >> 8)
+    return (bits as a 32 bit floating-point number) * (0.00000000023283064365386963 as a 32 bit floating-point number)
+
+to get [the UI scene GGX half vector at] {floating-point number:first} {floating-point number:second} [with roughness] {floating-point number:roughness}:
+    set alpha to roughness * roughness
+    set angle to 6.283185307179586 * first
+    set cosine to the square root of ((1.0 - second) / (1.0 + (alpha * alpha - 1.0) * second))
+    set sine to the square root of (the maximum of 0.0 and (1.0 - cosine * cosine))
+    return a new vector with x (sine * (the cosine of angle)), y (sine * (the sine of angle)) and z cosine
+
+to get [the UI scene tangent vector] {vector:local} [around] {vector:normal}:
+    set up to a new vector with x 0.0, y 0.0 and z 1.0
+    if (the absolute value of (the z of normal)) >= 0.999:
+        set up to a new vector with x 1.0, y 0.0 and z 0.0
+    set tangent to (the cross product of up and normal) normalized
+    set bitangent to the cross product of normal and tangent
+    return (tangent * (the x of local) + bitangent * (the y of local)) + normal * (the z of local)
+
+to get [the UI scene cube direction on face] {integer:face} [at] {floating-point number:horizontal} {floating-point number:vertical}:
+    set x to 2.0 * horizontal - 1.0
+    set y to 2.0 * vertical - 1.0
+    set direction to a new vector with x (0.0 - x), y (0.0 - y) and z -1.0
+    if face = 0:
+        set direction to a new vector with x 1.0, y (0.0 - y) and z (0.0 - x)
+    if face = 1:
+        set direction to a new vector with x -1.0, y (0.0 - y) and z x
+    if face = 2:
+        set direction to a new vector with x x, y 1.0 and z y
+    if face = 3:
+        set direction to a new vector with x x, y -1.0 and z (0.0 - y)
+    if face = 4:
+        set direction to a new vector with x x, y (0.0 - y) and z 1.0
+    return direction normalized
+
+to get [the UI scene DFG coefficients at roughness] {floating-point number:roughness} [view cosine] {floating-point number:cosine} [using] {integer:count} [samples]:
+    set view to a new vector with x (the square root of (the maximum of 0.0 and (1.0 - cosine * cosine))), y 0.0 and z cosine
+    set first to 0.0
+    set second to 0.0
+    set alpha to roughness * roughness
+    loop index from 0 to count:
+        set u to (index as a 32 bit floating-point number) / (count as a 32 bit floating-point number)
+        set v to the UI scene radical inverse of index
+        set half to the UI scene GGX half vector at u v with roughness roughness
+        set light to half * (2.0 * (the dot product of view and half)) - view
+        set nl to (the z of light) clamped between 0.0 and 1.0
+        if nl > 0.0:
+            set nh to (the z of half) clamped between 0.0 and 1.0
+            set vh to (the dot product of view and half) clamped between 0.0 and 1.0
+            set visibility to the UI scene GGX visibility at alpha alpha light cosine nl view cosine cosine
+            set weight to (4.0 * nl * visibility * vh) / nh
+            set fresnel to (1.0 - vh) raised to the power of 5.0
+            set first to first + (1.0 - fresnel) * weight
+            set second to second + fresnel * weight
+    return a new vector with x (first / count), y (second / count) and z 0.0

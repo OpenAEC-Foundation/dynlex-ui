@@ -430,3 +430,32 @@ irradiance and prefiltered radiance; sampling and scene-specific effects remain
 with the material shader. Tests compare both CPU and GPU results against recorded
 float pixels from the original Three.js functions, rather than regenerating
 expected values from the DynLex implementation.
+
+`ui/scene_sampling.dl` supplies the matching environment integration. Its radical
+inverse reverses unsigned 32-bit indices for Hammersley samples. GGX half vectors
+use perceptual roughness squared, and tangent frames rotate them around a unit
+normal. Cube directions take face indices 0 through 5 in +X, -X, +Y, -Y, +Z, -Z
+order and texture coordinates from zero to one, with the same orientation on both
+browser backends.
+
+`the UI scene DFG coefficients at roughness roughness view cosine cosine using
+count samples` returns A and B in x and y. Supply a positive sample count,
+roughness from zero to one and a view cosine greater than zero through one.
+`ui/shaders/environment_dfg.dl` bakes those coefficients into a render target,
+using a float32x4 uniform at binding 0: width, height, sample count and reserved
+zero. Texture x selects roughness; texture y selects the normal/view cosine.
+Use an HDR target to retain coefficient precision.
+
+The split-sum integration follows the derivation in
+[Karis's shading notes](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)
+with the correlated Smith visibility described in
+[Filament](https://google.github.io/filament/main/filament.html#annex/importancesamplingfortheibl).
+The analytic roughness-one, normal-incidence integral is `1 - ln(2)`; shared
+tests verify it with 8,192 runtime samples as well as ideal-mirror Fresnel.
+
+Static bake passes can use `load` and `store` attachments and a fullscreen draw
+covering every texel. After the bake, submit an empty draw list. Both browser
+backends omit that pass's GPU work while retaining its image. Clear, resolve and
+discard attachment operations still execute with empty draws. A frame-size image
+loses its contents when resized and must be baked again; fixed-size images retain
+their storage. The application controls rebaking through the ordinary draw API.

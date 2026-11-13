@@ -4,6 +4,7 @@ import {createShaderUniforms} from './shader-uniforms.js';
 import {createShaderAssets} from './shader-assets.js';
 import {webGpuShaderAssetDriver} from './shader-assets-webgpu.js';
 import {createWebGpuShaderTargets} from './shader-targets-webgpu.js';
+import {shaderPassHasWork} from './shader-passes.js';
 const fullscreen=`@vertex fn main(@builtin(vertex_index) index:u32)->@builtin(position) vec4f {
   let points=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));return vec4f(points[index],0,1);
 }`;
@@ -104,6 +105,7 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
       if(output===null||output.texture!==record.storage) output=target(record);
       const encoder=device.createCommandEncoder();
       for(const [index,pass] of passes.entries()) {
+        if(!shaderPassHasWork(pass.description,plans[index])) continue;
         bindGroups(pass);
         const render=encoder.beginRenderPass(pass.targets.description());
         for(const [index,group] of pass.groups.entries()) render.setBindGroup(index,group);

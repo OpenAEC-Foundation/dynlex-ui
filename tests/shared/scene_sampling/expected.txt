@@ -1,0 +1,1 @@
+Environment sampling preserves unsigned Hammersley bits, cube orientation, tangent frames, mirror Fresnel and the analytic rough GGX integral.
