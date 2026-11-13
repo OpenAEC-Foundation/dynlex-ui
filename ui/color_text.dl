@@ -1,0 +1,29 @@
+# Text color data uses the same RGB paint as drawing and scene materials.
+import colors.dl
+import lib/text.dl
+
+local function [the UI hexadecimal digit from] {integer:code}:
+    execute:
+        if 48 <= code <= 57:
+            return code - 48
+        if 65 <= code <= 70:
+            return code - 55
+        if 97 <= code <= 102:
+            return code - 87
+        require condition false reporting "Hexadecimal UI colors require digits zero through F"
+        return 0
+
+to get [UI ink from hexadecimal] {a value:text}:
+    set source to the string form of text
+    set count to the length of source
+    require condition ((count = 4) or (count = 7)) reporting "Hexadecimal UI colors require #RGB or #RRGGBB"
+    require condition ((the character at 0 in source) = 35) reporting "Hexadecimal UI colors must begin with #"
+    set channels to [0,0,0]
+    loop channel from 0 to 3:
+        set index to 1 + channel * (2 if count = 7, else 1)
+        set first to the UI hexadecimal digit from ((the character at index in source) as an integer)
+        set value to first * 17
+        if count = 7:
+            set value to first * 16 + (the UI hexadecimal digit from ((the character at (index + 1) in source) as an integer))
+        store value into channels at channel
+    return UI ink (the item at 0 in channels) (the item at 1 in channels) (the item at 2 in channels)

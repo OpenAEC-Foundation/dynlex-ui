@@ -1,0 +1,17 @@
+import ../../../ui/color_text.dl
+
+to [check UI color] {a value:text} [equals] {UI paint:expected}:
+    set actual to UI ink from hexadecimal text
+    require condition ((actual's red = expected's red) and ((actual's green = expected's green) and (actual's blue = expected's blue))) reporting "A hexadecimal UI color decoded incorrectly"
+
+check UI color "#cd6350" equals (UI ink 205 99 80)
+check UI color "#AbC" equals (UI ink 170 187 204)
+check UI color "#012345" equals (UI ink 1 35 69)
+check UI color "#6789ab" equals (UI ink 103 137 171)
+check UI color "#CDEF01" equals (UI ink 205 239 1)
+check UI color "#000" equals (UI ink 0 0 0)
+check UI color "#fff" equals (UI ink 255 255 255)
+set text to the string form of "#F09A07"
+check UI color text equals (UI ink 240 154 7)
+require condition (text = "#F09A07") reporting "Color decoding must preserve its caller's text"
+print line "Hexadecimal UI colors decode short and full RGB, both letter cases and dynamic text."

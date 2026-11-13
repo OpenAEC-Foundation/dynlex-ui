@@ -348,6 +348,18 @@ conversion with ordinary UI painting. `linear UI ink from color` decodes an
 eight-bit sRGB paint once. `linear UI ink red r green g blue b` accepts finite
 float32 linear components directly.
 
+`ui/color_text.dl` reads RGB palette data with `UI ink from hexadecimal text`.
+It accepts `#RGB` and `#RRGGBB`, with either letter case, returning the same
+eight-bit `UI paint` used by ordinary drawing and scene materials. Missing
+prefixes, invalid lengths and non-hexadecimal digits fail explicitly.
+
+```dynlex
+import ui/color_text.dl
+
+set accent to UI ink from hexadecimal "#cd6350"
+set pale to UI ink from hexadecimal "#AbC"
+```
+
 `ui/scene_normals.dl` supplies `recalculate UI mesh normals in vertices using
 indices` for mutable vertex/index builders. It accumulates area-weighted face
 normals in float32 storage, then normalizes each vertex. Unused vertices and

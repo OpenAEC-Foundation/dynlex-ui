@@ -1,0 +1,1 @@
+Hexadecimal UI colors decode short and full RGB, both letter cases and dynamic text.

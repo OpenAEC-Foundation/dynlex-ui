@@ -72,6 +72,8 @@ def main():
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_transform_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_model_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/color_text.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/shared_frontends.mjs', str(args.dynlex.resolve()), 'color_text'], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_baking_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_rotation_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
