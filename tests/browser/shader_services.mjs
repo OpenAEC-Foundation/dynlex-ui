@@ -29,7 +29,7 @@ try {
   const source=value=>({webgpu:{kind:'source',value},webgl:{kind:'source',value}});
   const description={operation:'shader',assets:[{kind:'texture',name:'paint'}],output:'output',passes:[{vertex:source('vertex'),fragment:source('fragment'),
     vertexBuffers:[{arrayStride:8,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x2'}],source:'vertices.bin'}],
-    indices:'indices.bin',draws:[],uniforms:[],resources:[],glslBindings:[],glslUniforms:[],state:{},color:{},depth:null,topology:'triangle-list'}]};
+    indices:'indices.bin',draws:[],uniforms:[],resources:[],glslBindings:[],glslUniforms:[],pipelines:[{}],color:{},depth:null,topology:'triangle-list'}]};
   const response=await service.request(description,{signal:new AbortController().signal},surface);
   assert.equal(response.passes,1);
   assert.deepEqual(calls[0][1].assets,description.assets);assert.equal(calls[0][1].output,'output');
@@ -47,9 +47,9 @@ try {
   imports.ui_shader_index_buffer(17,handle,0,32,3);
   assert.deepEqual(calls.at(-1),['index',0,[0,2,1]]);
   assert.equal(imports.ui_shader_index_count(17,handle,0),3);
-  new Uint32Array(memory.buffer,48,6).set([3,2,1,4,5,1]);
+  new Uint32Array(memory.buffer,48,7).set([3,2,1,4,5,1,2]);
   imports.ui_shader_draws(17,handle,0,48,1);
-  assert.deepEqual(calls.at(-1),['draws',0,[3,2,1,4,5,1]]);
+  assert.deepEqual(calls.at(-1),['draws',0,[3,2,1,4,5,1,2]]);
   new Uint8Array(memory.buffer,96,16).set([1,2,3,4]);
   imports.ui_shader_uniform(17,handle,0,2,3,0,1,4,96,16);
   assert.deepEqual(calls.at(-1),['uniform',0,2,3,0,1,4,[1,2,3,4,0,0,0,0,0,0,0,0,0,0,0,0]]);

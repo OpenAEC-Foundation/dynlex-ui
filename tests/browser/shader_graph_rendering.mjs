@@ -2,8 +2,9 @@ import {createGpu} from '/platform/gpu.js';
 import {shaderProgram,shaderPass,shaderState,shaderImage,shaderView,shaderColor,shaderDepth} from './shader_fixtures.mjs';
 import {verifyRendering,verifyShaderBuffers,verifyShaderUniforms,verifyCompiledShaderUniforms} from './rendering.mjs';
 import {verifySceneBuffers} from './scene_rendering.mjs';
+import {verifyPipelineDraws} from './pipeline_rendering.mjs';
 
-const draw=count=>({count,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false});
+const draw=count=>({count,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0});
 const layout={arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]};
 const encode=value=>Math.round(255*(value<=0.0031308?value*12.92:1.055*Math.pow(value,1/2.4)-0.055));
 function check(actual,linear,label) {
@@ -25,10 +26,10 @@ async function verify(backend,fixture,stages) {
   const surface=gpu.surface(canvas),context=new OffscreenCanvas(32,32).getContext('2d');
   const descriptor=shaderProgram([
     shaderPass({vertex:vertex[backend],fragment:null,vertexBuffers:[layout],draws:[draw(6)],
-      ...metadata(vertex),color:null,depth:shaderDepth('shadow','clear',0.25),state:shaderState(true,'always')}),
+      ...metadata(vertex),color:null,depth:shaderDepth('shadow','clear',0.25),pipelines:[shaderState(true,'always')]}),
     shaderPass({vertex:vertex[backend],fragment:fixture[backend],vertexBuffers:[layout],draws:[draw(3)],
       ...metadata(vertex,fixture),color:shaderColor('msaa','clear',[0,0,0,1],shaderView('scene'),'discard'),
-      depth:shaderDepth('depth','clear',1,'discard'),state:shaderState(true,'less',null,'back','ccw')}),
+      depth:shaderDepth('depth','clear',1,'discard'),pipelines:[shaderState(true,'less',null,'back','ccw')]}),
     shaderPass({fragment:post[backend],draws:[draw(3)],...metadata(post)})
   ],[...fixture.assets,shaderImage('msaa','rgba16float',4),shaderImage('depth','depth24plus',4)]);
   const shader=await gpu.shader(surface,descriptor);
@@ -68,7 +69,7 @@ async function verify(backend,fixture,stages) {
     values.mode=[0];values.uv=[0.25,0.25];check(frame(24),[1,1,0],backend+' resized graph');
     check(frame(8),[1,1,0],backend+' fixed assets after resize');
     // Exercise the opposite cull mode with the same translated vertex winding.
-    descriptor.passes[1].state.cullMode='front';
+    descriptor.passes[1].pipelines[0].cullMode='front';
     const culled=await gpu.shader(surface,descriptor);
     try {
       culled.vertexBuffer(0,0,new Float32Array());culled.draws(0,new Uint32Array());
@@ -95,7 +96,7 @@ async function verifyOrientation(backend,stages) {
   const program=shaderProgram([
     shaderPass({fragment:pattern[backend],draws:[],...metadata(pattern),color:shaderColor('scene','clear',[0.25,0.5,0.75,1])}),
     shaderPass({fragment:pattern[backend],draws:[draw(3)],...metadata(pattern),color:shaderColor('scene','load'),
-      depth:shaderDepth(),state:shaderState(false,'less',blend)}),
+      depth:shaderDepth(),pipelines:[shaderState(false,'less',blend)]}),
     shaderPass({fragment:post[backend],draws:[draw(3)],...metadata(post)})
   ],[shaderImage('scene','rgba16float'),shaderImage('depth','depth24plus'),{kind:'sampler',name:'pixel',minFilter:'nearest',magFilter:'nearest',mipmapFilter:'nearest',
     addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge',addressModeW:'clamp-to-edge',compare:'none',lodMinClamp:0,lodMaxClamp:32,maxAnisotropy:1}]);
@@ -129,7 +130,7 @@ async function verifyInterfaces(backend,stages) {
     for(const winding of ['ccw','cw']) for(const indexed of [false,true]) {
       const state={...shaderState(),frontFace:winding};
       const program=shaderProgram([shaderPass({vertex:vertex[backend],fragment:fragment[backend],
-        vertexBuffers:buffers,draws:[{...draw(3),indexed,first:indexed?1:0}],state,...metadata(vertex,fragment)})]);
+        vertexBuffers:buffers,draws:[{...draw(3),indexed,first:indexed?1:0}],pipelines:[state],...metadata(vertex,fragment)})]);
       const shader=await gpu.shader(surface,program);
       try {
         shader.vertexBuffer(0,0,new Float32Array(positions.flat()));
@@ -185,18 +186,21 @@ export async function verifyShaderGraph() {
     await verifyOrientation('webgpu',stages);
     await verifyInterfaces('webgpu',stages);
     await verifyToneMapping('webgpu',stages);
+    await verifyPipelineDraws('webgpu',stages);
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     Object.defineProperty(Navigator.prototype,'gpu',{configurable:true,get:()=>undefined});
     await verify('webgl',fixture,stages);
     await verifyOrientation('webgl',stages);
     await verifyInterfaces('webgl',stages);
     await verifyToneMapping('webgl',stages);
+    await verifyPipelineDraws('webgl',stages);
     const originalExtension=WebGL2RenderingContext.prototype.getExtension;
     try {
       WebGL2RenderingContext.prototype.getExtension=function(name) {
         return name==='WEBGL_provoking_vertex'?null:originalExtension.call(this,name);
       };
       await verifyInterfaces('webgl',stages);
+      await verifyPipelineDraws('webgl',stages);
     } finally {WebGL2RenderingContext.prototype.getExtension=originalExtension;}
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     return ['webgpu','webgl'];

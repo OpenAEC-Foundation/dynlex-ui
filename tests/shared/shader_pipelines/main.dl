@@ -1,0 +1,11 @@
+import ../../../ui/shader_graph.dl
+
+set draw to a UI shader draw counting 12 instanced 3 starting at 4 with vertex offset 5 and instance offset 6 indexed true using pipeline 7
+require condition ((the size of UI shader draw) = 28) reporting "Draw ABI must use seven uint32 words on every target."
+require condition ((draw's pipeline = 7) and ((draw's indexed = 1) and ((draw's count = 12) and (draw's instance offset = 6)))) reporting "A draw lost its pipeline or ranges."
+set json to the JSON form of UI shader draw draw
+require condition ((the JSON number named "pipeline" in json) = 7.0) reporting "A serialized draw lost its pipeline."
+free json
+set draw to a UI shader draw counting 0 instanced 1 starting at 0 with vertex offset 0 and instance offset 0 indexed false
+require condition ((draw's pipeline = 0) and (draw's indexed = 0)) reporting "A single-pipeline draw must select pipeline zero."
+print line "Shader draws preserve seven-word pipeline selection and portable ranges."

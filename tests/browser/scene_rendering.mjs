@@ -12,7 +12,7 @@ export async function verifySceneBuffers() {
   const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:stages.vertex[gpu.backend],fragment:stages.fragment[gpu.backend],
     vertexBuffers:data.layouts,draws:[],uniforms:stages.vertex.reflection.uniforms,
     glslUniforms:[...stages.vertex.reflection.glslUniforms,...stages.fragment.reflection.glslUniforms],
-    state:shaderState(true,'less'),depth:shaderDepth()})],[shaderImage('depth','depth24plus')]));
+    pipelines:[shaderState(true,'less')],depth:shaderDepth()})],[shaderImage('depth','depth24plus')]));
   const quad=[];
   for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) quad.push(x*96,y*96,x,y,1,1,1,1);
   const context=new OffscreenCanvas(96,96).getContext('2d');

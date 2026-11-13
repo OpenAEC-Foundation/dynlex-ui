@@ -12,7 +12,7 @@ to get [a test shader graph]:
     set pass to a JSON object containing [
         JSON text "vertex" is "vertex", JSON text "fragment" is "fragment",
         JSON child "uniforms" is (a new JSON-RPC array), JSON child "resources" is (a new JSON-RPC array),
-        JSON child "state" is (a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less" blending "opaque"),
+        JSON child "pipelines" is (a JSON array containing [a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less" blending "opaque"]), JSON child "draws" is (a new JSON-RPC array),
         JSON child "color" is (a UI shader color attachment using (a UI shader image view of "msaa" at level 0 layer 0) resolving into (a UI shader image view of "scene" at level 0 layer 0) loading "clear" storing "discard" cleared to [0.0,0.0,0.0,1.0]),
         JSON child "depth" is (a UI shader depth attachment using (a UI shader image view of "depth" at level 0 layer 0) loading "clear" storing "discard" cleared to 1.0)
     ]
@@ -20,7 +20,7 @@ to get [a test shader graph]:
         JSON child "vertex" is (a new JSON-RPC null), JSON text "fragment" is "postprocess",
         JSON child "uniforms" is (a new JSON-RPC array),
         JSON child "resources" is (a JSON array containing [a JSON object containing [JSON text "name" is "scene", JSON text "kind" is "texture", JSON number "group" is 0, JSON number "binding" is 1, JSON text "dimension" is "2d", JSON text "sampleType" is "float"]]),
-        JSON child "state" is (a UI shader raster state culling "none" facing "ccw" writing depth false comparing "always" blending "opaque"),
+        JSON child "pipelines" is (a JSON array containing [a UI shader raster state culling "none" facing "ccw" writing depth false comparing "always" blending "opaque"]), JSON child "draws" is (a new JSON-RPC array),
         JSON child "color" is (a UI shader color attachment using (a UI shader image view of "output" at level 0 layer 0) resolving into (a new JSON-RPC null) loading "clear" storing "store" cleared to [0.0,0.0,0.0,1.0]),
         JSON child "depth" is (a new JSON-RPC null)
     ]
@@ -33,6 +33,20 @@ to [expect shader graph] {a pointer to JSON value:graph} [reports] {C string:mes
 
 set graph to a test shader graph
 expect shader graph graph reports ""
+set graph to a test shader graph
+set pass to the JSON value at index 0 in (the JSON member named "passes" in graph)
+set JSON member (JSON child "pipelines" is (a new JSON-RPC array)) in pass
+expect shader graph graph reports "A shader pass requires at least one pipeline"
+set graph to a test shader graph
+set pass to the JSON value at index 0 in (the JSON member named "passes" in graph)
+set draw to a UI shader draw counting 0 instanced 1 starting at 0 with vertex offset 0 and instance offset 0 indexed false using pipeline 1
+add (the JSON form of UI shader draw draw) to the JSON array (the JSON member named "draws" in pass)
+expect shader graph graph reports "A shader draw selects an unknown pipeline"
+set graph to a test shader graph
+set pass to the JSON value at index 0 in (the JSON member named "passes" in graph)
+add (a new JSON-RPC object) to the JSON array (the JSON member named "draws" in pass)
+expect shader graph graph reports "A shader draw requires a pipeline index"
+
 set graph to a test shader graph
 set assets to the JSON member named "assets" in graph
 add (a UI shader pixel sampler named "paint") to the JSON array assets

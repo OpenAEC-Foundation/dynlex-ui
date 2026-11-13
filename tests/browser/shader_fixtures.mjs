@@ -6,7 +6,7 @@ export const shaderImage=(name,format='rgba8unorm-srgb',samples=1,size={kind:'fr
 export const shaderState=(depthWrite=false,depthCompare='always',blend=null,cullMode='none',frontFace='ccw')=>({depthWrite,depthCompare,blend,cullMode,frontFace});
 export const additiveBlend={color:{srcFactor:'one',dstFactor:'one',operation:'add'},alpha:{srcFactor:'one',dstFactor:'one',operation:'add'}};
 export function shaderPass({vertex=null,fragment=null,vertexBuffers=[],indices=null,draws=[],uniforms=[],resources=[],glslBindings=[],glslUniforms=[],
-  state=shaderState(),color=shaderColor(),depth=null,topology='triangle-list'}) {
-  return {vertex,fragment,vertexBuffers,indices,draws,uniforms,resources,glslBindings,glslUniforms,state,color,depth,topology};
+  pipelines=[shaderState()],color=shaderColor(),depth=null,topology='triangle-list'}) {
+  return {vertex,fragment,vertexBuffers,indices,draws,uniforms,resources,glslBindings,glslUniforms,pipelines,color,depth,topology};
 }
 export const shaderProgram=(passes,assets=[])=>({operation:'shader',output:'output',assets:[shaderImage('output'),...assets],passes});

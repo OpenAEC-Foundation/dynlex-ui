@@ -44,27 +44,33 @@ assert.throws(() => shaderVertexLayouts([{ arrayStride:12, stepMode:'vertex',
   attributes:[{ shaderLocation:0, offset:8, format:'float32x2' }] }]), /stride/);
 assert.throws(() => shaderVertexLayouts([{ arrayStride:16, stepMode:'vertex',
   attributes:[{ shaderLocation:0, offset:0, format:'float32x2' },{ shaderLocation:0, offset:8, format:'float32x2' }] }]), /location/);
-const draw = (changes={}) => ({ count:3, instances:2, first:1, vertexOffset:1, instanceOffset:1, indexed:true, ...changes });
+const draw = (changes={}) => ({ count:3, instances:2, first:1, vertexOffset:1, instanceOffset:1, indexed:true, pipeline:0, ...changes });
 const words = packShaderDraws([draw()]);
-assert.deepEqual([...words], [3,2,1,1,1,1]);
+assert.deepEqual([...words], [3,2,1,1,1,1,0]);
 const indices = new Uint32Array([99,0,1,2,99]);
-const plan = validateShaderDraws(layouts, [64,72], indices, words);
+const plan = validateShaderDraws(3,layouts, [64,72], indices, words);
 assert.equal(plan.length,1);
 assert.deepEqual(plan[0].offsets,[16,24], 'Offsets select buffer records; builtin IDs remain local to the draw on every backend');
 assert.equal(plan[0].first,1);
 assert.equal(plan[0].indexed,true);
-assert.throws(() => validateShaderDraws(layouts,[48,72],indices,words), /vertex/);
-assert.throws(() => validateShaderDraws(layouts,[64,48],indices,words), /instance/);
-assert.throws(() => validateShaderDraws(layouts,[64,72],indices,packShaderDraws([draw({first:4})])), /index/);
-assert.throws(() => validateShaderDraws(layouts,[64,72],indices,new Uint32Array([1,1])), /six/);
+assert.equal(plan[0].pipeline,0);
+const selected=validateShaderDraws(3,layouts,[64,72],indices,packShaderDraws([draw({pipeline:2})]));
+assert.equal(selected[0].pipeline,2);
+assert.throws(()=>validateShaderDraws(3,layouts,[64,72],indices,packShaderDraws([draw({pipeline:3})])),/pipeline/);
+assert.throws(()=>validateShaderDraws(3,layouts,[0,0],new Uint32Array(),packShaderDraws([draw({pipeline:3,count:0})])),/pipeline/);
+assert.throws(()=>packShaderDraws([draw({pipeline:-1})]),/pipeline/);
+assert.throws(() => validateShaderDraws(3,layouts,[48,72],indices,words), /vertex/);
+assert.throws(() => validateShaderDraws(3,layouts,[64,48],indices,words), /instance/);
+assert.throws(() => validateShaderDraws(3,layouts,[64,72],indices,packShaderDraws([draw({first:4})])), /index/);
+assert.throws(() => validateShaderDraws(3,layouts,[64,72],indices,new Uint32Array([1,1])), /seven/);
 assert.throws(() => packShaderDraws([draw({ instances:-1 })]), /instances/);
-assert.equal(validateShaderDraws(layouts,[0,0],new Uint32Array(),packShaderDraws([draw({count:0})])).length,0);
-const nonindexed = validateShaderDraws(layouts,[80,72],null,packShaderDraws([draw({indexed:false,count:2,first:2})]));
+assert.equal(validateShaderDraws(3,layouts,[0,0],new Uint32Array(),packShaderDraws([draw({count:0})])).length,0);
+const nonindexed = validateShaderDraws(3,layouts,[80,72],null,packShaderDraws([draw({indexed:false,pipeline:0,count:2,first:2})]));
 assert.deepEqual(nonindexed[0].offsets,[16,24]);
 const geometry=createShaderGeometry({ vertexBuffers:[
   { arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}] },
   { arrayStride:24,stepMode:'instance',attributes:[{shaderLocation:1,offset:0,format:'float32x4'}] }
-],draws:[] },transfer);
+],draws:[],pipelines:[{}, {}, {}] },transfer);
 assert.deepEqual(geometry.commands,[]);
 geometry.vertexBuffer(0,new Float32Array(16));
 geometry.vertexBuffer(1,new Float32Array(18));

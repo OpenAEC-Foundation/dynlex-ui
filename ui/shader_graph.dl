@@ -78,8 +78,12 @@ to get [the error in UI shader attachments for] {a pointer to JSON value:pass} [
             if ((UI shader view view matches the extent of other among assets) = false) or ((the JSON number named "samples" in source) != (the JSON number named "samples" in target)):
                 return "Shader color and depth attachments require matching extents and sample counts"
     else:
-        if the JSON boolean named "depthWrite" in (the JSON member named "state" in pass):
-            return "Writing shader depth requires a depth attachment"
+        set pipelines to the JSON member named "pipelines" in pass
+        set index to 0
+        loop while index < pipelines's length:
+            if the JSON boolean named "depthWrite" in (the JSON value at index index in pipelines):
+                return "Writing shader depth requires a depth attachment"
+            increment index
     return ""
 
 to get [UI shader pass] {a pointer to JSON value:pass} [writes image] {a value:name}:
@@ -128,6 +132,31 @@ to get [the error in UI shader resources for] {a pointer to JSON value:pass} [am
         increment index
     return ""
 
+to get [the error in UI shader pipelines for] {a pointer to JSON value:pass}:
+    if (pass has JSON member named "pipelines") = false:
+        return "A shader pass requires at least one pipeline"
+    set pipelines to the JSON member named "pipelines" in pass
+    if ((pipelines is a JSON array) = false) or (pipelines's length = 0):
+        return "A shader pass requires at least one pipeline"
+    if (pass has JSON member named "draws") = false:
+        return "A shader pass requires a draw array"
+    set draws to the JSON member named "draws" in pass
+    if (draws is a JSON array) = false:
+        return "A shader pass requires a draw array"
+    set index to 0
+    loop while index < draws's length:
+        set draw to the JSON value at index index in draws
+        if (draw has JSON member named "pipeline") = false:
+            return "A shader draw requires a pipeline index"
+        set selected to the JSON member named "pipeline" in draw
+        if (the kind of selected) != the JSON number kind:
+            return "A shader draw requires a pipeline index"
+        set pipeline to the number of selected
+        if ((0.0 <= pipeline < pipelines's length) = false) or ((the floor of pipeline) != pipeline):
+            return "A shader draw selects an unknown pipeline"
+        increment index
+    return ""
+
 to get [the error in UI shader graph] {a pointer to JSON value:program}:
     set assets to the JSON member named "assets" in program
     set index to 0
@@ -155,7 +184,9 @@ to get [the error in UI shader graph] {a pointer to JSON value:program}:
     set index to 0
     loop while index < passes's length:
         set pass to the JSON value at index index in passes
-        set error to the error in UI shader attachments for pass among assets
+        set error to the error in UI shader pipelines for pass
+        if error = "":
+            set error to the error in UI shader attachments for pass among assets
         if error = "":
             set error to the error in UI shader resources for pass among assets
         if error != "":

@@ -107,7 +107,7 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, b
         programFor(surface,handle).renderer.indexBuffer(pass,new Uint32Array(memory.buffer,pointer,count));
       },
       ui_shader_draws(surface,handle,pass,pointer,count) {
-        programFor(surface,handle).renderer.draws(pass,new Uint32Array(memory.buffer,pointer,count*6));
+        programFor(surface,handle).renderer.draws(pass,new Uint32Array(memory.buffer,pointer,count*7));
       },
       ui_shader_buffer_bytes(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferBytes(pass,slot); },
       ui_shader_buffer_records(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferRecords(pass,slot); },

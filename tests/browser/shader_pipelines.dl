@@ -1,0 +1,9 @@
+import lib/shader.dl
+
+if this is a vertex shader:
+    set position to the vertex input named "position" at location 0 of type an aggregate of 4 floating-point number values
+    set color to the vertex input named "color" at location 1 of type an aggregate of 4 floating-point number values
+    set the smooth shader interpolant named "draw color" at location 0 to color
+    @intrinsic("shader output", position)
+else:
+    @intrinsic("shader output", the smooth shader interpolant named "draw color" at location 0 of type an aggregate of 4 floating-point number values)

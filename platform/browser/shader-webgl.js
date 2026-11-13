@@ -140,20 +140,24 @@ export function createWebGlShader(gl,descriptor,target) {
           gl.bindSampler(unit,binding.sampler===null?null:assets.sampler(binding.sampler).storage);
           for(const location of binding.locations) gl.uniform1i(location,unit);
         }
-        const state=pass.description.state;
-        if(pass.description.depth!==null) gl.enable(gl.DEPTH_TEST);else gl.disable(gl.DEPTH_TEST);
-        gl.depthMask(state.depthWrite);gl.depthFunc(comparison[state.depthCompare]);
-        if(state.cullMode==='none') gl.disable(gl.CULL_FACE);
-        else {gl.enable(gl.CULL_FACE);gl.cullFace(state.cullMode==='front'?gl.FRONT:gl.BACK);}
-        // Naga's GLSL output adjusts clip-space Y relative to WebGPU.
-        gl.frontFace(state.frontFace==='ccw'?gl.CW:gl.CCW);
-        if(state.blend===null) gl.disable(gl.BLEND);
-        else {
-          const {color,alpha}=state.blend;gl.enable(gl.BLEND);
-          gl.blendFuncSeparate(factors[color.srcFactor],factors[color.dstFactor],factors[alpha.srcFactor],factors[alpha.dstFactor]);
-          gl.blendEquationSeparate(equations[color.operation],equations[alpha.operation]);
-        }
+        let pipeline=-1;
         for(const command of plans[index]) {
+          if(command.pipeline!==pipeline) {
+            const state=pass.description.pipelines[command.pipeline];
+            if(pass.description.depth!==null) gl.enable(gl.DEPTH_TEST);else gl.disable(gl.DEPTH_TEST);
+            gl.depthMask(state.depthWrite);gl.depthFunc(comparison[state.depthCompare]);
+            if(state.cullMode==='none') gl.disable(gl.CULL_FACE);
+            else {gl.enable(gl.CULL_FACE);gl.cullFace(state.cullMode==='front'?gl.FRONT:gl.BACK);}
+            // Naga's GLSL output adjusts clip-space Y relative to WebGPU.
+            gl.frontFace(state.frontFace==='ccw'?gl.CW:gl.CCW);
+            if(state.blend===null) gl.disable(gl.BLEND);
+            else {
+              const {color,alpha}=state.blend;gl.enable(gl.BLEND);
+              gl.blendFuncSeparate(factors[color.srcFactor],factors[color.dstFactor],factors[alpha.srcFactor],factors[alpha.dstFactor]);
+              gl.blendEquationSeparate(equations[color.operation],equations[alpha.operation]);
+            }
+            pipeline=command.pipeline;
+          }
           for(const [slot,layout] of pass.geometry.layouts.entries()) {
             gl.bindBuffer(gl.ARRAY_BUFFER,pass.geometry.streams[slot].buffer);
             for(const attribute of layout.attributes) {

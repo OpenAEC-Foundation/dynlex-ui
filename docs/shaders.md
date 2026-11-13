@@ -97,7 +97,14 @@ storage, so copying one or returning it from a function does not borrow locals.
 
 ## Draw records
 
-`UI shader draw` is six unsigned 32-bit words, in this order:
+Each pass declares a nonempty `pipelines` array of raster states. A draw selects one
+pipeline by index. Pipelines share the shader modules, vertex layouts, bindings and
+attachments, so mixed culling, blending and depth-write modes retain draw order
+within one render pass and one multisample resolve. The draw constructor's `using
+pipeline index` clause selects an index; omitting it selects zero for the common
+single-pipeline pass. Zero-count draws still require a valid pipeline.
+
+`UI shader draw` is seven unsigned 32-bit words, in this order:
 
 Its constructor accepts values from zero through 2,147,483,647 for counts and
 offsets, matching the portable backend range. It checks that range before
@@ -114,6 +121,7 @@ provider's fixed 32-bit representation. Texture dimensions must also be positive
 | `vertex offset` | Record offset applied to every per-vertex stream |
 | `instance offset` | Record offset applied to every per-instance stream |
 | `indexed` | 0 for vertices, 1 for unsigned-32-bit indices |
+| `pipeline` | Index in the pass's pipeline array |
 
 Offsets select buffer records. Builtin vertex IDs follow the draw's first/index
 values and instance IDs start at zero on both backends. Buffer offsets do not
@@ -182,7 +190,7 @@ set UI shader resource image "paint" in view level 0 layer 0 from pixels spannin
 
 ## Verification
 
-`tests/shared/shader_api` verifies the DynLex operation table and six-word ABI at
+`tests/shared/shader_api` verifies the DynLex operation table and seven-word ABI at
 both optimization levels. `node tests/browser/shader_streams.mjs` checks allocation
 reuse, ownership and range validation. `node tests/browser/shader_services.mjs`
 checks source loading and the browser ABI. Browser rendering tests compare actual

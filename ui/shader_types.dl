@@ -13,14 +13,19 @@ class:
         vertex offset as a 32 bit unsigned integer
         instance offset as a 32 bit unsigned integer
         indexed as a 32 bit unsigned integer
+        pipeline as a 32 bit unsigned integer
+
+to get [a UI shader draw counting] {integer:count} [instanced] {integer:instances} [starting at] {integer:first} [with vertex offset] {integer:vertex offset} [and instance offset] {integer:instance offset} [indexed] {boolean:indexed} [using pipeline] {integer:pipeline}:
+    require condition (((count is a valid UI operation integer) and (instances is a valid UI operation integer)) and (((first is a valid UI operation integer) and (vertex offset is a valid UI operation integer)) and (instance offset is a valid UI operation integer))) reporting "Shader draw ranges must be between 0 and 2147483647"
+    require condition (pipeline is a valid UI operation integer) reporting "Shader pipeline indices must be between 0 and 2147483647"
+    return @intrinsic("construct", UI shader draw, count as a 32 bit unsigned integer, instances as a 32 bit unsigned integer, first as a 32 bit unsigned integer, vertex offset as a 32 bit unsigned integer, instance offset as a 32 bit unsigned integer, (1 if indexed, else 0) as a 32 bit unsigned integer, pipeline as a 32 bit unsigned integer)
 
 to get [a UI shader draw counting] {integer:count} [instanced] {integer:instances} [starting at] {integer:first} [with vertex offset] {integer:vertex offset} [and instance offset] {integer:instance offset} [indexed] {boolean:indexed}:
-    require condition (((count is a valid UI operation integer) and (instances is a valid UI operation integer)) and (((first is a valid UI operation integer) and (vertex offset is a valid UI operation integer)) and (instance offset is a valid UI operation integer))) reporting "Shader draw ranges must be between 0 and 2147483647"
-    return @intrinsic("construct", UI shader draw, count as a 32 bit unsigned integer, instances as a 32 bit unsigned integer, first as a 32 bit unsigned integer, vertex offset as a 32 bit unsigned integer, instance offset as a 32 bit unsigned integer, (1 if indexed, else 0) as a 32 bit unsigned integer)
+    return a UI shader draw counting count instanced instances starting at first with vertex offset vertex offset and instance offset instance offset indexed indexed using pipeline 0
 
 to get [the JSON form of UI shader draw] {UI shader draw:draw}:
     return a JSON object containing [
         JSON number "count" is (draw's count), JSON number "instances" is (draw's instances),
         JSON number "first" is (draw's first), JSON number "vertexOffset" is (draw's vertex offset),
-        JSON number "instanceOffset" is (draw's instance offset), JSON flag "indexed" is (draw's indexed = 1)
+        JSON number "instanceOffset" is (draw's instance offset), JSON flag "indexed" is (draw's indexed = 1), JSON number "pipeline" is (draw's pipeline)
     ]

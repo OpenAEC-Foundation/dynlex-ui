@@ -15,14 +15,15 @@ try {
   await fs.writeFile(source,`import ${path.resolve('ui/shader_types.dl')}
 set selected to @intrinsic("call", "host", "range scenario", integer)
 set value to (@intrinsic("call", "host", "range value", a 64 bit integer)) as a 128 bit integer
-if selected = 5:
+if (selected = 5) or (selected = 7):
     set value to value << 64
 set count to value if ((selected = 0) or (selected = 5)), else (3 as a 128 bit integer)
 set instances to value if (selected = 1), else (1 as a 128 bit integer)
 set first to value if (selected = 2), else (0 as a 128 bit integer)
 set vertices to value if (selected = 3), else (0 as a 128 bit integer)
 set {instances offset} to value if (selected = 4), else (0 as a 128 bit integer)
-set draw to a UI shader draw counting count instanced instances starting at first with vertex offset vertices and instance offset instances offset indexed false
+set pipeline to value if ((selected = 6) or (selected = 7)), else (0 as a 128 bit integer)
+set draw to a UI shader draw counting count instanced instances starting at first with vertex offset vertices and instance offset instances offset indexed false using pipeline pipeline
 set data to the JSON form of UI shader draw draw
 print line the compact JSON form of data
 free data
@@ -38,21 +39,23 @@ free data
       let error;try{instance.exports.main();}catch(failure){error=failure;}
       return {error,output:chunks.join('')};
     };
-    for(let selected=0;selected<5;selected++){
+    for(const selected of [0,1,2,3,4,6]){
       for(const value of [4294967299n,2147483648n,-1n]){
         const result=await run(selected,value);
         assert(result.error,`Draw field ${selected} narrowed ${value} without rejecting it (${optimization}).`);
-        assert.match(result.output,/Shader draw ranges must/);
+        assert.match(result.output,selected===6?/Shader pipeline indices must/:/Shader draw ranges must/);
       }
       for(const value of [0n,1n,2147483647n]){
         const result=await run(selected,value);assert.ifError(result.error);
-        const expected=[3,1,0,0,0];expected[selected]=Number(value);
+        const expected=[3,1,0,0,0,0];expected[selected===6?5:selected]=Number(value);
         assert.deepEqual(JSON.parse(result.output),Object.fromEntries(
-          ['count','instances','first','vertexOffset','instanceOffset'].map((key,index)=>[key,expected[index]]).concat([['indexed',false]])));
+          ['count','instances','first','vertexOffset','instanceOffset'].map((key,index)=>[key,expected[index]]).concat([['indexed',false],['pipeline',expected[5]]])));
       }
     }
     const result=await run(5,3n);assert(result.error,'A 128-bit draw range was truncated.');
     assert.match(result.output,/Shader draw ranges must/);
+    const widePipeline=await run(7,3n);assert(widePipeline.error,'A 128-bit pipeline index was truncated.');
+    assert.match(widePipeline.output,/Shader pipeline indices must/);
     console.log('PASS shader draw ranges',optimization);
   }
 } finally {await fs.rm(directory,{recursive:true,force:true});}

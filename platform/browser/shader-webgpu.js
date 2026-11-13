@@ -19,16 +19,21 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
     write(buffer,bytes) {device.queue.writeBuffer(buffer,0,bytes);},retire
   };
   const dispose=pass=>{if(pass.uniforms!==null) pass.uniforms.close();pass.geometry.close();};
-  async function module(code) {
+  const modules=new Map();
+  async function compileModule(code) {
     const result=device.createShaderModule({code}),information=await result.getCompilationInfo();
     if(information.messages.some(message=>message.type==='error')) {
       console.error('DynLex shader compilation:',information.messages);throw new Error('Shader compilation failed');
     }
     return result;
   }
+  const module=code=>{
+    if(!modules.has(code)) modules.set(code,compileModule(code));
+    return modules.get(code);
+  };
   try {
     for(const description of descriptor.passes) {
-      const pass={description,geometry:createShaderGeometry(description,transfer),pipeline:null,uniforms:null,
+      const pass={description,geometry:createShaderGeometry(description,transfer),pipelines:[],uniforms:null,
         layouts:[],groups:[],generation:-1,targets:createWebGpuShaderTargets(assets,description.color,description.depth)};
       passes.push(pass);
       const [vertex,fragment]=await Promise.all([module(description.vertex===null?fullscreen:description.vertex),
@@ -47,9 +52,9 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
       const color=description.color===null?null:assets.definition(description.color.view.image);
       const depth=description.depth===null?null:assets.definition(description.depth.view.image);
       if(color===null&&depth===null) throw new Error('A shader pass requires an attachment');
-      const state=description.state;
-      pass.pipeline=await device.createRenderPipelineAsync({
-        layout:device.createPipelineLayout({bindGroupLayouts:pass.layouts}),
+      const pipelineLayout=device.createPipelineLayout({bindGroupLayouts:pass.layouts});
+      for(const state of description.pipelines) pass.pipelines.push(await device.createRenderPipelineAsync({
+        layout:pipelineLayout,
         vertex:{module:vertex,entryPoint:'main',buffers:pass.geometry.layouts.map(layout=>({
           arrayStride:layout.arrayStride,stepMode:layout.stepMode,
           attributes:layout.attributes.map(({shaderLocation,offset,format})=>({shaderLocation,offset,format}))}))},
@@ -58,7 +63,7 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
         primitive:{topology:description.topology,cullMode:state.cullMode,frontFace:state.frontFace},
         multisample:{count:(color===null?depth:color).samples},
         ...(depth===null?{}:{depthStencil:{format:depth.format,depthWriteEnabled:state.depthWrite,depthCompare:state.depthCompare}})
-      });
+      }));
       pass.uniforms=createShaderUniforms(description.uniforms,{
         allocate(description,size) {return device.createBuffer({size,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});},
         write(buffer,bytes) {device.queue.writeBuffer(buffer,0,bytes);},retire
@@ -101,10 +106,11 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
       for(const [index,pass] of passes.entries()) {
         bindGroups(pass);
         const render=encoder.beginRenderPass(pass.targets.description());
-        render.setPipeline(pass.pipeline);
         for(const [index,group] of pass.groups.entries()) render.setBindGroup(index,group);
         if(plans[index].some(command=>command.indexed)) render.setIndexBuffer(pass.geometry.indices.buffer,'uint32',0,pass.geometry.indices.byteLength);
+        let pipeline=-1;
         for(const command of plans[index]) {
+          if(command.pipeline!==pipeline) {render.setPipeline(pass.pipelines[command.pipeline]);pipeline=command.pipeline;}
           for(const [slot,stream] of pass.geometry.streams.entries()) render.setVertexBuffer(slot,stream.buffer,command.offsets[slot],stream.byteLength-command.offsets[slot]);
           if(command.indexed) render.drawIndexed(command.count,command.instances,command.first,0,0);
           else render.draw(command.count,command.instances,command.first,0);

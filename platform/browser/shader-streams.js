@@ -70,22 +70,23 @@ export function createShaderStream(transfer, usage) {
 }
 
 export function packShaderDraws(draws) {
-  const words=new Uint32Array(draws.length*6);
+  const words=new Uint32Array(draws.length*7);
   for (const [index,draw] of draws.entries()) {
     if (typeof draw.indexed!=='boolean') throw new Error('A shader draw must specify whether it is indexed');
     words.set([unsigned(draw.count,'draw count'),unsigned(draw.instances,'draw instances'),
       unsigned(draw.first,'draw first'),unsigned(draw.vertexOffset,'draw vertex offset'),
-      unsigned(draw.instanceOffset,'draw instance offset'),draw.indexed?1:0],index*6);
+      unsigned(draw.instanceOffset,'draw instance offset'),draw.indexed?1:0,unsigned(draw.pipeline,'pipeline')],index*7);
   }
   return words;
 }
 
-export function validateShaderDraws(layouts, byteLengths, indices, words) {
-  if (!(words instanceof Uint32Array) || words.length%6!==0) throw new Error('Shader draws require six unsigned words each');
+export function validateShaderDraws(pipelineCount, layouts, byteLengths, indices, words) {
+  if (!(words instanceof Uint32Array) || words.length%7!==0) throw new Error('Shader draws require seven unsigned words each');
   if (byteLengths.length!==layouts.length) throw new Error('Shader buffer lengths do not match the pipeline');
   const commands=[];
-  for (let cursor=0; cursor<words.length; cursor+=6) {
-    const [count,instances,first,vertexOffset,instanceOffset,indexed]=words.subarray(cursor,cursor+6);
+  for (let cursor=0; cursor<words.length; cursor+=7) {
+    const [count,instances,first,vertexOffset,instanceOffset,indexed,pipeline]=words.subarray(cursor,cursor+7);
+    if(pipeline>=pipelineCount) throw new Error('A shader draw selects an unknown pipeline');
     if (indexed>1) throw new Error('A shader draw has an invalid index flag');
     if (count===0 || instances===0) continue;
     if (count>0x7fffffff || instances>0x7fffffff || first>0x7fffffff)
@@ -109,12 +110,13 @@ export function validateShaderDraws(layouts, byteLengths, indices, words) {
       if (!Number.isSafeInteger(bytes)) throw new Error('Shader buffer offset exceeds integer precision');
       return bytes;
     });
-    commands.push({ count,instances,first,indexed:indexed===1,offsets });
+    commands.push({ count,instances,first,indexed:indexed===1,pipeline,offsets });
   }
   return commands;
 }
 
 export function createShaderGeometry(description, transfer) {
+  if(!Array.isArray(description.pipelines)||description.pipelines.length===0) throw new Error('A shader pass requires pipelines');
   const layouts=shaderVertexLayouts(description.vertexBuffers);
   const streams=layouts.map(()=>createShaderStream(transfer,'vertex'));
   const indices=createShaderStream(transfer,'index');
@@ -140,7 +142,7 @@ export function createShaderGeometry(description, transfer) {
     },
     draws(data) {
       active();
-      if (!(data instanceof Uint32Array) || data.length%6!==0) throw new Error('Shader draws require six unsigned words each');
+      if (!(data instanceof Uint32Array) || data.length%7!==0) throw new Error('Shader draws require seven unsigned words each');
       words=data.slice(); dirty=true;
     },
     bufferBytes(slot) { active(); return stream(slot).byteLength; },
@@ -150,7 +152,7 @@ export function createShaderGeometry(description, transfer) {
     get commands() {
       active();
       if (dirty) {
-        commands=validateShaderDraws(layouts,streams.map(buffer=>buffer.byteLength),indexData,words);
+        commands=validateShaderDraws(description.pipelines.length,layouts,streams.map(buffer=>buffer.byteLength),indexData,words);
         dirty=false;
       }
       return commands;

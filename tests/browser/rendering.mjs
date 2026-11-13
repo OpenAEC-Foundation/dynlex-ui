@@ -10,7 +10,7 @@ export async function verifyRendering() {
   const surface = gpu.surface(canvas);
   const mask = gpu.mask(surface, new Uint8Array(6).fill(128), 3, 2);
   const image = gpu.image(surface, new Uint8Array([255, 0, 0, 128]), 1, 1);
-  const shader = await gpu.shader(surface, shaderProgram([shaderPass({ vertex: null, vertexBuffers: [], draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}], uniforms: [],
+  const shader = await gpu.shader(surface, shaderProgram([shaderPass({ vertex: null, vertexBuffers: [], draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0}], uniforms: [],
     topology: 'triangle-list', fragment: gpu.backend === 'webgpu'
       ? '@fragment fn main() -> @location(0) vec4f { return vec4f(0,0,1,1); }'
       : '#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(0,0,1,1);}'
@@ -18,9 +18,9 @@ export async function verifyRendering() {
       ? '@vertex fn main(@location(0) position: vec4f) -> @builtin(position) vec4f { return position; }'
       : '#version 300 es\nlayout(location=0) in vec4 position;void main(){gl_Position=position;}',
     vertexBuffers: [{arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]}],
-    draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
+    draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0}],
     uniforms: [{ name: 'gain', group: 1, binding: 5, type:{scalar:'float32',rows:1,columns:4} }],
-    glslUniforms:[{name:'Settings',group:1,binding:5}],state:shaderState(true,'less',additiveBlend),
+    glslUniforms:[{name:'Settings',group:1,binding:5}],pipelines:[shaderState(true,'less',additiveBlend)],
     color:shaderColor('output','load'),depth:shaderDepth(),topology: 'triangle-list',
     fragment: gpu.backend === 'webgpu'
       ? '@group(1) @binding(5) var<uniform> gain:vec4f;@fragment fn main()->@location(0) vec4f{return vec4f(gain.x,0,0,0);}'
@@ -182,12 +182,12 @@ export async function verifyShaderBuffers() {
   try {
     shader.vertexBuffer(0,0,vertices);shader.vertexBuffer(0,1,instances);shader.vertexBuffer(0,2,signed);
     shader.indexBuffer(0,new Uint32Array([99,99,99,0,1,2,0,2,3,99]));
-    shader.draws(0,new Uint32Array([6,2,3,4,1,1]));
+    shader.draws(0,new Uint32Array([6,2,3,4,1,1,0]));
     frame();expect(16,32,255,0,0);expect(90,32,0,255,0);expect(60,32,0,0,0);expect(104,32,0,0,0);
     view.setFloat32(24+8,.25,true);view.setFloat32(48+12,.5,true);
     shader.vertexBuffer(0,1,instances);
     frame();expect(16,32,137,0,0);expect(90,32,0,188,0);
-    shader.draws(0,new Uint32Array([3,1,1,4,1,0]));
+    shader.draws(0,new Uint32Array([3,1,1,4,1,0,0]));
     frame(1);expect(34,32,137,0,0);expect(90,32,0,0,0);
     const grown=new Uint8Array(144);grown.set(instances);shader.vertexBuffer(0,1,grown);
     frame(1);expect(34,32,137,0,0);
@@ -225,7 +225,7 @@ export async function verifyShaderUniforms() {
       _group_0_binding_1_signed.x==(-2147483647-1)?0.5:0.0,
       _group_0_binding_2_unsigned.z==4294967295u?1.0:0.0,1.0);}`;
   const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:null,fragment,vertexBuffers:[],
-    draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
+    draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0}],
     uniforms:[{name:'camera',group:0,binding:0,type:{scalar:'float32',rows:3,columns:2}},
       {name:'signedInput',group:0,binding:1,type:{scalar:'sint32',rows:1,columns:2}},
       {name:'unsignedInput',group:0,binding:2,type:{scalar:'uint32',rows:1,columns:3}}],
@@ -269,7 +269,7 @@ export async function verifyCompiledShaderUniforms() {
     for(const artifact of artifacts) {
       const {scalar,rows,columns}=artifact.type;
       const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:null,fragment:artifact[gpu.backend],
-        vertexBuffers:[],draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
+        vertexBuffers:[],draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0}],
         uniforms:artifact.uniforms,glslUniforms:artifact.glslUniforms})]));
       try {
         const code={float32:0,sint32:1,uint32:2}[scalar],bytes=new ArrayBuffer(rows*16);

@@ -39,8 +39,8 @@ to [draw recorded shader in] {a pointer to UI view:view} [holding] {a pointer:sh
     require condition ((pass = 2) and (count = 2)) reporting "Draw submission changed its record count."
     set first to the item at 0 in data
     set last to the item at 1 in data
-    require condition (((first's count = 3) and (first's vertex offset = 4)) and (first's indexed = 1)) reporting "Indexed draw data did not cross the driver intact."
-    require condition (((last's instances = 2) and (last's instance offset = 7)) and (last's indexed = 0)) reporting "Instanced draw data did not cross the driver intact."
+    require condition (((first's count = 3) and (first's vertex offset = 4)) and ((first's indexed = 1) and (first's pipeline = 7))) reporting "Indexed draw data did not cross the driver intact."
+    require condition (((last's instances = 2) and (last's instance offset = 7)) and ((last's indexed = 0) and (last's pipeline = 3))) reporting "Instanced draw data did not cross the driver intact."
     increment (the shader recorder in view)'s draws
 
 to get [recorded shader bytes in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot}:
@@ -82,15 +82,15 @@ set view's instance to the address of instance
 set view's driver to the address of driver
 set context to the address of view
 set shader to 777 as a pointer
-require condition ((the size of UI shader draw) = 24) reporting "Draw records do not have a portable six-word layout."
+require condition ((the size of UI shader draw) = 28) reporting "Draw records do not have a portable seven-word layout."
 require condition ((4294967299 is a valid UI operation integer) = false) reporting "An oversized range was narrowed before validation."
 set maximum to a UI shader draw counting 2147483647 instanced 2147483647 starting at 2147483647 with vertex offset 2147483647 and instance offset 2147483647 indexed false
 require condition ((maximum's count = 2147483647) and (maximum's instance offset = 2147483647)) reporting "A valid maximum range was narrowed."
 set vertices to [1.0,2.0] as a 32 bit floating-point number array of 2 items
 set indices to [0,1,2] as a 32 bit unsigned integer array of 3 items
 set draws to [
-    a UI shader draw counting 3 instanced 1 starting at 0 with vertex offset 4 and instance offset 0 indexed true,
-    a UI shader draw counting 3 instanced 2 starting at 1 with vertex offset 0 and instance offset 7 indexed false
+    a UI shader draw counting 3 instanced 1 starting at 0 with vertex offset 4 and instance offset 0 indexed true using pipeline 7,
+    a UI shader draw counting 3 instanced 2 starting at 1 with vertex offset 0 and instance offset 7 indexed false using pipeline 3
 ]
 set UI shader shader pass 2 in context vertex buffer 3 from ((vertices + 0) as a pointer) spanning 8 bytes
 set UI shader shader image "ink 🌽" in context level 2 layer 5 from ((vertices + 0) as a pointer) spanning 8 bytes

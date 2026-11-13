@@ -67,7 +67,7 @@ set data to a JSON object containing [
     JSON child "colors" is (scene test words from ((bank's colors' data) as a pointer) counting ((the length of bank's colors) * 3)),
     JSON child "indices" is (scene test words from ((bank's indices' data) as a pointer) counting (the length of bank's indices)),
     JSON child "instances" is (scene test words from ((records' data) as a pointer) counting ((the length of records) * 44)),
-    JSON child "draws" is (scene test words from ((draws + 0) as a pointer) counting 12),
+    JSON child "draws" is (scene test words from ((draws + 0) as a pointer) counting 14),
     JSON child "camera" is (scene test words from ((camera input's data + 0) as a pointer) counting 16),
     JSON child "expected" is expected
 ]
