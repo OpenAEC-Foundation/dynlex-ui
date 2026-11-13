@@ -65,9 +65,9 @@ def main():
         subprocess.run(['node', 'tests/browser/shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_value_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve()), 'shader_attachments'], cwd=project, check=True)
-        subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve()), 'shader_graph'], cwd=project, check=True)
+        for fixture in ['shader_resources', 'shader_attachments', 'shader_graph', 'option_models']:
+            subprocess.run(['node', 'tests/browser/shared_frontends.mjs', str(args.dynlex.resolve()), fixture],
+                           cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_transform_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_model_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)

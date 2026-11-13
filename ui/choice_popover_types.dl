@@ -6,6 +6,7 @@ to get [a UI choice popover]:
     set result to a new UI choice popover
     set result's selected to -1
     set result's pressed to -1
+    set result's source revision to -1
     set result's preferred width to 440.0
     set result's surface's node to a UI container of kind 41 containing no UI children
     return result
@@ -22,6 +23,7 @@ to get [the UI choice at] {integer:index} [in] {a pointer to UI choice popover:p
 to [add UI choice] {string:label} [enabled] {boolean:enabled} [to] {a pointer to UI choice popover:popup}:
     set item to storage for one slot initialized with (a new UI choice)
     set item's label to label
+    set item's key to label
     set item's icon to ""
     set item's enabled to enabled
     if popup's count = 0:

@@ -14,20 +14,58 @@ to get [the UI popup appearance in] {a pointer to UI view:view}:
     set result's foreground to view's theme's text
     return result
 
+to [refresh UI option model] {a pointer to UI value:value} [in popup] {a pointer to UI choice popover:popup}:
+    if popup's source revision = value's options revision:
+        return nothing
+    set key to the string form of ""
+    if 0 <= popup's selected < popup's count:
+        set key to (the UI choice at (popup's selected) in popup)'s key
+    release UI choices in popup
+    set popup's first to 0
+    set popup's pressed to -1
+    set index to 0
+    loop while index < the length of (value's options):
+        set option to the item at index in (value's options)
+        add UI choice (option's label) enabled (option's enabled) to popup
+        set popup's last item's key to option's id
+        set popup's last item's icon to option's icon
+        increment index
+    set selected to the UI option position identified by key among (value's options)
+    if selected < 0:
+        set selected to value's number
+    if selected >= 0:
+        if (the UI choice at selected in popup)'s enabled:
+            set popup's selected to selected
+    set popup's source revision to value's options revision
+
 to [refresh UI popup choices in] {a pointer to UI view:view}:
     set owner to view's popup
     set popup to the address of (view's popup choices)
-    set item to popup's first item
-    set child to owner's first
-    loop while child != @intrinsic("construct", a pointer to UI layout):
-        set item's label to (the UI value for (child's node) in (view's instance))'s text
-        set item's enabled to the UI element (child's node) is enabled in (view's instance)
-        set item's icon to child's node's variant
-        if owner's node's kind = 34:
-            if ((the UI value for (owner's node) in (view's instance))'s text) = item's label:
+    set value to the UI value for (owner's node) in (view's instance)
+    if (owner's node's kind = 34) and (value's options supplied):
+        refresh UI option model value in popup popup
+        set item to popup's first item
+        set index to 0
+        loop while item != @intrinsic("construct", a pointer to UI choice):
+            set item's icon to (the item at index in (value's options))'s icon
+            if index = value's number:
                 set item's icon to "check"
-        set child to child's next
-        set item to item's next
+            set item to item's next
+            increment index
+    else:
+        set item to popup's first item
+        set child to owner's first
+        set index to 0
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            set item's label to (the UI value for (child's node) in (view's instance))'s text
+            set item's key to child's node's text
+            set item's enabled to the UI element (child's node) is enabled in (view's instance)
+            set item's icon to child's node's variant
+            if (owner's node's kind = 34) and (index = value's number):
+                set item's icon to "check"
+            set child to child's next
+            set item to item's next
+            increment index
     if popup's selected >= 0:
         if (the UI choice at (popup's selected) in popup)'s enabled = false:
             move UI choice selection in popup by 1 wrapping true
@@ -47,10 +85,14 @@ to [open UI popup for] {a pointer to UI layout:layout} [in] {a pointer to UI vie
     set view's popup to layout
     set popup's on release to true
     set popup's accepts space to true
-    set child to layout's first
-    loop while child != @intrinsic("construct", a pointer to UI layout):
-        add UI choice ((the UI value for (child's node) in (view's instance))'s text) enabled (the UI element (child's node) is enabled in (view's instance)) to popup
-        set child to child's next
+    set value to the UI value for (layout's node) in (view's instance)
+    if (layout's node's kind = 34) and (value's options supplied):
+        refresh UI option model value in popup popup
+    else:
+        set child to layout's first
+        loop while child != @intrinsic("construct", a pointer to UI layout):
+            add UI choice ((the UI value for (child's node) in (view's instance))'s text) enabled (the UI element (child's node) is enabled in (view's instance)) to popup
+            set child to child's next
     if layout's node's kind = 34:
         set popup's selected to (the UI value for (layout's node) in (view's instance))'s number
     show UI choice popover popup reporting "" with hint "" in view

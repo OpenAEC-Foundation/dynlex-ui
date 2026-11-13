@@ -1,0 +1,86 @@
+# Static descriptions and application-supplied choices share selection behavior.
+import declarations.dl
+
+to get [the UI option count for] {UI reference:node} [using] {a pointer to UI value:value}:
+    if value's options supplied:
+        return the length of (value's options)
+    return node's count
+
+to get [the UI option at] {integer:index} [from] {UI reference:node} [using] {a pointer to UI value:value}:
+    require condition (0 <= index < (the UI option count for node using value)) reporting "The selected UI option does not exist"
+    if value's options supplied:
+        return the item at index in (value's options)
+    set child to the UI child at index in node
+    set result to a UI option named (child's text) displaying (child's text) enabled true
+    set result's icon to child's variant
+    return result
+
+to get [the position of UI option] {string:text} [in] {UI reference:node} [using] {a pointer to UI value:value}:
+    set index to 0
+    loop while index < (the UI option count for node using value):
+        if (the UI option at index from node using value)'s label = text:
+            return index
+        increment index
+    require condition false reporting "The tool field value must match one of its options"
+    return -1
+
+to [select UI option] {integer:index} [from] {UI reference:node} [into] {a pointer to UI value:value}:
+    set chosen to the UI option at index from node using value
+    set value's number to index
+    set value's text to chosen's label
+
+to get [the UI option position identified by] {string:id} [among] {UI option values:options}:
+    set index to 0
+    loop while index < the length of options:
+        if (the item at index in options)'s id = id:
+            return index
+        increment index
+    return -1
+
+to get {UI option values:first} [are the same UI options as] {UI option values:last}:
+    if (the length of first) != (the length of last):
+        return false
+    set index to 0
+    loop while index < the length of first:
+        set left to the item at index in first
+        set right to the item at index in last
+        if ((left's id != right's id) or (left's label != right's label)) or ((left's enabled != right's enabled) or (left's icon != right's icon)):
+            return false
+        increment index
+    return true
+
+to [set UI choices of] {UI reference:node} [in] {a pointer to UI instance:instance} [to] {UI option values:options} [choosing] {a value:key}:
+    require condition (node's kind = 34) reporting "Only choice fields accept an option model"
+    set index to 0
+    loop while index < the length of options:
+        set item to the item at index in options
+        require condition (item's id is not empty) reporting "UI option identities must be nonempty"
+        set cursor to index + 1
+        loop while cursor < the length of options:
+            require condition (item's id != (the item at cursor in options)'s id) reporting "UI option identities must be unique"
+            increment cursor
+        increment index
+    set id to the string form of key
+    set selected to -1
+    if id's length > 0:
+        set selected to the UI option position identified by id among options
+        require condition (selected >= 0) reporting "The chosen UI option identity does not exist"
+    set value to the UI value for node in instance
+    if value's options supplied and ((value's options are the same UI options as options) and (value's number = selected)):
+        return nothing
+    set value's options to options
+    set value's options supplied to true
+    increment value's options revision
+    if selected < 0:
+        set value's number to -1
+        set value's text to ""
+    else:
+        select UI option selected from node into value
+    invalidate instance
+
+to get [the selected UI option identity of] {UI reference:node} [in] {a pointer to UI instance:instance}:
+    require condition (node's kind = 34) reporting "Only choice fields have a selected option identity"
+    set value to the UI value for node in instance
+    if value's number < 0:
+        return the string form of ""
+    return (the UI option at (value's number) from node using value)'s id

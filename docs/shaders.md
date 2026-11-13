@@ -192,7 +192,7 @@ is `node tests/browser/run.mjs <application directory> <graphics mode> <compiler
 `scripts/test.py --browser --dynlex <compiler checkout>` supplies that argument.
 
 `tests/shared/shader_resources` and `tests/shared/shader_attachments` check the
-description data at O0/O2. `tests/browser/shader_resource_descriptions.mjs` also
+description data at O0/O2. `tests/browser/shared_frontends.mjs` also
 checks native-emitted Wasm and the shipped browser compiler, including zero
 retained allocations. `shader_assets.mjs` verifies resource ownership and resize
 failure cleanup. `prepare_resources.mjs` and `shader_resources_browser.mjs` compile

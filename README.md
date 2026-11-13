@@ -69,7 +69,9 @@ without using this checkout as its working directory. Font paths are supplied by
 the application. See
 [the ribbon interface](examples/ribbon/interface.dl), [the text example](examples/text),
 and [section authoring](docs/sections.md). [Responsive documents](docs/documents.md)
-cover appearances, rich paragraphs, editors and tab groups. [Shader surfaces](docs/shaders.md)
+cover appearances, rich paragraphs, editors and tab groups. [Choice models](docs/choices.md)
+bind application collections to the same dropdowns, using stable identities and
+owning labels. [Shader surfaces](docs/shaders.md)
 cover typed vertex streams, instanced draw records and the shared driver API.
 [Scene geometry](docs/scenes.md) shares indexed mesh primitives, camera matrices,
 label projection and picking.

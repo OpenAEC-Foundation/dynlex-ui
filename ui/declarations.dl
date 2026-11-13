@@ -5,6 +5,7 @@ import lib/callbacks.dl
 import lib/check.dl
 import appearance.dl
 import text_states.dl
+import option_values.dl
 
 class:
     patterns:
@@ -115,6 +116,9 @@ class:
         enabled as a boolean
         read only as a boolean
         text protected as a boolean
+        options supplied as a boolean
+        options as UI option values
+        options revision as an integer
 
 {UI value:entry}'s text means: entry's text state's text
 {a pointer to UI value:entry}'s text means: entry's text state's text
@@ -297,8 +301,14 @@ to get the UI element {UI reference:node} is enabled in {a pointer to UI instanc
     set value to instance's values
     loop while value != @intrinsic("construct", a pointer to UI value):
         if value's target = node:
+            if node's kind = 34:
+                if value's options supplied:
+                    return value's enabled and ((the length of (value's options)) > 0)
+                return value's enabled and (node's count > 0)
             return value's enabled
         set value to value's next
+    if node's kind = 34:
+        return node's count > 0
     return true
 
 to click {UI reference:button} in {a pointer to UI instance:instance}:

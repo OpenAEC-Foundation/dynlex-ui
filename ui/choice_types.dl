@@ -6,6 +6,7 @@ class:
         UI choice
     members:
         label as a string
+        key as a string
         icon as a C string
         enabled as a boolean
         next as a pointer to UI choice
@@ -30,4 +31,5 @@ class:
         pressed as an integer
         message as a string
         hint as a string
+        source revision as an integer
         surface as UI layout

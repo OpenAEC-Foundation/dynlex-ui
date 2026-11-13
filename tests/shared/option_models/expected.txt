@@ -1,0 +1,1 @@
+Choice models own labels and stable identities, preserve independent selections and share popup input with static fields.

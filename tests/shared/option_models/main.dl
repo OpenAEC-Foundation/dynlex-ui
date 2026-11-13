@@ -1,0 +1,108 @@
+import ../../helpers/driver.dl
+
+document example:
+    choice field "Workers" choosing "":
+    choice field "Pace" choosing "Calm":
+        choice "Calm"
+        choice "Fast"
+
+to get [test worker options]:
+    set key to (the string form of "worker-") + "3"
+    set label to (the string form of "Corn") + " 🌾"
+    return a sequence copying [
+        a UI option named "worker-1" displaying "Alex" enabled false,
+        a UI option named "worker-2" displaying "Alex" enabled true,
+        a UI option named key displaying label enabled true
+    ]
+
+to [supply test choices to] {a pointer to UI instance:first} [and] {a pointer to UI instance:last}:
+    set options to test worker options
+    set the choices of "Workers" in first to options choosing "worker-2"
+    set the choices of "Workers" in last to options choosing "worker-3"
+
+to [notice worker choice] {a pointer to UI instance:instance}:
+    set counter to instance's state as a pointer to integer
+    increment the value at counter
+
+set called to 0
+set instance to an instance of example with state ((the address of called) as a pointer)
+set other to an instance of example
+set context to the address of instance
+set worker to the control labeled "Workers" in context
+set alternate to the control labeled "Workers" in (the address of other)
+require condition ((the selected UI option identity of worker in context) = "") reporting "An empty choice acquired a selection"
+require condition ((the UI element worker is enabled in context) = false) reporting "An empty field appeared available"
+supply test choices to context and (the address of other)
+set value to the UI value for worker in context
+require condition (the UI element worker is enabled in context) reporting "Supplying choices did not enable the field"
+require condition ((value's number = 1) and (value's text = "Alex")) reporting "Stable option identities were replaced with their duplicate display labels"
+require condition ((the selected choice of "Workers" in context) = "worker-2") reporting "A selected option lost its identity"
+require condition ((the selected UI option identity of alternate in (the address of other)) = "worker-3") reporting "Instances shared their option selection"
+set revision to instance's revision
+set UI choices of worker in context to (test worker options) choosing "worker-2"
+require condition (revision = instance's revision) reporting "An unchanged option model invalidated its view"
+bind worker in context to (the function named "notice worker choice $") for event 0
+
+set view to a UI view of context sized 360 by 320 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set field to the UI layout labeled "Workers" in (view's layout)
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+set popup to the address of (view's popup choices)
+require condition ((popup's count = 3) and (popup's selected = 1)) reporting "A data-driven field did not open its selected choice"
+require condition ((the UI choice at 0 in popup)'s enabled = false) reporting "A data-driven disabled choice became available"
+require condition ((the UI choice at 1 in popup)'s icon = "check") reporting "A duplicate display label received the wrong selection mark"
+require condition ((the UI choice at 0 in popup)'s icon != "check") reporting "Both duplicate labels received selection marks"
+queue UI input of kind 3 key 268 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (popup's selected = 1) reporting "Home selected a disabled model choice"
+queue UI input of kind 3 key 269 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (popup's selected = 2) reporting "End did not select the last model choice"
+
+set UI choices of worker in context to (a sequence copying [
+    a UI option named "worker-3" displaying "Corn 🌾" enabled true,
+    a UI option named "worker-2" displaying "Alex" enabled true,
+    a UI option named "worker-4" displaying "Bea" enabled true
+]) choosing "worker-2"
+refresh UI popup choices in (the address of view)
+require condition ((popup's selected = 0) and ((the UI choice at 0 in popup)'s key = "worker-3")) reporting "Reordering live choices changed the highlighted identity"
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((called = 1) and ((the selected UI option identity of worker in context) = "worker-3")) reporting "A dynamic choice did not activate its owner exactly once"
+require condition (value's text = "Corn 🌾") reporting "The selected model label borrowed a released temporary"
+set the value of "Workers" in context to 1
+require condition ((the selected UI option identity of worker in context) = "worker-2") reporting "Numeric selection ignored the bound model"
+set the text of "Workers" in context to "Bea"
+require condition ((the selected UI option identity of worker in context) = "worker-4") reporting "Text selection ignored the bound model"
+set the value of "Pace" in context to 1
+require condition ((the selected UI option identity of (the control labeled "Pace" in context) in context) = "Fast") reporting "Static fields lost their option identities"
+
+set many to an empty list of UI option
+set index to 0
+loop while index < 500:
+    set key to "person-" + (the string form of index)
+    set title to "Person " + (the string form of index)
+    append (a UI option named key displaying title enabled true) to many
+    increment index
+set prepared to a sequence taking the items from many
+free many
+set the choices of "Workers" in context to prepared choosing "person-499"
+ignore update UI view (the address of view)
+activate UI layout field in (the address of view)
+ignore update UI view (the address of view)
+require condition ((popup's count = 500) and (0 < popup's rows <= 8)) reporting "A model's full collection was truncated instead of bounding its viewport"
+require condition ((popup's selected = 499) and (popup's first > 0)) reporting "A long model did not reveal its selected item"
+dismiss the UI popup in (the address of view)
+
+set UI choices of worker in context to (an empty sequence of UI option) choosing ""
+ignore update UI view (the address of view)
+activate UI layout field in (the address of view)
+require condition ((view's popup = @intrinsic("construct", a pointer to UI layout)) and (called = 1)) reporting "An empty field opened a popup or emitted a selection event"
+require condition ((value's number = -1) and (value's text = "")) reporting "An empty model retained its previous selection"
+require condition ((the UI element worker is enabled in context) = false) reporting "Clearing a model left its field available"
+close the address of view
+close context
+require condition ((the selected UI option identity of alternate in (the address of other)) = "worker-3") reporting "Closing one instance retired another instance's options"
+close the address of other
+print line "Choice models own labels and stable identities, preserve independent selections and share popup input with static fields."

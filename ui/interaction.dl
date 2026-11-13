@@ -1,5 +1,5 @@
 import key_handling.dl
-# Popup content belongs to the description. Views own capture and focus only.
+# Descriptions and instance option models share view-owned popup capture.
 import view.dl
 import ribbon_scroll.dl
 import focus.dl
@@ -9,6 +9,13 @@ to dismiss the UI popup in {a pointer to UI view:view}:
     clear UI choice popover (the address of (view's popup choices)) in view
     set view's popup to @intrinsic("construct", a pointer to UI layout)
     set view's pressed to @intrinsic("construct", a pointer to UI layout)
+
+to [accept UI choice] {integer:index} [from] {a pointer to UI layout:owner} [in] {a pointer to UI view:view}:
+    set value to the UI value for (owner's node) in (view's instance)
+    select UI option index from (owner's node) into value
+    activate (owner's node) belonging to (owner's parent) in (view's instance)
+    set view's focus order to owner's order
+    dismiss the UI popup in view
 
 to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     set node to layout's node
@@ -38,18 +45,20 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
             dismiss the UI popup in view
             return nothing
         if owner's node's kind = 34:
-            set value to the UI value for (owner's node) in (view's instance)
             set index to 0
             loop while (the UI child at index in (owner's node)) != node:
                 increment index
-            select UI option index from (owner's node) into value
-            activate (owner's node) belonging to (owner's parent) in (view's instance)
+            accept UI choice index from owner in view
+            return nothing
         else:
             activate node belonging to (layout's parent) in (view's instance)
         set view's focus order to owner's order
         dismiss the UI popup in view
         return nothing
-    if ((node's kind = 33) or (node's kind = 34)) and (node's count > 0):
+    if ((node's kind = 33) and (node's count > 0)) or (node's kind = 34):
+        if node's kind = 34:
+            if (the UI option count for node using (the UI value for node in (view's instance))) = 0:
+                return nothing
         if view's popup = layout:
             dismiss the UI popup in view
         else:
@@ -71,12 +80,15 @@ to get [process UI control popup input in] {a pointer to UI view:view}:
         return false
     set tabbing to view's key press = 258
     if decision = 2:
-        set child to owner's first
-        set index to 0
-        loop while index < popup's selected:
-            set child to child's next
-            increment index
-        activate UI layout child in view
+        if owner's node's kind = 34:
+            accept UI choice (popup's selected) from owner in view
+        else:
+            set child to owner's first
+            set index to 0
+            loop while index < popup's selected:
+                set child to child's next
+                increment index
+            activate UI layout child in view
     if decision = 3:
         dismiss the UI popup in view
     if tabbing:

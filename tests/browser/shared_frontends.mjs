@@ -1,4 +1,4 @@
-// Exercise the same owned DynLex descriptions through both compiler frontends.
+// Exercise a shared UI fixture through native/Wasm and the shipped frontend.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -7,7 +7,8 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 
 const core=path.resolve(process.argv[2]),root=fileURLToPath(new URL('../../',import.meta.url));
-const fixture=process.argv[3]??'shader_resources';
+const fixture=process.argv[3];
+assert(fixture,'Pass a shared fixture name after the compiler checkout');
 const entry=`tests/shared/${fixture}/main.dl`;
 const expected=await fs.readFile(path.join(root,`tests/shared/${fixture}/expected.txt`),'utf8');
 const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(
@@ -19,8 +20,8 @@ async function verify(bytes,label) {
   const {instance}=await WebAssembly.instantiate(bytes,runtime);
   try {instance.exports.main();} catch(error) {throw new Error(chunks.join(''),{cause:error});}
   assert.equal(chunks.join(''),expected,label);
-  assert.equal(allocations.live,0,label+' retained description allocations');
-  console.log('PASS shader descriptions',fixture,label);
+  assert.equal(allocations.live,0,label+' retained fixture allocations');
+  console.log('PASS shared UI fixture',fixture,label);
 }
 const temporary=await fs.mkdtemp(path.join(os.tmpdir(),'dynlex-shader-descriptions-'));
 try {

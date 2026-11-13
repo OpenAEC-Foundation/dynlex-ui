@@ -34,8 +34,6 @@ to arrange ribbon UI layout {a pointer to UI layout:layout} using {UI theme:them
                 set last's next to child
             set last to child
             increment index
-        if node's kind = 34:
-            require condition (node's count > 0) reporting "A tool field requires options"
         return nothing
     set horizontal to 0.0
     set vertical to 0.0

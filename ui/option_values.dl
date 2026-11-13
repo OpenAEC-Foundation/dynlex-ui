@@ -1,0 +1,18 @@
+# Owning option data is independent of descriptions, views and popup lifetime.
+import lib/sequence.dl
+
+class:
+    patterns:
+        UI option
+    members:
+        id as a string
+        label as a string
+        enabled as a boolean
+        icon as a C string
+
+UI option values means: the type of (an empty sequence of UI option)
+
+to get [a UI option named] {a value:id} [displaying] {a value:label} [enabled] {boolean:enabled}:
+    set key to the string form of id
+    require condition (key's length > 0) reporting "A UI option requires a nonempty identity"
+    return @intrinsic("construct", UI option, key, the string form of label, enabled, "")
