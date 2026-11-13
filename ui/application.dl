@@ -81,9 +81,10 @@ to get update UI view {a pointer to UI view:view}:
         @intrinsic("call pointer", view's frame action, nothing, view)
     if (((view's damaged or view's animating) or continuing) and (view's closed = false)) and ((view's width > 0) and (view's height > 0)):
         set view's damaged to false
+        set revision to view's instance's revision
         paint UI view view
         set view's last paint to view's seconds
-        set view's revision to view's instance's revision
+        set view's revision to revision
         set view's last width to view's width
         set view's last height to view's height
         set view's last scale to view's pixel scale

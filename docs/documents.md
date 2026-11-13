@@ -35,6 +35,10 @@ set the text of "Output" in (the address of instance) to "42"
 set the value of "Files" in (the address of instance) to 1
 ```
 
+Model changes made during a canvas paint callback reflow on the next frame.
+Changes made by a frame callback participate in that frame's layout. Once those
+changes have been painted, an unchanged view remains idle.
+
 Tab selection is zero-based. Mouse, arrow keys, Home and End use the same
 selection state. In a document, Tab enters the selected header and then its
 active panel; inactive panels retain their editor values and undo history.
@@ -303,6 +307,12 @@ execution, including the configured main filename, protected prefix and all
 provided files. Free that snapshot after serialization. Synchronize its workspace
 before collecting it so current edits are included. Later edits do not change the
 snapshot, and collecting it does not modify the provided file map.
+
+`the UI source files of project with main source source` builds the same owned
+snapshot using a supplied main source. It retains the configured prefix and
+provided files, while preserving the editable draft, document revisions and
+language-service context. This lets an application rebuild a saved, applied
+program while the user continues editing a newer draft.
 
 To retain imported source in the same project, use `a UI source document named
 filename at uri containing source in project`. These models have no hidden prefix

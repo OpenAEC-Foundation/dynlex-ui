@@ -1,0 +1,1 @@
+Paint-time model changes reflow on the next frame, frame callbacks reflow before painting, and unchanged views stay idle.

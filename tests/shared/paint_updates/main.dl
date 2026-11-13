@@ -1,0 +1,42 @@
+import ../../helpers/driver.dl
+import lib/text.dl
+
+appearance small stage appearance:
+    maximum width is 100
+    height is 30
+
+document painted status:
+    paragraph "Status" containing "Waiting" using no UI appearance
+    surface "Stage" using small stage appearance
+
+to [finish a test scene while painting] {a pointer to UI canvas frame:painting}:
+    set instance to painting's instance
+    if (the UI value for (the control labeled "Status" in instance) in instance)'s text = "Waiting":
+        set the text of "Status" in instance to "Ready. Your scene is now available."
+
+to [change status before a test frame] {a pointer to UI view:view}:
+    set view's frame action to 0 as a pointer
+    set the text of "Status" in (view's instance) to "Frame updated"
+
+set instance to an instance of painted status
+set window to the address of instance
+bind (the control labeled "Stage" in window) in window to (the function named "finish a test scene while painting $") for event 1
+set view to a UI view of window sized 120 by 300 using font "regular" with the test UI driver
+set next to update UI view (the address of view)
+require condition next reporting "A model change during painting did not schedule its next frame."
+set status to the UI layout labeled "Status" in (view's layout)
+set {waiting height} to status's bounds' height
+ignore update UI view (the address of view)
+require condition (status's content = "Ready. Your scene is now available.") reporting "A paint callback's model change was acknowledged without rebuilding its paragraph."
+require condition (status's bounds' height > waiting height) reporting "A paint callback's longer paragraph retained stale geometry."
+set surface to view's window as a pointer to test UI surface
+require condition (surface's drawn contains "available.") reporting "The next frame did not draw the updated paragraph."
+set paints to surface's paints
+ignore update UI view (the address of view)
+require condition (surface's paints = paints) reporting "An unchanged model kept repainting after its paint-time update."
+set view's frame action to (the function named "change status before a test frame $") as a pointer
+ignore update UI view (the address of view)
+require condition (status's content = "Frame updated") reporting "A frame callback's model change was acknowledged before layout could consume it."
+close the address of view
+close window
+print line "Paint-time model changes reflow on the next frame, frame callbacks reflow before painting, and unchanged views stay idle."
