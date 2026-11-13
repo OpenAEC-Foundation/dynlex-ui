@@ -15,6 +15,7 @@ import document_rendering.dl
 import overlays.dl
 
 to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
+    set view's text layout to layout
     set node to layout's node
     if node's kind = 22:
         if node != view's instance's page:
@@ -91,6 +92,7 @@ to paint UI view {a pointer to UI view:view}:
     set view's last text to @intrinsic("construct", a pointer to UI text run)
     set view's text count to 0
     set view's selectable to true
+    set view's text layout to view's layout
     increment view's paint count
     if view's theme's dark:
         set backdrop to the UI viewport bounds in view
@@ -104,6 +106,7 @@ to paint UI view {a pointer to UI view:view}:
     else:
         draw UI text (view's instance's description's text) at 32 57 with (view's heading) in (view's theme's text) on frame
         draw UI layout (view's layout) at 32 120 with cursor cursor in view on frame
+        set view's text layout to view's layout
         set bottom to view's height - 72
         set width to view's width - 64
         draw a rounded UI box (UI box at 32 bottom sized width 44) with radius 10.0 in (UI ink 229 236 248) on frame

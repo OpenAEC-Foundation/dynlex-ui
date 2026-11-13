@@ -17,6 +17,7 @@ class:
         start as an integer
         end caret as a boolean
         control as a pointer to UI layout
+        layout as a pointer to UI layout
         generation as an integer
         paint serial as an integer
         next as a pointer to UI text run

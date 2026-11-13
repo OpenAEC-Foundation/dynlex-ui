@@ -56,6 +56,7 @@ class:
         text focus as UI reference
         text source as a pointer to UI text source
         text control as a pointer to UI layout
+        text layout as a pointer to UI layout
         text offset as an integer
         text end caret as a boolean
         reveal caret as a boolean

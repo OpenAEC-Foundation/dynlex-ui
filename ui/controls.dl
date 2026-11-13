@@ -6,6 +6,7 @@ import text_field.dl
 import switch_states.dl
 
 to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
+    set view's text layout to layout
     set node to layout's node
     set layout's painted bounds to box
     if node's kind = 38:

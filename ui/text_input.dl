@@ -13,9 +13,11 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view} limite
     set covering to the UI hit at point in view
     set run to view's texts
     loop while run != @intrinsic("construct", a pointer to UI text run):
-        set visible to true
+        set visible to run's generation = view's paint count
+        if visible:
+            set visible to the UI layout (run's layout) is active in view
         if covering != @intrinsic("construct", a pointer to UI layout):
-            set visible to run's paint serial >= covering's paint serial
+            set visible to visible and (run's paint serial >= covering's paint serial)
         if scope != @intrinsic("construct", a pointer to UI text source):
             set visible to visible and (run's source = scope)
         if run's source's element != @intrinsic("construct", UI reference):
@@ -50,12 +52,14 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
     set run to view's texts
     set source to view's selection's caret source
     loop while run != @intrinsic("construct", a pointer to UI text run):
-        set allowed to true
+        set allowed to run's generation = view's paint count
+        if allowed:
+            set allowed to the UI layout (run's layout) is active in view
         if source != @intrinsic("construct", a pointer to UI text source):
             if source's element != @intrinsic("construct", UI reference):
-                set allowed to run's source = source
+                set allowed to allowed and (run's source = source)
             else:
-                set allowed to run's source's element = @intrinsic("construct", UI reference)
+                set allowed to allowed and (run's source's element = @intrinsic("construct", UI reference))
         if run's source's element != @intrinsic("construct", UI reference):
             set allowed to allowed and (the UI element (run's source's element) is enabled in (view's instance))
         if view's selection's limit != @intrinsic("construct", a pointer to UI text source):

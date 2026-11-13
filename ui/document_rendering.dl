@@ -17,6 +17,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         set layout's hover to 0.0
     if (the UI layout layout is visible in (view's instance)) = false:
         return nothing
+    set view's text layout to layout
     increment view's paint serial
     set layout's paint serial to view's paint serial
     set box to layout's bounds

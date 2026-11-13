@@ -5,6 +5,7 @@ import clipping.dl
 import control_presentation.dl
 
 to draw ribbon control {a pointer to UI layout:layout} in {UI bounds:box} focused {boolean:focused} in {a pointer to UI view:view} on {UI frame:frame}:
+    set view's text layout to layout
     set node to layout's node
     set ink to view's theme's text
     set background to UI ink between (UI ink 255 255 255) and (UI ink 222 228 237) at (layout's hover * 0.65)

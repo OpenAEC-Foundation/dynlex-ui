@@ -104,6 +104,8 @@ to [paint UI text popover] {a pointer to UI text popover:popover} [anchored at] 
     set {previous offset} to view's text offset
     set {previous ending} to view's text end caret
     set {previous control} to view's text control
+    set {previous layout} to view's text layout
+    set view's text layout to layout
     set view's selectable to true
     set view's text source to the address of (layout's text source)
     set line to layout's lines
@@ -115,6 +117,7 @@ to [paint UI text popover] {a pointer to UI text popover:popover} [anchored at] 
     set view's text offset to previous offset
     set view's text end caret to previous ending
     set view's text control to previous control
+    set view's text layout to previous layout
     restore UI clip saved in view on frame
 
 to get [read UI text popover] {a pointer to UI text popover:popover} [in] {a pointer to UI view:view}:

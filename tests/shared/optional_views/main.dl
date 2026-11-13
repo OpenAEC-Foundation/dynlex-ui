@@ -15,6 +15,7 @@ document conditional views using stack appearance:
         region "Work" using stack appearance:
             button "Run"
             editor "Draft" containing "kept draft" using editor appearance
+            paragraph "Retained explanation" using no UI appearance
             choice field "Mode" choosing "One" using no UI appearance:
                 choice "One"
                 choice "Two"
@@ -42,8 +43,22 @@ set before to the UI layout labeled "Before" in (view's layout)
 set after to the UI layout labeled "After" in (view's layout)
 set run to the UI layout labeled "Run" in (view's layout)
 set position to a UI point at (run's painted bounds' x + 5.0) and (run's painted bounds' y + 5.0)
+set glyph to view's texts
+loop while glyph's source != (the address of ((the UI layout labeled "Draft" in (view's layout))'s text source)):
+    set glyph to glyph's next
+set point to a UI point at (glyph's origin's x + 2.0) and (glyph's origin's y - 2.0)
+require condition ((the UI text hit at point in (the address of view)) = glyph) reporting "The visible draft did not expose its text hit target"
+select UI text at point in glyph extending false in (the address of view)
+set explanation to the UI layout labeled "Retained explanation" in (view's layout)
+set caption to view's texts
+loop while caption's source != (the address of (explanation's text source)):
+    set caption to caption's next
+set {caption point} to a UI point at (caption's origin's x + 2.0) and (caption's origin's y - 2.0)
 
 set the value of "Details" in window to -1
+require condition ((the UI text hit at point in (the address of view)) = (0 as a pointer to UI text run)) reporting "Hidden editor glyphs remained selectable before repainting"
+require condition ((the UI text hit at caption point in (the address of view)) = (0 as a pointer to UI text run)) reporting "Hidden paragraph glyphs remained selectable before repainting"
+require condition ((the nearest UI text to point in (the address of view)) = (0 as a pointer to UI text run)) reporting "A selection drag could enter hidden text"
 require condition ((the selected UI child of group in window) = (0 as UI reference)) reporting "An optional view group cannot select no view"
 require condition ((the active UI editor within group in window) = (0 as UI reference)) reporting "A hidden view still exposes its editor"
 require condition ((UI source element source is active within conditional views in window) = false) reporting "A hidden source was still active for language analysis"

@@ -159,6 +159,8 @@ to get remember UI [text] {string:text} at {UI point:origin} using {UI font:type
                 clear UI selection in view
         set source's text to text
     set run's source to source
+    require condition (view's text layout != (0 as a pointer to UI layout)) reporting "Selectable text requires a retained layout owner"
+    set run's layout to view's text layout
     set run's control to view's text control
     set run's text to text
     set run's origin to origin
