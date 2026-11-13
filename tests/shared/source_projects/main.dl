@@ -46,6 +46,17 @@ edit UI source document main to (the string form of "a new program") at 2.0 seco
 require condition ((the compact JSON form of snapshot) = before) reporting "A source snapshot changed after its project was edited."
 free snapshot
 
+# Rebuilding an applied program must not replace the visible draft or its
+# language-service identity. The caller owns the entire snapshot independently.
+set revision to main's revision
+set context to project's context
+set snapshot to the UI source files of project with main source (the string form of "print line \"applied 🌽\"")
+require condition ((the JSON text named "renamed.dl" in snapshot) = (main's prefix + "print line \"applied 🌽\"")) reporting "A compilation snapshot lost the supplied source or protected prefix."
+require condition ((main's source = "a new program") and ((main's revision = revision) and (project's context = context))) reporting "Compiling an alternate snapshot changed the editor draft or analysis identity."
+set JSON member (JSON text "helper.dl" is "helper means: 12") in snapshot
+require condition ((the JSON text named "helper.dl" in (project's files)) = "helper means: 9") reporting "Editing a compilation snapshot mutated its project's imported files."
+free snapshot
+
 # Root ownership includes imported models and their retained query slots. The
 # Wasm allocation probe checks that closing this project releases all of them.
 free UI source project (main's project)

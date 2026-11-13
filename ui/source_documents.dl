@@ -80,13 +80,17 @@ to [refresh the context of UI source project] {a pointer to UI source project:pr
     set project's context to the compact JSON form of context
     free context
 
-# Analysis and execution consume the same owned snapshot of project inputs.
-to get [the UI source files of] {a pointer to UI source project:project}:
+# Snapshots own their inputs. Alternate applied source can be compiled without
+# replacing a visible draft or changing the language service's project identity.
+to get [the UI source files of] {a pointer to UI source project:project} [with main source] {string:source}:
     set document to project's entry
     set files to a copy of JSON-RPC node (project's files)
     require condition ((files has JSON member named (document's filename)) = false) reporting "The main editor source is duplicated in its project files"
-    add JSON-RPC member (document's filename) containing (a new JSON-RPC text for (document's prefix + document's source)) to files
+    add JSON-RPC member (document's filename) containing (a new JSON-RPC text for (document's prefix + source)) to files
     return files
+
+to get [the UI source files of] {a pointer to UI source project:project}:
+    return the UI source files of project with main source (project's entry's source)
 
 to get [the UI source document at] {string:uri} [in] {a pointer to UI source project:project}:
     set document to project's documents
