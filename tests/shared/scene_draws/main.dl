@@ -1,0 +1,118 @@
+import ../../../ui/scene_draws.dl
+import ../../../ui/scene_surfaces.dl
+
+to get [a test scene object named] {a value:name} [using] {UI scene mesh:mesh} [at depth] {floating-point number:depth} [mirrored] {boolean:mirrored} [transparent] {boolean:transparent}:
+    set material to a UI scene material with color (UI ink 200 120 80) roughness 0.8 metalness 0.0
+    if transparent:
+        set material's opacity to 0.5
+        set material's double sided to true
+        set material's depth write to false
+    set pose to an identity UI scene pose
+    set pose's position's z to depth
+    if mirrored:
+        set pose's scale's x to -1.0
+    set part to a UI scene mesh part named "body" under -1 using mesh with material material at pose
+    return a UI scene object named name with model (a UI scene model from [part])
+
+to [check stable scene sorting]:
+    set records to an empty list of UI scene ordered record
+    set scratch to an empty list of UI scene ordered record
+    loop index from 0 to 257:
+        set record to a new UI scene ordered record
+        set record's depth to ((index * 73) % 23) as a floating-point number
+        store (index as a 32 bit unsigned integer) into record's record's flags at 0
+        append record to records
+    sort UI scene records records using scratch
+    set previous to 100.0
+    set serial to 0 as a 32 bit unsigned integer
+    for each record in records:
+        set current to the item at 0 in record's record's flags
+        require condition (record's depth <= previous) reporting "Scene depth sorting did not order an irregular non-power-of-two input"
+        if record's depth = previous:
+            require condition (current > serial) reporting "Equal-depth transparent instances lost their stable source order"
+        set previous to record's depth
+        set serial to current
+    free records
+    free scratch
+
+set bank to a UI scene mesh bank
+set frame to a UI scene frame using bank
+set mesh to a UI box mesh with 1 by 1 by 1 segments
+set opaque to a test scene object named "opaque" using mesh at depth 1.0 mirrored false transparent false
+set near to a test scene object named "near" using mesh at depth 2.0 mirrored false transparent true
+set far to a test scene object named "far" using mesh at depth 0.0 mirrored true transparent true
+set objects to a list containing opaque
+append near to objects
+append far to objects
+set camera to a UI scene camera at (a UI scene vector from [0.0,0.0,5.0]) aimed at (a UI scene vector from [0.0,0.0,0.0]) with angle 35.0 aspect 1.0 near 0.1 far 100.0
+prepare UI scene frame frame from objects through camera
+require condition ((bank's revision = 1) and ((the length of bank's vertices) = 24)) reporting "Objects with shared geometry created duplicate GPU streams"
+require condition (((the length of frame's records) = 3) and ((the length of frame's draws) = 3)) reporting "Scene frame dropped mixed-pipeline instances"
+require condition (((the item at 0 in frame's draws)'s pipeline = 0) and (((the item at 1 in frame's draws)'s pipeline = 15) and ((the item at 2 in frame's draws)'s pipeline = 14))) reporting "Transparent draws lost global back-to-front ordering"
+require condition ((the item at 14 in (the item at 1 in frame's records)'s matrix) = 0.0) reporting "Far transparent object was not submitted first"
+require condition ((the item at 14 in (the item at 2 in frame's records)'s matrix) = 2.0) reporting "Near transparent object was not submitted last"
+require condition ((the length of frame's shadow records) = 3) reporting "Color depth-write settings suppressed shadow casters"
+require condition (((the item at 0 in frame's shadow draws)'s pipeline = 0) and (((the item at 1 in frame's shadow draws)'s pipeline = 2) and ((the item at 2 in frame's shadow draws)'s pipeline = 3))) reporting "Shadow draws did not preserve mirroring and two-sided faces independently of blending"
+set revision to far's revision
+prepare UI scene frame frame from objects through camera
+require condition ((far's revision = revision) and (bank's revision = 1)) reporting "Unchanged objects repacked transforms or reuploaded meshes"
+set tint to linear UI ink red 0.5 green 0.75 blue 1.0
+set UI scene color multiplier in far to tint
+prepare UI scene frame frame from objects through camera
+set colored to the item at 1 in (frame's records)
+set original to linear UI ink from (UI ink 200 120 80)
+require condition ((the absolute value of ((the item at 0 in (colored's color)) - original's red * 0.5)) < 0.00001) reporting "Instance tint did not multiply in linear color space"
+set revision to far's revision
+set UI scene color multiplier in far to tint
+prepare UI scene frame frame from objects through camera
+require condition (far's revision = revision) reporting "An unchanged linear color multiplier invalidated cached instances"
+set UI scene color multiplier in far to (linear UI ink red 1.0 green 1.0 blue 1.0)
+set duplicate to a test scene object named "opaque" using mesh at depth -1.0 mirrored false transparent false
+append duplicate to objects
+prepare UI scene frame frame from objects through camera
+require condition (((the length of frame's draws) = 3) and ((the item at 0 in frame's draws)'s instances = 2)) reporting "Opaque instances using one mesh and state were not batched"
+remove the last item from objects
+set pose to an identity UI scene pose
+set pose's position's x to 7.0
+set UI scene root pose in (duplicate's instance) to pose
+set replacement to a UI scene model from [a UI scene mesh part named "changed" under -1 using mesh with material (a UI scene material with color (UI ink 10 20 30) roughness 0.2 metalness 0.5) at (an identity UI scene pose)]
+set UI scene model in duplicate to replacement
+refresh UI scene object duplicate
+require condition ((duplicate's instance's model's parts' data = replacement's parts' data) and ((the item at 12 in (the item at 0 in duplicate's packets)'s record's matrix) = 7.0)) reporting "Replacing a model lost shared geometry or the object transform"
+close UI scene object duplicate
+set viewport to UI box at 0.0 0.0 sized 100.0 100.0
+set ray to the UI scene ray at (a UI point at 50.0 and 50.0) through camera in viewport
+set selected to the UI scene object selection from ray among objects including backfaces false
+require condition ((selected's object = near) and (selected's selection's part = 0)) reporting "Picking did not select the nearest rendered object"
+set near's pickable to false
+set selected to the UI scene object selection from ray among objects including backfaces false
+require condition (selected's object = opaque) reporting "Object pickability was ignored"
+set opaque's visible to false
+set pose to far's instance's root pose
+set pose's position's z to 3.0
+set UI scene root pose in (far's instance) to pose
+prepare UI scene frame frame from objects through camera
+require condition (((the length of frame's records) = 2) and ((the item at 0 in frame's draws)'s pipeline = 14)) reporting "Visibility or changed transforms did not update ordering"
+require condition (far's revision > revision) reporting "Changed objects did not refresh their cached records"
+set pipelines to the UI scene color pipelines
+set shadows to the UI scene shadow pipelines
+require condition ((pipelines's length = 16) and (shadows's length = 4)) reporting "Scene raster variants are incomplete"
+set state to the JSON value at index 15 in pipelines
+require condition (((the JSON text named "frontFace" in state) = "cw") and (((the JSON text named "cullMode" in state) = "none") and ((the JSON boolean named "depthWrite" in state) = false))) reporting "Mirrored translucent two-sided material selected the wrong raster state"
+free pipelines
+free shadows
+close UI scene frame frame
+close UI scene mesh bank bank
+# Reuse cached objects with a different bank: cached packets must not retain atlas offsets.
+set bank to a UI scene mesh bank
+set unused to the span of UI mesh (a UI plane mesh with 1 by 1 segments) in bank
+set frame to a UI scene frame using bank
+prepare UI scene frame frame from objects through camera
+require condition (((the item at 0 in frame's draws)'s first = 6) and ((the item at 0 in frame's draws)'s vertex offset = 4)) reporting "Object caches retained offsets into a previous mesh bank"
+close UI scene frame frame
+close UI scene mesh bank bank
+for each object in objects:
+    close UI scene object object
+free objects
+check stable scene sorting
+print line "Scene submission caches shared objects, batches opaque geometry, orders transparency, preserves shadow states and selects rendered instances."

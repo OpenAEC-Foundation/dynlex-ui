@@ -1,0 +1,76 @@
+import scene_objects.dl
+import scene_uploads.dl
+import shader_attachments.dl
+
+class:
+    patterns:
+        UI scene ordered record
+    members:
+        record as UI scene shader instance
+        span as an integer
+        pipeline as an integer
+        depth as a floating-point number
+
+UI scene ordered records means: the type of (an empty list of UI scene ordered record)
+UI scene draw buckets means: the type of (an empty list of UI scene shader instances)
+UI scene shader draws means: the type of (an empty list of UI shader draw)
+
+class:
+    patterns:
+        UI scene frame
+    members:
+        bank as a pointer to UI scene mesh bank
+        records as UI scene shader instances
+        draws as UI scene shader draws
+        shadow records as UI scene shader instances
+        shadow draws as UI scene shader draws
+        buckets as UI scene draw buckets
+        shadow buckets as UI scene draw buckets
+        ordered as UI scene ordered records
+        scratch as UI scene ordered records
+
+to get [a UI scene frame using] {a pointer to UI scene mesh bank:bank}:
+    set result to storage for one slot initialized with (a new UI scene frame)
+    set result's bank to bank
+    set result's records to an empty list of UI scene shader instance
+    set result's draws to an empty list of UI shader draw
+    set result's shadow records to an empty list of UI scene shader instance
+    set result's shadow draws to an empty list of UI shader draw
+    set result's buckets to an empty list of UI scene shader instances
+    set result's shadow buckets to an empty list of UI scene shader instances
+    set result's ordered to an empty list of UI scene ordered record
+    set result's scratch to an empty list of UI scene ordered record
+    return result
+
+to get [the UI scene color pipelines]:
+    set result to a new JSON-RPC array
+    loop index from 0 to 16:
+        set face to "cw" if (index & 1) != 0, else "ccw"
+        set cull to "none" if (index & 2) != 0, else "back"
+        set blend to "alpha" if (index & 4) != 0, else "opaque"
+        add (a UI shader raster state culling cull facing face writing depth ((index & 8) = 0) comparing "less-equal" blending blend) to the JSON array result
+    return result
+
+to get [the UI scene shadow pipelines]:
+    set result to a new JSON-RPC array
+    loop index from 0 to 4:
+        set face to "cw" if (index & 1) != 0, else "ccw"
+        set cull to "none" if (index & 2) != 0, else "front"
+        add (a UI shader raster state culling cull facing face writing depth true comparing "less-equal" blending "opaque") to the JSON array result
+    return result
+
+to [close UI scene frame] {a pointer to UI scene frame:frame}:
+    free frame's records
+    free frame's draws
+    free frame's shadow records
+    free frame's shadow draws
+    for each bucket in (frame's buckets):
+        free bucket
+    free frame's buckets
+    for each bucket in (frame's shadow buckets):
+        free bucket
+    free frame's shadow buckets
+    free frame's ordered
+    free frame's scratch
+    destroy the value at frame
+    deallocate frame

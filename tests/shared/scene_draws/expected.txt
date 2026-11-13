@@ -1,0 +1,1 @@
+Scene submission caches shared objects, batches opaque geometry, orders transparency, preserves shadow states and selects rendered instances.

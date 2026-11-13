@@ -1,0 +1,117 @@
+# Objects own editable instances and cached drawing records. A frame borrows them.
+import scene_instance_picking.dl
+import scene_buffers.dl
+
+class:
+    patterns:
+        UI scene object packet
+    members:
+        part as an integer
+        record as UI scene shader instance
+        center as UI scene vector
+        pipeline as an integer
+        shadow pipeline as an integer
+        casts shadow as a boolean
+        ordered as a boolean
+
+class:
+    patterns:
+        UI scene object
+    members:
+        name as a string
+        instance as a pointer to UI scene instance
+        visible as a boolean
+        pickable as a boolean
+        revision as a 64 bit integer
+        color multiplier as linear UI paint
+        packets as the type of (an empty list of UI scene object packet)
+
+UI scene objects means: the type of (an empty list of a pointer to UI scene object)
+
+class:
+    patterns:
+        UI scene object selection
+    members:
+        object as a pointer to UI scene object
+        selection as UI scene selection
+
+to get [a UI scene object named] {a value:name} [with model] {UI scene model:model}:
+    set result to storage for one slot initialized with (a new UI scene object)
+    set result's name to the string form of name
+    set result's instance to a UI scene instance of model
+    set result's visible to true
+    set result's pickable to true
+    set result's revision to -1
+    set result's color multiplier to linear UI ink red 1.0 green 1.0 blue 1.0
+    set result's packets to an empty list of UI scene object packet
+    return result
+
+to [set UI scene color multiplier in] {a pointer to UI scene object:object} [to] {linear UI paint:color}:
+    require condition (((color's red >= 0.0) and (color's red is finite)) and (((color's green >= 0.0) and (color's green is finite)) and ((color's blue >= 0.0) and (color's blue is finite)))) reporting "Scene color multipliers must be finite and nonnegative"
+    set previous to object's color multiplier
+    if (previous's red = color's red) and ((previous's green = color's green) and (previous's blue = color's blue)):
+        return nothing
+    set object's color multiplier to color
+    set object's revision to -1
+
+to [set UI scene model in] {a pointer to UI scene object:object} [to] {UI scene model:model}:
+    if object's instance's model's parts' data = model's parts' data:
+        return nothing
+    set pose to object's instance's root pose
+    set anchor to a UI scene transform from (object's instance's anchor)
+    close UI scene instance (object's instance)
+    set object's instance to a UI scene instance of model
+    set UI scene root pose in (object's instance) to pose
+    set UI scene anchor in (object's instance) to anchor
+    set object's revision to -1
+
+to [refresh UI scene object] {a pointer to UI scene object:object}:
+    set instance to object's instance
+    refresh UI scene instance instance
+    if object's revision = instance's revision:
+        return nothing
+    clear object's packets
+    set index to 0
+    for each part in (instance's model's parts):
+        set placement to the item at index in (instance's placements)
+        if (placement's present) and (placement's visible):
+            set material to the item at index in (instance's materials)
+            set packet to a new UI scene object packet
+            set packet's part to index
+            set packet's record to a UI scene shader instance through (placement's transform) with material material casting shadow (part's casts shadow) receiving shadow (part's receives shadow)
+            set tint to object's color multiplier
+            store ((the item at 0 in packet's record's color) * tint's red) into packet's record's color at 0
+            store ((the item at 1 in packet's record's color) * tint's green) into packet's record's color at 1
+            store ((the item at 2 in packet's record's color) * tint's blue) into packet's record's color at 2
+            set packet's center to (placement's bounds' minimum + placement's bounds' maximum) / 2.0
+            set pipeline to 1 if placement's transform's handedness < 0.0, else 0
+            if material's double sided:
+                set pipeline to pipeline + 2
+            set packet's shadow pipeline to pipeline
+            if material's opacity < 1.0:
+                set pipeline to pipeline + 4
+            if (material's depth write) = false:
+                set pipeline to pipeline + 8
+            set packet's pipeline to pipeline
+            set packet's casts shadow to part's casts shadow
+            set packet's ordered to ((material's opacity < 1.0) or ((material's depth write) = false))
+            append packet to (object's packets)
+        increment index
+    set object's revision to instance's revision
+
+to get [the UI scene object selection from] {UI scene ray:ray} [among] {UI scene objects:objects} [including backfaces] {boolean:backfaces}:
+    set result to a new UI scene object selection
+    set result's selection's part to -1
+    for each object in objects:
+        if (object's visible) and (object's pickable):
+            set selected to the UI scene selection from ray in (object's instance) including backfaces backfaces
+            if (selected's hit's hit) and (((result's selection's hit's hit) = false) or (selected's hit's distance < result's selection's hit's distance)):
+                set result's object to object
+                set result's selection to selected
+    return result
+
+to [close UI scene object] {a pointer to UI scene object:object}:
+    close UI scene instance (object's instance)
+    free object's packets
+    destroy the value at object
+    deallocate object

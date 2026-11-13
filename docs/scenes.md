@@ -46,6 +46,55 @@ Triangle winding selects the front face. Enable backfaces for two-sided geometry
 Parallel rays, degenerate triangles and intersections behind the ray report no
 hit. Integer and floating-point vertex coordinates share the camera conversion.
 
+## Object submission
+
+`ui/scene_draws.dl` builds color and shadow instance streams from the same
+objects used for picking. Objects own their editable instances; a frame borrows
+its mesh bank and the objects passed to it.
+
+```dynlex
+set object to a UI scene object named "worker-1" with model model
+set objects to a list containing object
+set bank to a UI scene mesh bank
+set frame to a UI scene frame using bank
+prepare UI scene frame frame from objects through camera
+
+# Upload frame's records and draws to the color pass; shadow records and shadow
+# draws go to the depth pass. Geometry bindings retain the bank's static streams.
+set selected to the UI scene object selection from ray among objects including backfaces false
+
+close UI scene frame frame
+close UI scene mesh bank bank
+close UI scene object object
+free objects
+```
+
+Use `the UI scene color pipelines` for the color pass and `the UI scene shadow
+pipelines` for its shadow pass. These JSON arrays transfer ownership into their
+pass descriptions, or can be freed separately. The frame's draw records select
+the matching variants: mirrored winding, two-sided geometry, alpha blending and
+depth writes. Shadow variants preserve winding and sidedness independently of
+color opacity and depth writes.
+
+Opaque objects with depth writes batch by mesh and pipeline. Transparent objects
+and objects with depth writes disabled follow all opaque draws, sorted stably by
+their world-bounds centers from far to near along the camera direction. Only
+adjacent records using the same mesh and pipeline combine into an instanced draw.
+Sorting takes O(n log n) time; reusable lists retain capacity between frames.
+
+Unchanged objects reuse their packed matrices and materials. Pose, material and
+part visibility edits use the instance setters described below. `object's
+visible` controls both submission and selection; `object's pickable` controls
+selection. Objects may share names, for example several models belonging to the
+same game entity. An empty selection has `selection's hit's hit = false`.
+
+`set UI scene color multiplier in object to color` accepts a finite nonnegative
+`linear UI paint`. It multiplies base color in linear space without changing the
+model or its material. `set UI scene model in object to model` replaces the
+articulation and materials while retaining the root pose, anchor, visibility,
+pickability and color multiplier. Mesh-bank offsets are resolved per frame;
+cached objects can be reused with another bank.
+
 ## Indexed meshes
 
 `ui/scene_mesh.dl` defines owning, immutable `UI scene mesh` values. Each mesh has

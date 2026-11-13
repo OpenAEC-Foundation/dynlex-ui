@@ -1,0 +1,101 @@
+# Opaque records batch by mesh/state. Ordered records retain global depth order.
+import scene_draw_types.dl
+
+to [sort UI scene records] {UI scene ordered records:records} [using] {UI scene ordered records:scratch}:
+    clear scratch
+    for each record in records:
+        append record to scratch
+    set count to the length of records
+    set width to 1
+    loop while width < count:
+        set start to 0
+        loop while start < count:
+            set middle to the minimum of (start + width) and count
+            set end to the minimum of (middle + width) and count
+            set left to start
+            set right to middle
+            set destination to start
+            loop while destination < end:
+                set take to false
+                if left < middle:
+                    set take to true
+                    if right < end:
+                        set take to (the item at left in records)'s depth >= (the item at right in records)'s depth
+                if take:
+                    replace item at index destination in scratch with (the item at left in records)
+                    increment left
+                else:
+                    replace item at index destination in scratch with (the item at right in records)
+                    increment right
+                increment destination
+            set start to end
+        loop index from 0 to count:
+            replace item at index index in records with (the item at index in scratch)
+        set width to width * 2
+
+to [append UI scene record] {UI scene shader instance:record} [to bucket] {integer:index} [among] {UI scene draw buckets:buckets}:
+    loop while (the length of buckets) <= index:
+        append (an empty list of UI scene shader instance) to buckets
+    append record to (the item at index in buckets)
+
+to [flatten UI scene buckets] {UI scene draw buckets:buckets} [with] {integer:variants} [pipelines from] {a pointer to UI scene mesh bank:bank} [into] {UI scene shader instances:records} [drawing] {UI scene shader draws:draws}:
+    set index to 0
+    for each bucket in buckets:
+        set count to the length of bucket
+        if count > 0:
+            set draw to a UI scene mesh draw from span (index / variants) in bank counting count instances starting at (the length of records)
+            set draw's pipeline to (index % variants) as a 32 bit unsigned integer
+            append draw to draws
+            for each record in bucket:
+                append record to records
+        increment index
+
+to [collect UI scene object] {a pointer to UI scene object:object} [for] {a pointer to UI scene frame:frame} [looking from] {UI scene vector:eye} [along] {UI scene vector:forward}:
+    if (object's visible) = false:
+        return nothing
+    refresh UI scene object object
+    for each packet in (object's packets):
+        set part to the item at (packet's part) in (object's instance's model's parts)
+        set span to the span of UI mesh (part's mesh) in (frame's bank)
+        if packet's ordered:
+            set depth to the dot product of (packet's center - eye) and forward
+            append (@intrinsic("construct", UI scene ordered record, packet's record, span, packet's pipeline, depth)) to (frame's ordered)
+        else:
+            append UI scene record (packet's record) to bucket (span * 16 + packet's pipeline) among (frame's buckets)
+        if packet's casts shadow:
+            append UI scene record (packet's record) to bucket (span * 4 + packet's shadow pipeline) among (frame's shadow buckets)
+
+to [prepare UI scene frame] {a pointer to UI scene frame:frame} [from] {UI scene objects:objects} [through] {UI scene camera:camera}:
+    clear frame's records
+    clear frame's draws
+    clear frame's shadow records
+    clear frame's shadow draws
+    clear frame's ordered
+    for each bucket in (frame's buckets):
+        clear bucket
+    for each bucket in (frame's shadow buckets):
+        clear bucket
+    set forward to camera's target - camera's position
+    set magnitude to the length of forward
+    require condition ((magnitude is finite) and (magnitude > 0.0)) reporting "Scene submission requires a finite camera direction"
+    set forward to forward / magnitude
+    for each object in objects:
+        collect UI scene object object for frame looking from (camera's position) along forward
+    flatten UI scene buckets (frame's buckets) with 16 pipelines from (frame's bank) into (frame's records) drawing (frame's draws)
+    flatten UI scene buckets (frame's shadow buckets) with 4 pipelines from (frame's bank) into (frame's shadow records) drawing (frame's shadow draws)
+    sort UI scene records (frame's ordered) using (frame's scratch)
+    set previous to -1
+    set pipeline to -1
+    for each ordered in (frame's ordered):
+        if (previous = ordered's span) and (pipeline = ordered's pipeline):
+            set index to (the length of frame's draws) - 1
+            set draw to the item at index in (frame's draws)
+            increment draw's instances
+            replace item at index index in (frame's draws) with draw
+        else:
+            set draw to a UI scene mesh draw from span (ordered's span) in (frame's bank) counting 1 instances starting at (the length of frame's records)
+            set draw's pipeline to ordered's pipeline as a 32 bit unsigned integer
+            append draw to (frame's draws)
+            set previous to ordered's span
+            set pipeline to ordered's pipeline
+        append (ordered's record) to (frame's records)
