@@ -39,6 +39,8 @@ require condition ((the record count of UI shader shader pass pass buffer slot i
 require condition ((the index count of UI shader shader pass pass in context) = 6) reporting "Wrong index count."
 set image to a UI texture from shader shader sized width by height in context
 require condition (image's resource = (100 as a pointer)) reporting "Wrong texture resource."
+set UI shader shader pass pass in context enabled false
+set UI shader shader pass pass in context enabled true
 close UI shader shader in context
 print line "Shader provider ABI retained."
 `;
@@ -58,6 +60,7 @@ print line "Shader provider ABI retained."
       ui_shader_image:(surface,shader,name,length,level,layer,pointer,count)=>record('image',[surface,shader,length,level,layer,count]),
       ui_shader_index_buffer:(surface,shader,pass,pointer,count)=>record('indices',[surface,shader,pass,count]),
       ui_shader_draws:(surface,shader,pass,pointer,count)=>record('draws',[surface,shader,pass,count]),
+      ui_shader_pass_enabled:(...args)=>record('pass enabled',args),
       ui_shader_buffer_bytes:(...args)=>{record('bytes',args);return 48;},
       ui_shader_buffer_records:(...args)=>{record('records',args);return 3;},
       ui_shader_index_count:(...args)=>{record('index count',args);return 6;},
@@ -76,7 +79,8 @@ print line "Shader provider ABI retained."
       {kind:'vertices',args:[9,777,2,3,8]},{kind:'image',args:[9,777,5,2,3,8]},{kind:'indices',args:[9,777,2,3]},
       {kind:'draws',args:[9,777,2,1]},{kind:'bytes',args:[9,777,2,3]},
       {kind:'records',args:[9,777,2,3]},{kind:'index count',args:[9,777,2]},
-      {kind:'frame',args:[9,777,40,20]},{kind:'close',args:[9,777]}
+      {kind:'frame',args:[9,777,40,20]},{kind:'pass enabled',args:[9,777,2,0]},
+      {kind:'pass enabled',args:[9,777,2,1]},{kind:'close',args:[9,777]}
     ]);
     // Earlier valid operations may run, but the rejected operation must not reach its provider.
     for(let field=0;field<values.length;field++){

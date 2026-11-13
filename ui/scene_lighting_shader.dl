@@ -1,0 +1,16 @@
+# Fragment-only material operations. Portable BRDF arithmetic lives in scene_lighting.dl.
+# Standard roughness follows Three.js; MIT notice: assets/licenses/threejs.txt.
+import scene_lighting.dl
+import lib/shader.dl
+
+to get [the UI scene geometry roughness of] {vector:normal}:
+    set horizontal to the horizontal shader derivative of normal
+    set vertical to the vertical shader derivative of normal
+    set x to the maximum of (the absolute value of (the x of horizontal)) and (the absolute value of (the x of vertical))
+    set y to the maximum of (the absolute value of (the y of horizontal)) and (the absolute value of (the y of vertical))
+    set z to the maximum of (the absolute value of (the z of horizontal)) and (the absolute value of (the z of vertical))
+    return the maximum of x and (the maximum of y and z)
+
+to get [the UI scene standard roughness from] {floating-point number:roughness} [on normal] {vector:normal}:
+    set geometry to the UI scene geometry roughness of normal
+    return the minimum of 1.0 and ((the maximum of 0.0525 and roughness) + geometry)

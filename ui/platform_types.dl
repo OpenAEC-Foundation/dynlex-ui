@@ -15,6 +15,7 @@ class:
         index count as a pointer
         images as a pointer
         close as a pointer
+        pass state as a pointer
 
 class:
     patterns:

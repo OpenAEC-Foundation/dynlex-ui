@@ -5,7 +5,7 @@ import {createShaderAssets} from './shader-assets.js';
 import {webGlShaderAssetDriver} from './shader-assets-webgl.js';
 import {createWebGlShaderTargets} from './shader-targets-webgl.js';
 import {createWebGlPrimitiveDraws} from './shader-provoking-webgl.js';
-import {shaderPassHasWork} from './shader-passes.js';
+import {shaderPassHasWork,setShaderPassEnabled} from './shader-passes.js';
 
 const fullscreen = `#version 300 es
 precision highp float;
@@ -63,7 +63,7 @@ export function createWebGlShader(gl,descriptor,target) {
   const equations={add:gl.FUNC_ADD,subtract:gl.FUNC_SUBTRACT,'reverse-subtract':gl.FUNC_REVERSE_SUBTRACT,min:gl.MIN,max:gl.MAX};
   try {
     for(const description of descriptor.passes) {
-      const pass={description,geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,slots:new Map(),textures:[],
+      const pass={description,enabled:true,geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,slots:new Map(),textures:[],
         primitives:provoking===null?createWebGlPrimitiveDraws(description.topology,transfer):null,
         targets:createWebGlShaderTargets(gl,assets,description.color,description.depth),
         topology:{'triangle-list':gl.TRIANGLES,'line-list':gl.LINES,'point-list':gl.POINTS}[description.topology]};
@@ -117,6 +117,7 @@ export function createWebGlShader(gl,descriptor,target) {
     vertexBuffer(index,slot,data) {const pass=passAt(index);gl.bindVertexArray(pass.array);pass.geometry.vertexBuffer(slot,data);},
     indexBuffer(index,data) {const pass=passAt(index);gl.bindVertexArray(pass.array);pass.geometry.indexBuffer(data);},
     draws(index,data) {passAt(index).geometry.draws(data);},
+    passEnabled(index,enabled) {setShaderPassEnabled(passAt(index),enabled);},
     bufferBytes(index,slot) {return passAt(index).geometry.bufferBytes(slot);},
     bufferRecords(index,slot) {return passAt(index).geometry.bufferRecords(slot);},
     indexCount(index) {return passAt(index).geometry.indexCount;},
@@ -133,7 +134,7 @@ export function createWebGlShader(gl,descriptor,target) {
       const record=assets.image(descriptor.output);
       if(output===null||output.texture!==record.storage) output=target(record);
       for(const [index,pass] of passes.entries()) {
-        if(!shaderPassHasWork(pass.description,plans[index])) continue;
+        if(!pass.enabled||!shaderPassHasWork(pass.description,plans[index])) continue;
         pass.targets.begin();gl.useProgram(pass.program);gl.bindVertexArray(pass.array);
         for(const binding of pass.uniforms.bindings) gl.bindBufferBase(gl.UNIFORM_BUFFER,pass.slots.get(binding.buffer),binding.buffer);
         for(const [unit,binding] of pass.textures.entries()) {

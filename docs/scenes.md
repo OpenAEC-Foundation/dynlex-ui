@@ -385,6 +385,9 @@ bank once their last use has finished. The binding itself owns no resources.
 `ui/scene_shader.dl` reads this vertex ABI in ordinary DynLex shaders. It supplies
 world position, normalized inverse-transpose world normal and camera projection,
 along with vertex colors, material color, emission, surface values, flags and UVs.
+For a perturbed object-space normal, use `the UI scene shader world normal from
+normal`; it applies the same instance inverse transpose and normalization. Apply
+object-space effects before this transform to preserve them under nonuniform scale.
 Pass a reflected 4-by-4 camera uniform to `the UI scene shader clip position of
 point through camera`; submit its value with `a UI shader value from graphics
 matrix matrix`. Standard core vector arithmetic and readable coordinates work in
@@ -438,6 +441,14 @@ normal. Cube directions take face indices 0 through 5 in +X, -X, +Y, -Y, +Z, -Z
 order and texture coordinates from zero to one, with the same orientation on both
 browser backends.
 
+`ui/scene_lighting_shader.dl` adds fragment-only geometric roughness. Supply the
+normalized, interpolated surface normal to `the UI scene standard roughness from
+roughness on normal normal`. It adds the largest absolute component of either
+pixel derivative, applies the standard 0.0525 material floor and caps the result
+at one. Call it in uniform control flow before material-specific branches. Core
+`lib/shader.dl` exposes horizontal and vertical shader derivatives for float32
+scalars and vectors of two through four components.
+
 `the UI scene DFG coefficients at roughness roughness view cosine cosine using
 count samples` returns A and B in x and y. Supply a positive sample count,
 roughness from zero to one and a view cosine greater than zero through one.
@@ -459,3 +470,18 @@ backends omit that pass's GPU work while retaining its image. Clear, resolve and
 discard attachment operations still execute with empty draws. A frame-size image
 loses its contents when resized and must be baked again; fixed-size images retain
 their storage. The application controls rebaking through the ordinary draw API.
+
+For passes that clear attachments, use explicit activation when retaining their
+results between updates:
+
+```dynlex
+set UI shader shader pass 0 in view enabled false
+set UI shader shader pass 0 in view enabled true
+```
+
+All passes start enabled. Disabling a pass omits its draw, clear, resolve and
+discard work while retaining its data and fixed-size images. Re-enabling it
+performs the declared attachment operations again. Keep uniforms and draw ranges
+valid as for every other pass. A cached shadow map can therefore clear and redraw
+when its casters move, then remain untouched between changes. Activation is a
+runtime operation; shader description data is unchanged.

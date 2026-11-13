@@ -4,7 +4,7 @@ import {createShaderUniforms} from './shader-uniforms.js';
 import {createShaderAssets} from './shader-assets.js';
 import {webGpuShaderAssetDriver} from './shader-assets-webgpu.js';
 import {createWebGpuShaderTargets} from './shader-targets-webgpu.js';
-import {shaderPassHasWork} from './shader-passes.js';
+import {shaderPassHasWork,setShaderPassEnabled} from './shader-passes.js';
 const fullscreen=`@vertex fn main(@builtin(vertex_index) index:u32)->@builtin(position) vec4f {
   let points=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));return vec4f(points[index],0,1);
 }`;
@@ -34,7 +34,7 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
   };
   try {
     for(const description of descriptor.passes) {
-      const pass={description,geometry:createShaderGeometry(description,transfer),pipelines:[],uniforms:null,
+      const pass={description,enabled:true,geometry:createShaderGeometry(description,transfer),pipelines:[],uniforms:null,
         layouts:[],groups:[],generation:-1,targets:createWebGpuShaderTargets(assets,description.color,description.depth)};
       passes.push(pass);
       const [vertex,fragment]=await Promise.all([module(description.vertex===null?fullscreen:description.vertex),
@@ -89,6 +89,7 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
     vertexBuffer(index,slot,data) {passAt(index).geometry.vertexBuffer(slot,data);},
     indexBuffer(index,data) {passAt(index).geometry.indexBuffer(data);},
     draws(index,data) {passAt(index).geometry.draws(data);},
+    passEnabled(index,enabled) {setShaderPassEnabled(passAt(index),enabled);},
     bufferBytes(index,slot) {return passAt(index).geometry.bufferBytes(slot);},
     bufferRecords(index,slot) {return passAt(index).geometry.bufferRecords(slot);},
     indexCount(index) {return passAt(index).geometry.indexCount;},
@@ -105,7 +106,7 @@ export async function createWebGpuShader(device,descriptor,target,retire) {
       if(output===null||output.texture!==record.storage) output=target(record);
       const encoder=device.createCommandEncoder();
       for(const [index,pass] of passes.entries()) {
-        if(!shaderPassHasWork(pass.description,plans[index])) continue;
+        if(!pass.enabled||!shaderPassHasWork(pass.description,plans[index])) continue;
         bindGroups(pass);
         const render=encoder.beginRenderPass(pass.targets.description());
         for(const [index,group] of pass.groups.entries()) render.setBindGroup(index,group);

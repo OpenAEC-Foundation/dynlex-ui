@@ -1,0 +1,9 @@
+import ../../ui/scene_lighting_shader.dl
+
+set x to the fragment x coordinate
+set y to the fragment y coordinate
+set normal to a new vector with x (x * 0.125 + y * 0.25), y (x * 0.25 - y * 0.375) and z (x * 0.375 + y * 0.0625)
+set base to the shader uniform named "roughness" at binding 0 as a 32 bit floating-point number
+set geometry to the UI scene geometry roughness of normal
+set roughness to the UI scene standard roughness from base on normal normal
+set the fragment color with a red channel of roughness, a green channel of geometry, a blue channel of 0.25 and an alpha channel of 1.0

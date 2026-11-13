@@ -9,6 +9,7 @@ const renderer={
   vertexBuffer(pass,slot,data){buffers.set(`${pass}:${slot}`,data.slice());calls.push(['vertex',pass,slot,[...data]]);},
   indexBuffer(pass,data){calls.push(['index',pass,[...data]]);},
   draws(pass,data){calls.push(['draws',pass,[...data]]);},
+  passEnabled(pass,enabled){calls.push(['pass enabled',pass,enabled]);},
   bufferBytes(pass,slot){return buffers.get(`${pass}:${slot}`).byteLength;},
   bufferRecords(pass,slot){return buffers.get(`${pass}:${slot}`).byteLength/8;},
   indexCount(){return 3;},
@@ -50,6 +51,10 @@ try {
   new Uint32Array(memory.buffer,48,7).set([3,2,1,4,5,1,2]);
   imports.ui_shader_draws(17,handle,0,48,1);
   assert.deepEqual(calls.at(-1),['draws',0,[3,2,1,4,5,1,2]]);
+  imports.ui_shader_pass_enabled(17,handle,0,0);
+  assert.deepEqual(calls.at(-1),['pass enabled',0,false]);
+  imports.ui_shader_pass_enabled(17,handle,0,1);
+  assert.deepEqual(calls.at(-1),['pass enabled',0,true]);
   new Uint8Array(memory.buffer,96,16).set([1,2,3,4]);
   imports.ui_shader_uniform(17,handle,0,2,3,0,1,4,96,16);
   assert.deepEqual(calls.at(-1),['uniform',0,2,3,0,1,4,[1,2,3,4,0,0,0,0,0,0,0,0,0,0,0,0]]);
@@ -60,6 +65,7 @@ try {
   assert.equal(resources.get(output),texture);
   assert.deepEqual(calls.at(-1),['render',5,3]);
   assert.throws(()=>imports.ui_shader_buffer_bytes(18,handle,0,0),/different surface/);
+  assert.throws(()=>imports.ui_shader_pass_enabled(18,handle,0,0),/different surface/);
   await assert.rejects(()=>service.request({operation:'release',resource:handle},{signal:new AbortController().signal},other),/different surface/);
   imports.ui_shader_close(17,handle);
   assert.equal(closed,1);assert.equal(resources.has(output),false);assert.equal(service.owns(handle),false);

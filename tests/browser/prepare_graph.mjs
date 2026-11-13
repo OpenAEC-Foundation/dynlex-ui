@@ -15,7 +15,9 @@ await prepareScene(core,output);
 await fs.copyFile(path.join(output,'scene-buffers.json'),path.join(output,'__tests__/scene-buffers.json'));
 execFileSync(process.execPath,[path.join(core,'tests/web/shader_uniforms.mjs'),path.join(core,'build-web'),
   path.join(output,'__tests__/shader-uniforms.json')],{cwd:root,stdio:'inherit',timeout:60000});
-for(const name of ['shader_graph_rendering.mjs','shader_fixtures.mjs','rendering.mjs','scene_rendering.mjs','pipeline_rendering.mjs','lighting_rendering.mjs','sampling_rendering.mjs'])
+execFileSync(process.execPath,[path.join(core,'tests/web/shader_derivatives.mjs'),path.join(core,'build-web'),
+  path.join(output,'__tests__/shader-derivatives.json')],{cwd:root,stdio:'inherit',timeout:60000});
+for(const name of ['shader_graph_rendering.mjs','shader_fixtures.mjs','rendering.mjs','scene_rendering.mjs','pipeline_rendering.mjs','lighting_rendering.mjs','sampling_rendering.mjs','derivative_rendering.mjs'])
   await fs.copyFile(path.join(root,'tests/browser',name),path.join(output,'__tests__',name));
 await fs.copyFile(path.join(root,'tests/browser/shader_resources.html'),path.join(output,'index.html'));
 await fs.cp(path.join(root,'platform/browser'),path.join(output,'platform'),{recursive:true});
@@ -26,6 +28,7 @@ const sources={},jobs=[
   {entry:'tests/browser/shader_graph_pattern.dl',kind:'shader',stage:'fragment',output:'graph-pattern'},
   {entry:'tests/browser/scene_tone.dl',kind:'shader',stage:'fragment',output:'scene-tone'},
   {entry:'tests/browser/scene_lighting.dl',kind:'shader',stage:'fragment',output:'scene-lighting'},
+  {entry:'tests/browser/scene_roughness.dl',kind:'shader',stage:'fragment',output:'scene-roughness'},
   {entry:'ui/shaders/environment_dfg.dl',kind:'shader',stage:'fragment',output:'environment-dfg'},
   {entry:'tests/browser/scene_cube.dl',kind:'shader',stage:'fragment',output:'scene-cube'},
   {entry:'tests/browser/scene_sampling_query.dl',kind:'shader',stage:'fragment',output:'sampling-query'},
@@ -47,6 +50,7 @@ const request=path.join(output,'graph-request.json');
 await fs.writeFile(request,JSON.stringify({sources,jobs}));
 execFileSync(process.execPath,[path.join(core,'scripts/compile_project.mjs'),request,output],{cwd:core,stdio:'inherit',timeout:90000});
 const artifacts={};
+artifacts.derivatives=JSON.parse(await fs.readFile(path.join(output,'__tests__/shader-derivatives.json'),'utf8'));
 for(const job of jobs.filter(job=>job.kind==='shader')) artifacts[job.output]={
   webgpu:await fs.readFile(path.join(output,job.output+'.wgsl'),'utf8'),
   webgl:await fs.readFile(path.join(output,job.output+'.glsl'),'utf8'),

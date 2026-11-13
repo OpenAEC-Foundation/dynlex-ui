@@ -33,6 +33,10 @@ to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to U
     set provider to the UI shader operations in view
     @intrinsic("call pointer", provider's draws, nothing, view, shader, a UI operation integer from pass, data, a UI operation integer from count)
 
+to [set UI shader] {a pointer:shader} [pass] {integer:pass} [in] {a pointer to UI view:view} [enabled] {boolean:enabled}:
+    set provider to the UI shader operations in view
+    @intrinsic("call pointer", provider's pass state, nothing, view, shader, a UI operation integer from pass, a UI operation integer from (1 if enabled, else 0))
+
 to get [the byte count of UI shader] {a pointer:shader} [pass] {integer:pass} [buffer] {integer:slot} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
     return @intrinsic("call pointer", provider's buffer bytes, an integer, view, shader, a UI operation integer from pass, a UI operation integer from slot)

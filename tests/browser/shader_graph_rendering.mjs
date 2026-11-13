@@ -5,6 +5,7 @@ import {verifySceneBuffers} from './scene_rendering.mjs';
 import {verifyPipelineDraws} from './pipeline_rendering.mjs';
 import {verifyLighting} from './lighting_rendering.mjs';
 import {verifyEnvironmentSampling} from './sampling_rendering.mjs';
+import {verifyDerivatives,verifyGeometryRoughness} from './derivative_rendering.mjs';
 
 const draw=count=>({count,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false,pipeline:0});
 const layout={arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]};
@@ -66,6 +67,11 @@ async function verify(backend,fixture,stages) {
     values.mode=[2];values.level=[0];values.uv=[0.25,0.5];check(frame(),[0,0,0],backend+' cleared shadow');
     values.uv=[0.75,0.5];check(frame(),[1,1,1],backend+' rendered shadow');
     values.uv=[0.5,0.5];check(frame(),[0.5,0.5,0.5],backend+' shadow PCF');
+    shader.passEnabled(0,false);shader.draws(0,new Uint32Array());
+    values.uv=[0.75,0.5];check(frame(),[1,1,1],backend+' disabled shadow retains depth');
+    shader.passEnabled(0,true);check(frame(),[0,0,0],backend+' enabled shadow clears removed geometry');
+    shader.draws(0,new Uint32Array([6,1,0,0,0,0,0]));
+    assertPassErrors(shader);
     values.mode=[3];check(frame(),[Math.pow((128/255+0.055)/1.055,2.4),0,0],backend+' sRGB source');
     values.mode=[4];check(frame(),[0.5,0.25,0.25],backend+' signed HDR');
     values.mode=[0];values.uv=[0.25,0.25];check(frame(24),[1,1,0],backend+' resized graph');
@@ -87,6 +93,17 @@ async function verify(backend,fixture,stages) {
     if(surface.gl&&surface.gl.getError()!==surface.gl.NO_ERROR) throw new Error('Shader graph produced a WebGL API error');
     if(errors.length) throw errors[0];
   } finally {shader.close();gpu.releaseSurface(surface);gpu.close();}
+}
+
+function assertPassErrors(shader) {
+  for(const index of [-1,999]) {
+    let failed=false;
+    try {shader.passEnabled(index,false);} catch(error) {failed=/Unknown shader pass/.test(error.message);}
+    if(!failed) throw new Error('Pass activation accepted an unknown pass');
+  }
+  let failed=false;
+  try {shader.passEnabled(0,2);} catch(error) {failed=/boolean/.test(error.message);}
+  if(!failed) throw new Error('Pass activation accepted a non-boolean state');
 }
 async function verifyOrientation(backend,stages) {
   const errors=[],gpu=await createGpu(error=>errors.push(error)),canvas=document.createElement('canvas');
@@ -190,6 +207,8 @@ export async function verifyShaderGraph() {
     await verifyToneMapping('webgpu',stages);
     await verifyLighting('webgpu',stages);
     await verifyEnvironmentSampling('webgpu',stages);
+    await verifyDerivatives('webgpu',stages.derivatives);
+    await verifyGeometryRoughness('webgpu',stages['scene-roughness']);
     await verifyPipelineDraws('webgpu',stages);
     await verifyRendering();await verifyShaderBuffers();await verifyShaderUniforms();await verifyCompiledShaderUniforms();await verifySceneBuffers();
     Object.defineProperty(Navigator.prototype,'gpu',{configurable:true,get:()=>undefined});
@@ -199,6 +218,8 @@ export async function verifyShaderGraph() {
     await verifyToneMapping('webgl',stages);
     await verifyLighting('webgl',stages);
     await verifyEnvironmentSampling('webgl',stages);
+    await verifyDerivatives('webgl',stages.derivatives);
+    await verifyGeometryRoughness('webgl',stages['scene-roughness']);
     await verifyPipelineDraws('webgl',stages);
     const originalExtension=WebGL2RenderingContext.prototype.getExtension;
     try {

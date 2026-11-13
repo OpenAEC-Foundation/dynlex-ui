@@ -45,6 +45,7 @@ export async function verifySceneBuffers() {
     frame(6);for(const item of data.expected) expect(item.screen,[1/Math.sqrt(3),0.5,0.5],'shared vector arithmetic');
     frame(7);for(const item of data.expected) expect(item.screen,[0.25,0.5,0.75],'shared vector mutation');
     frame(8);for(const item of data.expected) expect(item.screen,[0.25,0.5,0.75],'zero vector normalization');
+    frame(9);for(const item of data.expected) expect(item.screen,item.customNormal,'custom inverse-transpose normal');
     shader.draws(0,new Uint32Array());frame(0);
     for(const item of data.expected) expect(item.screen,[0,0,0],'removed draws');
     shader.draws(0,new Uint32Array(data.draws));frame(0);

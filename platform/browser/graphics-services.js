@@ -109,6 +109,7 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, b
       ui_shader_draws(surface,handle,pass,pointer,count) {
         programFor(surface,handle).renderer.draws(pass,new Uint32Array(memory.buffer,pointer,count*7));
       },
+      ui_shader_pass_enabled(surface,handle,pass,enabled) { programFor(surface,handle).renderer.passEnabled(pass,enabled!==0); },
       ui_shader_buffer_bytes(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferBytes(pass,slot); },
       ui_shader_buffer_records(surface,handle,pass,slot) { return programFor(surface,handle).renderer.bufferRecords(pass,slot); },
       ui_shader_index_count(surface,handle,pass) { return programFor(surface,handle).renderer.indexCount(pass); },

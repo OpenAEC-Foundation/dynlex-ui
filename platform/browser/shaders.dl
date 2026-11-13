@@ -16,6 +16,9 @@ to [index browser shader in] {a pointer to UI view:view} [holding] {a pointer:sh
 to [draw browser shader in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [from] {a pointer to UI shader draw:data} [counting] {integer:count}:
     @intrinsic("call", "dynlex_ui", "ui_shader_draws", nothing, view's window, shader, pass, data, count)
 
+to [set browser shader pass in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [enabled] {integer:enabled}:
+    @intrinsic("call", "dynlex_ui", "ui_shader_pass_enabled", nothing, view's window, shader, pass, enabled)
+
 to get [browser shader bytes in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [slot] {integer:slot}:
     return @intrinsic("call", "dynlex_ui", "ui_shader_buffer_bytes", an integer, view's window, shader, pass, slot)
 
@@ -41,4 +44,5 @@ the browser UI shader operations means: a static reference to @intrinsic("constr
     (the function named "browser shader records in $ holding $ pass $ slot $") as a pointer,
     (the function named "browser shader indices in $ holding $ pass $") as a pointer,
     (the function named "upload browser shader image in $ holding $ named $ counting $ at level $ layer $ from $ spanning $") as a pointer,
-    (the function named "close browser shader in $ holding $") as a pointer)
+    (the function named "close browser shader in $ holding $") as a pointer,
+    (the function named "set browser shader pass in $ holding $ pass $ enabled $") as a pointer)

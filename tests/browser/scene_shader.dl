@@ -61,6 +61,11 @@ if this is a vertex shader:
         set red to zero's x + 0.25
         set green to zero's y + 0.5
         set blue to zero's z + 0.75
+    else if mode = 9:
+        set normal to the UI scene shader world normal from (a new vector with x 0.2, y 0.7 and z -0.4)
+        set red to (the x of normal) * 0.5 + 0.5
+        set green to (the y of normal) * 0.5 + 0.5
+        set blue to (the z of normal) * 0.5 + 0.5
     set the smooth shader interpolant named "scene_color" at location 0 to ([red, green, blue, 1.0] as an aggregate of 4 floating-point number values)
 else:
     set color to the smooth shader interpolant named "scene_color" at location 0 of type an aggregate of 4 floating-point number values

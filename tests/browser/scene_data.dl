@@ -54,9 +54,11 @@ loop index from 0 to 4:
     append (a UI scene shader instance through transform with material material casting shadow true receiving shadow false) to records
     if (index = 1) or (index = 2):
         set normal to the UI scene normal of (a new vector with x 1.0, y 2.0 and z 3.0) through transform
+        set custom to the UI scene normal of (a new vector with x 0.2, y 0.7 and z -0.4) through transform
         add (a JSON object containing [
             JSON child "screen" is (a scene test screen point position through camera),
             JSON child "normal" is (a JSON array containing [a new JSON number from (normal's x * 0.5 + 0.5), a new JSON number from (normal's y * 0.5 + 0.5), a new JSON number from (normal's z * 0.5 + 0.5)]),
+            JSON child "customNormal" is (a JSON array containing [a new JSON number from (custom's x * 0.5 + 0.5), a new JSON number from (custom's y * 0.5 + 0.5), a new JSON number from (custom's z * 0.5 + 0.5)]),
             JSON number "handedness" is (transform's handedness)
         ]) to the JSON array expected
 set draws to [a UI scene mesh draw from span first in bank counting 2 instances starting at 1, a UI scene mesh draw from span second in bank counting 1 instances starting at 3]

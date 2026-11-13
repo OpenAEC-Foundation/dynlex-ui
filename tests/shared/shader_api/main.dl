@@ -11,6 +11,7 @@ class:
         draws as an integer
         images as an integer
         closed as an integer
+        pass changes as an integer
 
 to get [the shader recorder in] {a pointer to UI view:view}:
     return view's instance's state as a pointer to shader API recorder
@@ -55,6 +56,12 @@ to get [recorded shader indices in] {a pointer to UI view:view} [holding] {a poi
 to [close recorded shader in] {a pointer to UI view:view} [holding] {a pointer:shader}:
     increment (the shader recorder in view)'s closed
 
+to [set recorded shader pass in] {a pointer to UI view:view} [holding] {a pointer:shader} [pass] {integer:pass} [enabled] {integer:enabled}:
+    require condition ((shader = (777 as a pointer)) and (pass = 2)) reporting "Pass activation lost its shader or pass"
+    set recorder to the shader recorder in view
+    require condition (enabled = recorder's pass changes) reporting "Pass activation must cross the provider as zero then one"
+    increment recorder's pass changes
+
 to [upload recorded shader image in] {a pointer to UI view:view} [holding] {a pointer:shader} [named] {a pointer:name} [counting] {integer:length} [at level] {integer:level} [layer] {integer:layer} [from] {a pointer:data} [spanning] {integer:count}:
     require condition ((shader = (777 as a pointer)) and ((length = 8) and ((level = 2) and (layer = 5)))) reporting "Image upload lost its UTF-8 name, level or layer"
     require condition (((the item at 0 in (name as a pointer to an 8 bit unsigned integer)) = 105) and ((the item at 4 in (name as a pointer to an 8 bit unsigned integer)) = 240)) reporting "The image resource name was not transferred as UTF-8"
@@ -71,7 +78,8 @@ set operations to @intrinsic("construct", UI shader operations,
     (the function named "recorded shader records in $ holding $ pass $ slot $") as a pointer,
     (the function named "recorded shader indices in $ holding $ pass $") as a pointer,
     (the function named "upload recorded shader image in $ holding $ named $ counting $ at level $ layer $ from $ spanning $") as a pointer,
-    (the function named "close recorded shader in $ holding $") as a pointer)
+    (the function named "close recorded shader in $ holding $") as a pointer,
+    (the function named "set recorded shader pass in $ holding $ pass $ enabled $") as a pointer)
 set driver to a new UI driver
 set driver's shader operations to the address of operations
 set recorder to a new shader API recorder
@@ -103,6 +111,9 @@ set UI shader shader pass 2 in context uniform group 1 binding 4 to (a UI unsign
 require condition (recorder's uniforms = 1) reporting "The uniform provider was not called once."
 require condition (recorder's images = 1) reporting "The image provider was not called once."
 set image to a UI texture from shader shader sized 40 by 20 in context
+set UI shader shader pass 2 in context enabled false
+set UI shader shader pass 2 in context enabled true
+require condition (recorder's pass changes = 2) reporting "Pass activation did not cross the provider"
 require condition ((image's resource = (910 as a pointer)) and ((image's width = 40) and (image's height = 20))) reporting "Shader texture data changed across drivers."
 set encoded to the JSON form of UI shader draw (the item at 0 in draws)
 require condition (((the JSON number named "vertexOffset" in encoded) = 4.0) and (the JSON boolean named "indexed" in encoded)) reporting "Draw descriptors and binary submissions disagree."
