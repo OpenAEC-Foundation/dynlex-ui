@@ -1,4 +1,5 @@
 import { createGpu } from '/platform/gpu.js';
+import {shaderPass,shaderProgram,shaderImage,shaderState,shaderColor,shaderDepth,additiveBlend} from './shader_fixtures.mjs';
 
 // Pixel checks use the public submission ABI, independent of application layout.
 export async function verifyRendering() {
@@ -9,20 +10,22 @@ export async function verifyRendering() {
   const surface = gpu.surface(canvas);
   const mask = gpu.mask(surface, new Uint8Array(6).fill(128), 3, 2);
   const image = gpu.image(surface, new Uint8Array([255, 0, 0, 128]), 1, 1);
-  const shader = await gpu.shader(surface, { passes: [{ vertex: null, vertexBuffers: [], draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}], uniforms: [], depth: false,
-    blend: 'opaque', topology: 'triangle-list', fragment: gpu.backend === 'webgpu'
+  const shader = await gpu.shader(surface, shaderProgram([shaderPass({ vertex: null, vertexBuffers: [], draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}], uniforms: [],
+    topology: 'triangle-list', fragment: gpu.backend === 'webgpu'
       ? '@fragment fn main() -> @location(0) vec4f { return vec4f(0,0,1,1); }'
       : '#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(0,0,1,1);}'
-  }, { vertex: gpu.backend === 'webgpu'
+  }), shaderPass({ vertex: gpu.backend === 'webgpu'
       ? '@vertex fn main(@location(0) position: vec4f) -> @builtin(position) vec4f { return position; }'
       : '#version 300 es\nlayout(location=0) in vec4 position;void main(){gl_Position=position;}',
     vertexBuffers: [{arrayStride:16,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x4'}]}],
     draws: [{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
-    uniforms: [{ name: 'gain', group: 1, binding: 5, type:{scalar:'float32',rows:1,columns:4} }], depth: true, blend: 'additive', topology: 'triangle-list',
+    uniforms: [{ name: 'gain', group: 1, binding: 5, type:{scalar:'float32',rows:1,columns:4} }],
+    glslUniforms:[{name:'Settings',group:1,binding:5}],state:shaderState(true,'less',additiveBlend),
+    color:shaderColor('output','load'),depth:shaderDepth(),topology: 'triangle-list',
     fragment: gpu.backend === 'webgpu'
       ? '@group(1) @binding(5) var<uniform> gain:vec4f;@fragment fn main()->@location(0) vec4f{return vec4f(gain.x,0,0,0);}'
       : '#version 300 es\nprecision highp float;layout(std140) uniform Settings{vec4 _group_1_binding_5_fs;};out vec4 color;void main(){color=vec4(_group_1_binding_5_fs.x,0,0,0);}'
-  }] });
+  })], [shaderImage('depth','depth24plus')]));
   shader.vertexBuffer(1, 0, new Float32Array([-1,-1,0,1, 3,-1,0,1, -1,3,0,1]));
   shader.uniformBuffer(1,1,5,0,1,4,new Uint8Array(new Float32Array([0.25,0,0,0]).buffer));
   const rendered = shader.render(5, 3);
@@ -148,8 +151,9 @@ export async function verifyShaderBuffers() {
     }`;
   const fragment=gpu.backend==='webgpu' ? '@fragment fn main(@location(0) color:vec3f)->@location(0) vec4f{return vec4f(color,1);}'
     : '#version 300 es\nprecision highp float;in vec3 ink;out vec4 color;void main(){color=vec4(ink,1);}';
-  const shader=await gpu.shader(surface,{passes:[{vertex,fragment,vertexBuffers:layouts,draws:[],
-    uniforms:[{name:'minimum_vertex',group:0,binding:0,type:{scalar:'float32',rows:1,columns:4}}],depth:false,blend:'opaque',topology:'triangle-list'}]});
+  const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex,fragment,vertexBuffers:layouts,draws:[],
+    uniforms:[{name:'minimum_vertex',group:0,binding:0,type:{scalar:'float32',rows:1,columns:4}}],
+    glslUniforms:[{name:'Settings',group:0,binding:0}]})]));
   const vertices=new Float32Array(32),signed=new Int32Array(16);
   vertices.fill(-99);signed.fill(99);
   for(const [index,point] of [[-.2,-.6],[.2,-.6],[.2,.6],[-.2,.6]].entries()) {
@@ -220,12 +224,12 @@ export async function verifyShaderUniforms() {
     void main(){color=vec4(_group_0_binding_0_rows[2].y,
       _group_0_binding_1_signed.x==(-2147483647-1)?0.5:0.0,
       _group_0_binding_2_unsigned.z==4294967295u?1.0:0.0,1.0);}`;
-  const shader=await gpu.shader(surface,{passes:[{vertex:null,fragment,vertexBuffers:[],
+  const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:null,fragment,vertexBuffers:[],
     draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
     uniforms:[{name:'camera',group:0,binding:0,type:{scalar:'float32',rows:3,columns:2}},
       {name:'signedInput',group:0,binding:1,type:{scalar:'sint32',rows:1,columns:2}},
       {name:'unsignedInput',group:0,binding:2,type:{scalar:'uint32',rows:1,columns:3}}],
-    depth:false,blend:'opaque',topology:'triangle-list'}]});
+    glslUniforms:[{name:'Camera',group:0,binding:0},{name:'Signed',group:0,binding:1},{name:'Unsigned',group:0,binding:2}]})]));
   const matrix=new Float32Array(12);matrix[9]=0.25;
   const vertices=[];
   for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) vertices.push(x*16,y*16,x,y,1,1,1,1);
@@ -264,9 +268,9 @@ export async function verifyCompiledShaderUniforms() {
   try {
     for(const artifact of artifacts) {
       const {scalar,rows,columns}=artifact.type;
-      const shader=await gpu.shader(surface,{passes:[{vertex:null,fragment:artifact[gpu.backend],
+      const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:null,fragment:artifact[gpu.backend],
         vertexBuffers:[],draws:[{count:3,instances:1,first:0,vertexOffset:0,instanceOffset:0,indexed:false}],
-        uniforms:artifact.uniforms,depth:false,blend:'opaque',topology:'triangle-list'}]});
+        uniforms:artifact.uniforms,glslUniforms:artifact.glslUniforms})]));
       try {
         const code={float32:0,sint32:1,uint32:2}[scalar],bytes=new ArrayBuffer(rows*16);
         const values=new ({float32:Float32Array,sint32:Int32Array,uint32:Uint32Array}[scalar])(bytes);

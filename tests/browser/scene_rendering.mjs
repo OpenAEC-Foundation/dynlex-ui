@@ -1,4 +1,5 @@
 import {createGpu} from '/platform/gpu.js';
+import {shaderProgram,shaderPass,shaderImage,shaderState,shaderDepth} from './shader_fixtures.mjs';
 
 // CPU-projected points are tested against the actual indexed, instanced GPU image.
 export async function verifySceneBuffers() {
@@ -8,9 +9,10 @@ export async function verifySceneBuffers() {
   const gpu=await createGpu(error=>errors.push(error));
   const canvas=document.createElement('canvas');canvas.width=96;canvas.height=96;
   const surface=gpu.surface(canvas);
-  const shader=await gpu.shader(surface,{passes:[{vertex:stages.vertex[gpu.backend],fragment:stages.fragment[gpu.backend],
+  const shader=await gpu.shader(surface,shaderProgram([shaderPass({vertex:stages.vertex[gpu.backend],fragment:stages.fragment[gpu.backend],
     vertexBuffers:data.layouts,draws:[],uniforms:stages.vertex.reflection.uniforms,
-    depth:true,blend:'opaque',topology:'triangle-list'}]});
+    glslUniforms:[...stages.vertex.reflection.glslUniforms,...stages.fragment.reflection.glslUniforms],
+    state:shaderState(true,'less'),depth:shaderDepth()})],[shaderImage('depth','depth24plus')]));
   const quad=[];
   for(const [x,y] of [[0,0],[1,0],[1,1],[0,0],[1,1],[0,1]]) quad.push(x*96,y*96,x,y,1,1,1,1);
   const context=new OffscreenCanvas(96,96).getContext('2d');

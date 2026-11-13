@@ -15,11 +15,23 @@ releases every resource it owns.
 Scene controllers can import `ui/invalidation.dl` to request a redraw or animate
 a view without importing input dispatch or the application loop.
 
-`ui/shader_programs.dl` shares source-stage descriptions, reflected uniform
-binding linkage and program-input lookup. `UI shader linkage` contains either an
+`ui/shader_programs.dl` shares source-stage descriptions, reflected uniform and
+resource linkage, exact GLSL block/sampler names and program-input lookup. `UI shader linkage` contains either an
 owned program or an error. Merged bindings copy their reflection data, reject
 conflicting names or slots, and deduplicate bindings shared by both stages.
-Applications supply their scene's vertex layouts, depth/blend settings and draws.
+Applications supply their scene's vertex layouts, attachments, raster state and draws.
+`ui/shader_graph.dl` checks the linked graph before platform allocation: named assets,
+sampled resource types, attachment extents/sample counts, resolves, and feedback.
+
+Programs contain `operation: "shader"`, `assets`, `output` and `passes`. The output
+names a single-sample, frame-sized 2D color image. Each pass contains `vertex` and
+`fragment` stages, `vertexBuffers`, `indices`, `draws`, `uniforms`, `resources`,
+`glslBindings`, `glslUniforms`, `topology`, `state`, `color` and `depth`. A null
+vertex uses the fullscreen triangle; a null fragment supports a depth-only pass.
+Color/depth attachments can be null independently; at least one must be present.
+The state holds `cullMode`, `frontFace`, `depthWrite`, `depthCompare` and `blend`.
+Blend data contains independent color/alpha factors and operations, or null for
+opaque rendering. Depth testing and writing are independent.
 
 ## Layout and source data
 
@@ -150,8 +162,15 @@ fixed images once, replaces frame-sized images on resize and retires each handle
 once. Uploads name a complete mip level and cube face. Color uploads use raw RGBA
 bytes or IEEE half-float components; depth images are written by render passes.
 Image definitions remain immutable and can be inspected before frame storage is
-allocated. The current program adapter still uses its single output/depth target;
-connecting these descriptions and asset storage to its pass graph is in progress.
+allocated. Each pass binds its declared mip/face views, clears or preserves them,
+resolves multisample color and stores or discards attachments. Sampled images and
+samplers bind by reflected slots; WebGL combines the exact image/sampler pairs
+reported by the translator. Resizing rebuilds frame targets and their bindings,
+while fixed assets and uploaded pixels persist.
+
+```dynlex
+set UI shader resource image "paint" in view level 0 layer 0 from pixels spanning size bytes
+```
 
 ## Verification
 
@@ -179,3 +198,8 @@ retained allocations. `shader_assets.mjs` verifies resource ownership and resize
 failure cleanup. `prepare_resources.mjs` and `shader_resources_browser.mjs` compile
 actual DynLex shaders/descriptions and compare WebGPU/WebGL pixels for separate
 samplers, cube faces/mips, sRGB/HDR and filtered shadow comparisons on private Xvfb.
+`prepare_graph.mjs` and `shader_graph_browser.mjs` exercise the public program
+renderer and UI composition on both APIs: depth-only shadows, HDR/MSAA resolves,
+postprocessing, both culling modes, translated uniform/sampler-name collisions,
+asymmetric image orientation and frame resize. They also rerun the typed uniform,
+stream and scene-buffer pixel corpus against the same renderer.

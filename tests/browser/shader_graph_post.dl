@@ -1,0 +1,8 @@
+import lib/shader.dl
+
+set image to the shader image named "scene" at binding 0
+set sampler to the shader sampler named "pixel" at binding 1
+set width to the shader uniform named "width" at binding 2 as a 32 bit floating-point number
+set height to the shader uniform named "height" at binding 3 as a 32 bit floating-point number
+set uv to @intrinsic("construct", @intrinsic("vector", 2), (the fragment x coordinate) / width, (the fragment y coordinate) / height)
+@intrinsic("shader output", the sample from image using sampler at uv with level 0.0)

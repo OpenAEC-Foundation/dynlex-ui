@@ -67,6 +67,7 @@ def main():
         subprocess.run(['node', 'tests/browser/shader_value_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve()), 'shader_attachments'], cwd=project, check=True)
+        subprocess.run(['node', 'tests/browser/shader_resource_descriptions.mjs', str(args.dynlex.resolve()), 'shader_graph'], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_transform_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_model_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
@@ -75,18 +76,21 @@ def main():
         subprocess.run(['node', 'tests/browser/scene_shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         for case in ['pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_services', 'shader_uniforms', 'shader_assets']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
-        subprocess.run(['node', 'tests/browser/prepare_resources.mjs', str(args.dynlex.resolve()),
-                        '.cache/shader-resources-probe'], cwd=project, check=True)
-        with socket.socket() as server_port, socket.socket() as debug_port:
-            server_port.bind(('127.0.0.1', 0))
-            debug_port.bind(('127.0.0.1', 0))
-            ports = (server_port.getsockname()[1], debug_port.getsockname()[1])
-        environment = dict(os.environ, DYNLEX_CORE=str(args.dynlex.resolve()),
-            DYNLEX_TEST_WEB_ROOT=str(project), DYNLEX_TEST_WEB_SERVER='static', DYNLEX_TEST_GRAPHICS='webgpu',
-            DYNLEX_TEST_SERVER_PORT=str(ports[0]), DYNLEX_TEST_DEBUG_PORT=str(ports[1]),
-            DYNLEX_BROWSER_TEST_ENTRY=str(project / 'tests/browser/shader_resources_browser.mjs'))
-        subprocess.run([str(args.dynlex.resolve() / 'scripts/test_web_browser.sh')], cwd=project,
-                       env=environment, check=True)
+        for suite in ['resources', 'graph']:
+            probe = project / f'.cache/shader-{suite}-probe'
+            subprocess.run(['node', f'tests/browser/prepare_{suite}.mjs', str(args.dynlex.resolve()),
+                            str(probe)], cwd=project, check=True)
+            with socket.socket() as server_port, socket.socket() as debug_port:
+                server_port.bind(('127.0.0.1', 0))
+                debug_port.bind(('127.0.0.1', 0))
+                ports = (server_port.getsockname()[1], debug_port.getsockname()[1])
+            environment = dict(os.environ, DYNLEX_CORE=str(args.dynlex.resolve()),
+                DYNLEX_TEST_WEB_ROOT=str(probe if suite == 'graph' else project),
+                DYNLEX_TEST_WEB_SERVER='static', DYNLEX_TEST_GRAPHICS='webgpu',
+                DYNLEX_TEST_SERVER_PORT=str(ports[0]), DYNLEX_TEST_DEBUG_PORT=str(ports[1]),
+                DYNLEX_BROWSER_TEST_ENTRY=str(project / f'tests/browser/shader_{suite}_browser.mjs'))
+            subprocess.run([str(args.dynlex.resolve() / 'scripts/test_web_browser.sh')], cwd=project,
+                           env=environment, check=True)
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
         applications.append((['--entry', 'tests/browser/commands.dl', '--output', '.cache/commands'], '.cache/commands'))

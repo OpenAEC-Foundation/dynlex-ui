@@ -44,14 +44,14 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, b
     if (payload.operation === 'shader') {
       const prepared = await Promise.all(payload.passes.map(async pass => {
         const [vertex,fragment,vertices,indices] = await Promise.all([
-          pass.vertex === null ? null : stage(pass.vertex,signal), stage(pass.fragment,signal),
+          pass.vertex === null ? null : stage(pass.vertex,signal), pass.fragment === null ? null : stage(pass.fragment,signal),
           Promise.all(pass.vertexBuffers.map(buffer => buffer.source === null ? null
             : read(buffer.source,signal).then(response => response.arrayBuffer()))),
           pass.indices === null ? null : read(pass.indices,signal).then(response => response.arrayBuffer())
         ]);
         return { description:{...pass,vertex,fragment},vertices,indices };
       }));
-      const renderer = await gpu.shader(surface,{passes:prepared.map(pass => pass.description)});
+      const renderer = await gpu.shader(surface,{...payload,passes:prepared.map(pass => pass.description)});
       try {
         signal.throwIfAborted();
         for (const [index,pass] of prepared.entries()) {
@@ -95,6 +95,10 @@ export function createGraphicsServices({ gpu, surfaces, resources, id, memory, b
       },
       ui_shader_uniform(surface,handle,pass,group,binding,scalar,rows,columns,pointer,bytes) {
         programFor(surface,handle).renderer.uniformBuffer(pass,group,binding,scalar,rows,columns,new Uint8Array(memory.buffer,pointer,bytes));
+      },
+      ui_shader_image(surface,handle,name,length,level,layer,pointer,bytes) {
+        const title=new TextDecoder().decode(new Uint8Array(memory.buffer,name,length));
+        programFor(surface,handle).renderer.imageBytes(title,level,layer,new Uint8Array(memory.buffer,pointer,bytes));
       },
       ui_shader_vertex_buffer(surface,handle,pass,slot,pointer,bytes) {
         programFor(surface,handle).renderer.vertexBuffer(pass,slot,new Uint8Array(memory.buffer,pointer,bytes));

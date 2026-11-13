@@ -1,0 +1,8 @@
+import lib/shader.dl
+
+set width to the shader uniform named "width" at binding 0 as a 32 bit floating-point number
+set height to the shader uniform named "height" at binding 1 as a 32 bit floating-point number
+set opacity to the shader uniform named "opacity" at binding 2 as a 32 bit floating-point number
+set red to (the fragment x coordinate) / width
+set green to (the fragment y coordinate) / height
+set the fragment color with a red channel of red, a green channel of green, a blue channel of 0.0 and an alpha channel of opacity

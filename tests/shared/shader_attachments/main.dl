@@ -23,7 +23,8 @@ free depth
 set state to a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less-equal" blending "alpha"
 require condition (((the JSON text named "cullMode" in state) = "back") and ((the JSON text named "frontFace" in state) = "ccw")) reporting "Raster orientation was lost"
 require condition (((the JSON boolean named "depthWrite" in state) = true) and ((the JSON text named "depthCompare" in state) = "less-equal")) reporting "Depth testing was coupled to blending"
-require condition ((the JSON text named "blend" in state) = "alpha") reporting "Alpha blending was replaced by additive blending"
+set blend to the JSON member named "blend" in state
+require condition (((the JSON text named "srcFactor" in (the JSON member named "color" in blend)) = "src-alpha") and ((the JSON text named "dstFactor" in (the JSON member named "alpha" in blend)) = "one-minus-src-alpha")) reporting "Alpha blending was replaced by additive blending"
 free state
 
 set image to a UI shader frame image named "samples" storing "rgba16float" with 4 samples

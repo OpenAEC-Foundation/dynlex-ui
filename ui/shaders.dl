@@ -48,3 +48,9 @@ to get [the index count of UI shader] {a pointer:shader} [pass] {integer:pass} [
 to [close UI shader] {a pointer:shader} [in] {a pointer to UI view:view}:
     set provider to the UI shader operations in view
     @intrinsic("call pointer", provider's close, nothing, view, shader)
+
+to [set UI shader] {a pointer:shader} [image] {a value:name} [in] {a pointer to UI view:view} [level] {integer:level} [layer] {integer:layer} [from] {a pointer:data} [spanning] {integer:count} [bytes]:
+    set provider to the UI shader operations in view
+    set title to the string form of name
+    require condition (title's length > 0) reporting "Shader image uploads require a resource name"
+    @intrinsic("call pointer", provider's images, nothing, view, shader, (the data of title) as a pointer, a UI operation integer from (title's length), a UI operation integer from level, a UI operation integer from layer, data, a UI operation integer from count)

@@ -1,0 +1,115 @@
+import ../../../ui/shader_graph.dl
+
+to get [a test shader graph]:
+    set assets to a JSON array containing [
+        a UI shader frame image named "output" storing "rgba8unorm-srgb",
+        a UI shader frame image named "scene" storing "rgba16float",
+        a UI shader frame image named "msaa" storing "rgba16float" with 4 samples,
+        a UI shader frame image named "depth" storing "depth24plus" with 4 samples,
+        a UI shader image named "paint" storing "rgba8unorm" sized 2 by 2 with 1 level,
+        a UI shader pixel sampler named "pixel"
+    ]
+    set pass to a JSON object containing [
+        JSON text "vertex" is "vertex", JSON text "fragment" is "fragment",
+        JSON child "uniforms" is (a new JSON-RPC array), JSON child "resources" is (a new JSON-RPC array),
+        JSON child "state" is (a UI shader raster state culling "back" facing "ccw" writing depth true comparing "less" blending "opaque"),
+        JSON child "color" is (a UI shader color attachment using (a UI shader image view of "msaa" at level 0 layer 0) resolving into (a UI shader image view of "scene" at level 0 layer 0) loading "clear" storing "discard" cleared to [0.0,0.0,0.0,1.0]),
+        JSON child "depth" is (a UI shader depth attachment using (a UI shader image view of "depth" at level 0 layer 0) loading "clear" storing "discard" cleared to 1.0)
+    ]
+    set final to a JSON object containing [
+        JSON child "vertex" is (a new JSON-RPC null), JSON text "fragment" is "postprocess",
+        JSON child "uniforms" is (a new JSON-RPC array),
+        JSON child "resources" is (a JSON array containing [a JSON object containing [JSON text "name" is "scene", JSON text "kind" is "texture", JSON number "group" is 0, JSON number "binding" is 1, JSON text "dimension" is "2d", JSON text "sampleType" is "float"]]),
+        JSON child "state" is (a UI shader raster state culling "none" facing "ccw" writing depth false comparing "always" blending "opaque"),
+        JSON child "color" is (a UI shader color attachment using (a UI shader image view of "output" at level 0 layer 0) resolving into (a new JSON-RPC null) loading "clear" storing "store" cleared to [0.0,0.0,0.0,1.0]),
+        JSON child "depth" is (a new JSON-RPC null)
+    ]
+    return a JSON object containing [JSON text "operation" is "shader", JSON text "output" is "output", JSON child "assets" is assets, JSON child "passes" is (a JSON array containing [pass,final])]
+
+to [expect shader graph] {a pointer to JSON value:graph} [reports] {C string:message}:
+    set error to the error in UI shader graph graph
+    require condition (error = message) reporting "Shader graph validation returned the wrong result"
+    free graph
+
+set graph to a test shader graph
+expect shader graph graph reports ""
+set graph to a test shader graph
+set assets to the JSON member named "assets" in graph
+add (a UI shader pixel sampler named "paint") to the JSON array assets
+expect shader graph graph reports "Shader asset names must be unique"
+
+set graph to a test shader graph
+set output to the JSON value at index 0 in (the JSON member named "assets" in graph)
+set JSON member (JSON child "size" is (a JSON object containing [JSON text "kind" is "fixed", JSON number "width" is 1, JSON number "height" is 1])) in output
+expect shader graph graph reports "A shader output must follow the frame size"
+
+set graph to a test shader graph
+set pass to the JSON value at index 0 in (the JSON member named "passes" in graph)
+set color to the JSON member named "color" in pass
+set JSON member (JSON child "resolve" is (a UI shader image view of "output" at level 0 layer 0)) in color
+expect shader graph graph reports "Shader resolve images require matching formats and extents"
+
+set graph to a test shader graph
+set assets to the JSON member named "assets" in graph
+set depth to the JSON value at index 3 in assets
+set JSON member (JSON number "samples" is 1) in depth
+expect shader graph graph reports "Shader color and depth attachments require matching extents and sample counts"
+
+set graph to a test shader graph
+set pass to the JSON value at index 1 in (the JSON member named "passes" in graph)
+set resource to the JSON value at index 0 in (the JSON member named "resources" in pass)
+set JSON member (JSON text "name" is "output") in resource
+expect shader graph graph reports "A shader pass cannot sample an image it writes"
+
+set graph to a test shader graph
+set pass to the JSON value at index 1 in (the JSON member named "passes" in graph)
+set resource to the JSON value at index 0 in (the JSON member named "resources" in pass)
+set JSON member (JSON text "name" is "missing") in resource
+expect shader graph graph reports "A shader resource names an undeclared asset"
+
+set graph to a test shader graph
+set pass to the JSON value at index 1 in (the JSON member named "passes" in graph)
+set uniforms to the JSON member named "uniforms" in pass
+add (a JSON object containing [JSON number "group" is 0, JSON number "binding" is 1]) to the JSON array uniforms
+expect shader graph graph reports "A shader uniform and resource occupy the same binding"
+
+set graph to a test shader graph
+set pass to the JSON value at index 0 in (the JSON member named "passes" in graph)
+set JSON member (JSON child "color" is (a new JSON-RPC null)) in pass
+set JSON member (JSON child "fragment" is (a new JSON-RPC null)) in pass
+expect shader graph graph reports ""
+
+set graph to a test shader graph
+set assets to the JSON member named "assets" in graph
+set paint to a UI shader image view of "paint" at level 1 layer 0
+require condition ((the error in UI shader view paint among assets requiring depth false) = "A shader attachment view exceeds its image subresources") reporting "An out-of-bounds mip view was accepted"
+free paint
+free graph
+
+# Both stages share slots, but the translator can name their blocks separately.
+set pass to a JSON object containing [JSON child "uniforms" is (a new JSON-RPC array), JSON child "resources" is (a new JSON-RPC array), JSON child "glslBindings" is (a new JSON-RPC array), JSON child "glslUniforms" is (a new JSON-RPC array)]
+set stage to a JSON object containing [
+    JSON child "uniforms" is (a JSON array containing [a JSON object containing [JSON text "name" is "camera", JSON number "group" is 0, JSON number "binding" is 13, JSON child "type" is (a JSON object containing [JSON text "scalar" is "float32", JSON number "rows" is 4, JSON number "columns" is 4])]]),
+    JSON child "resources" is (a JSON array containing [a JSON object containing [JSON text "name" is "paint", JSON text "kind" is "texture", JSON number "group" is 0, JSON number "binding" is 1, JSON text "dimension" is "2d", JSON text "sampleType" is "float"]]),
+    JSON child "glslBindings" is (a JSON array containing [a JSON object containing [JSON text "name" is "combined_image", JSON child "texture" is (a JSON object containing [JSON number "group" is 0, JSON number "binding" is 1]), JSON child "sampler" is (a new JSON-RPC null)]]),
+    JSON child "glslUniforms" is (a JSON array containing [a JSON object containing [JSON text "name" is "CameraVertex", JSON number "group" is 0, JSON number "binding" is 13]])
+]
+require condition ((the error from linking UI shader stage stage into pass pass) = "") reporting "A valid stage did not link"
+require condition ((the error from linking UI shader stage stage into pass pass) = "") reporting "Shared stage bindings were rejected"
+require condition (((the JSON member named "uniforms" in pass)'s length = 1) and ((the JSON member named "resources" in pass)'s length = 1)) reporting "Shared stage slots were duplicated"
+require condition (((the JSON member named "glslBindings" in pass)'s length = 1) and ((the JSON member named "glslUniforms" in pass)'s length = 1)) reporting "Shared GLSL names were duplicated"
+set blocks to the JSON member named "glslUniforms" in stage
+set block to the JSON value at index 0 in blocks
+set JSON member (JSON text "name" is "CameraFragment") in block
+require condition ((the error from linking UI shader stage stage into pass pass) = "") reporting "Stage-specific block names were rejected"
+require condition ((the JSON member named "glslUniforms" in pass)'s length = 2) reporting "A stage-specific block name was discarded"
+set resource to the JSON value at index 0 in (the JSON member named "resources" in stage)
+set JSON member (JSON text "dimension" is "cube") in resource
+require condition ((the error from linking UI shader stage stage into pass pass) = "Shader stages disagree about an image type") reporting "Conflicting image dimensions were accepted"
+set JSON member (JSON text "dimension" is "2d") in resource
+set JSON member (JSON number "binding" is 2) in resource
+require condition ((the error from linking UI shader stage stage into pass pass) = "A shader resource uses different bindings across stages") reporting "One named resource acquired two bindings"
+free stage
+require condition ((the JSON text named "name" in (the JSON value at index 0 in (the JSON member named "resources" in pass))) = "paint") reporting "Linked metadata borrowed its source storage"
+free pass
+print line "Shader graphs link HDR resolves, depth-only passes and typed resources while rejecting invalid attachments and feedback."

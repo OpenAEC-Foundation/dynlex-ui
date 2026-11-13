@@ -1,0 +1,168 @@
+# Linking validates application-authored render graphs before platform allocation.
+import shader_attachments.dl
+import shader_programs.dl
+
+to get [the UI shader asset named] {a value:name} [among] {a pointer to JSON value:assets}:
+    set index to 0
+    loop while index < assets's length:
+        set asset to the JSON value at index index in assets
+        if (the JSON text named "name" in asset) = name:
+            return asset
+        increment index
+    return 0 as a pointer to JSON value
+
+to get [the error in UI shader view] {a pointer to JSON value:view} [among] {a pointer to JSON value:assets} [requiring depth] {boolean:depth}:
+    set asset to the UI shader asset named (the JSON text named "image" in view) among assets
+    if asset = (0 as a pointer to JSON value):
+        return "A shader attachment names an undeclared image"
+    if (the JSON text named "kind" in asset) != "texture":
+        return "A shader attachment requires an image"
+    if ((the JSON text named "format" in asset) is a UI shader depth format) != depth:
+        return "Shader attachment and image formats disagree"
+    if ((the JSON number named "level" in view) >= (the JSON number named "levels" in asset)) or ((the JSON number named "layer" in view) >= (the JSON number named "layers" in asset)):
+        return "A shader attachment view exceeds its image subresources"
+    return ""
+
+to get [the UI shader extent of] {a pointer to JSON value:view} [among] {a pointer to JSON value:assets} [along] {C string:axis}:
+    set asset to the UI shader asset named (the JSON text named "image" in view) among assets
+    set size to the JSON member named "size" in asset
+    set extent to (the JSON number named axis in size) as an integer
+    set level to (the JSON number named "level" in view) as an integer
+    loop while level > 0:
+        set extent to the maximum of 1 and (extent / 2)
+        decrement level
+    return extent
+
+to get [UI shader view] {a pointer to JSON value:left} [matches the extent of] {a pointer to JSON value:right} [among] {a pointer to JSON value:assets}:
+    set first to the UI shader asset named (the JSON text named "image" in left) among assets
+    set last to the UI shader asset named (the JSON text named "image" in right) among assets
+    set kind to the JSON text named "kind" in (the JSON member named "size" in first)
+    if kind != (the JSON text named "kind" in (the JSON member named "size" in last)):
+        return false
+    if kind = "frame":
+        return true
+    return ((the UI shader extent of left among assets along "width") = (the UI shader extent of right among assets along "width")) and ((the UI shader extent of left among assets along "height") = (the UI shader extent of right among assets along "height"))
+
+to get [the error in UI shader attachments for] {a pointer to JSON value:pass} [among] {a pointer to JSON value:assets}:
+    set color to the JSON member named "color" in pass
+    set depth to the JSON member named "depth" in pass
+    if (color is JSON null) and (depth is JSON null):
+        return "A shader pass requires a color or depth attachment"
+    if color is not JSON null:
+        set view to the JSON member named "view" in color
+        set error to the error in UI shader view view among assets requiring depth false
+        if error != "":
+            return error
+        if (the JSON member named "fragment" in pass) is JSON null:
+            return "A color pass requires a fragment shader"
+        set resolve to the JSON member named "resolve" in color
+        if resolve is not JSON null:
+            set error to the error in UI shader view resolve among assets requiring depth false
+            if error != "":
+                return error
+            set source to the UI shader asset named (the JSON text named "image" in view) among assets
+            set target to the UI shader asset named (the JSON text named "image" in resolve) among assets
+            if ((the JSON number named "samples" in source) != 4) or ((the JSON number named "samples" in target) != 1):
+                return "A shader resolve requires a multisample source and single-sample target"
+            if ((the JSON text named "format" in source) != (the JSON text named "format" in target)) or ((UI shader view view matches the extent of resolve among assets) = false):
+                return "Shader resolve images require matching formats and extents"
+    if depth is not JSON null:
+        set view to the JSON member named "view" in depth
+        set error to the error in UI shader view view among assets requiring depth true
+        if error != "":
+            return error
+        if color is not JSON null:
+            set other to the JSON member named "view" in color
+            set source to the UI shader asset named (the JSON text named "image" in view) among assets
+            set target to the UI shader asset named (the JSON text named "image" in other) among assets
+            if ((UI shader view view matches the extent of other among assets) = false) or ((the JSON number named "samples" in source) != (the JSON number named "samples" in target)):
+                return "Shader color and depth attachments require matching extents and sample counts"
+    else:
+        if the JSON boolean named "depthWrite" in (the JSON member named "state" in pass):
+            return "Writing shader depth requires a depth attachment"
+    return ""
+
+to get [UI shader pass] {a pointer to JSON value:pass} [writes image] {a value:name}:
+    set color to the JSON member named "color" in pass
+    set depth to the JSON member named "depth" in pass
+    if color is not JSON null:
+        if (the JSON text named "image" in (the JSON member named "view" in color)) = name:
+            return true
+        set resolve to the JSON member named "resolve" in color
+        if resolve is not JSON null:
+            if (the JSON text named "image" in resolve) = name:
+                return true
+    if depth is not JSON null:
+        if (the JSON text named "image" in (the JSON member named "view" in depth)) = name:
+            return true
+    return false
+
+to get [the error in UI shader resources for] {a pointer to JSON value:pass} [among] {a pointer to JSON value:assets}:
+    set resources to the JSON member named "resources" in pass
+    set uniforms to the JSON member named "uniforms" in pass
+    set index to 0
+    loop while index < resources's length:
+        set resource to the JSON value at index index in resources
+        set name to the JSON text named "name" in resource
+        set asset to the UI shader asset named name among assets
+        if asset = (0 as a pointer to JSON value):
+            return "A shader resource names an undeclared asset"
+        set kind to the JSON text named "kind" in resource
+        if kind != (the JSON text named "kind" in asset):
+            return "Shader resource and asset kinds disagree"
+        if kind = "texture":
+            if ((the JSON text named "dimension" in resource) != (the JSON text named "dimension" in asset)) or ((the JSON number named "samples" in asset) != 1):
+                return "A sampled shader image has an incompatible dimension or sample count"
+            if ((the JSON text named "sampleType" in resource) = "depth") != ((the JSON text named "format" in asset) is a UI shader depth format):
+                return "A sampled shader image has an incompatible format"
+            if UI shader pass pass writes image name:
+                return "A shader pass cannot sample an image it writes"
+        else:
+            if (the JSON boolean named "comparison" in resource) != ((the JSON text named "compare" in asset) != "none"):
+                return "A shader sampler has an incompatible comparison mode"
+        set cursor to 0
+        loop while cursor < uniforms's length:
+            if resource has the same UI shader slot as (the JSON value at index cursor in uniforms):
+                return "A shader uniform and resource occupy the same binding"
+            increment cursor
+        increment index
+    return ""
+
+to get [the error in UI shader graph] {a pointer to JSON value:program}:
+    set assets to the JSON member named "assets" in program
+    set index to 0
+    loop while index < assets's length:
+        set name to the JSON text named "name" in (the JSON value at index index in assets)
+        set cursor to index + 1
+        loop while cursor < assets's length:
+            if (the JSON text named "name" in (the JSON value at index cursor in assets)) = name:
+                return "Shader asset names must be unique"
+            increment cursor
+        increment index
+    set output to the UI shader asset named (the JSON text named "output" in program) among assets
+    if output = (0 as a pointer to JSON value):
+        return "A shader program requires a declared output image"
+    if (the JSON text named "kind" in output) != "texture":
+        return "A shader program output requires an image"
+    if (((the JSON text named "format" in output) is a UI shader color format) = false) or (((the JSON text named "dimension" in output) != "2d") or ((the JSON number named "samples" in output) != 1)):
+        return "A shader output requires a single-sample 2D color image"
+    if (the JSON text named "kind" in (the JSON member named "size" in output)) != "frame":
+        return "A shader output must follow the frame size"
+    set passes to the JSON member named "passes" in program
+    if passes's length = 0:
+        return "A shader program requires at least one pass"
+    set written to false
+    set index to 0
+    loop while index < passes's length:
+        set pass to the JSON value at index index in passes
+        set error to the error in UI shader attachments for pass among assets
+        if error = "":
+            set error to the error in UI shader resources for pass among assets
+        if error != "":
+            return error
+        if UI shader pass pass writes image (the JSON text named "output" in program):
+            set written to true
+        increment index
+    if written = false:
+        return "A shader program must write its output image"
+    return ""

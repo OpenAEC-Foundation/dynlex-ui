@@ -13,6 +13,7 @@ const renderer={
   bufferRecords(pass,slot){return buffers.get(`${pass}:${slot}`).byteLength/8;},
   indexCount(){return 3;},
   uniformBuffer(...args){calls.push(['uniform',...args.slice(0,-1),[...args.at(-1)]]);},
+  imageBytes(name,level,layer,bytes){calls.push(['image',name,level,layer,[...bytes]]);},
   render(width,height){calls.push(['render',width,height]);return texture;},
   close(){closed++;}
 };
@@ -26,11 +27,12 @@ globalThis.fetch=async url=>{
 };
 try {
   const source=value=>({webgpu:{kind:'source',value},webgl:{kind:'source',value}});
-  const description={operation:'shader',passes:[{vertex:source('vertex'),fragment:source('fragment'),
+  const description={operation:'shader',assets:[{kind:'texture',name:'paint'}],output:'output',passes:[{vertex:source('vertex'),fragment:source('fragment'),
     vertexBuffers:[{arrayStride:8,stepMode:'vertex',attributes:[{shaderLocation:0,offset:0,format:'float32x2'}],source:'vertices.bin'}],
-    indices:'indices.bin',draws:[],uniforms:[],depth:false,blend:'opaque',topology:'triangle-list'}]};
+    indices:'indices.bin',draws:[],uniforms:[],resources:[],glslBindings:[],glslUniforms:[],state:{},color:{},depth:null,topology:'triangle-list'}]};
   const response=await service.request(description,{signal:new AbortController().signal},surface);
   assert.equal(response.passes,1);
+  assert.deepEqual(calls[0][1].assets,description.assets);assert.equal(calls[0][1].output,'output');
   assert.deepEqual(calls[1],['vertex',0,0,[1,2,3,4,5,6,7,8]]);
   assert.deepEqual(calls[2],['index',0,[2,1,0]]);
   const imports=service.imports;
@@ -51,6 +53,9 @@ try {
   new Uint8Array(memory.buffer,96,16).set([1,2,3,4]);
   imports.ui_shader_uniform(17,handle,0,2,3,0,1,4,96,16);
   assert.deepEqual(calls.at(-1),['uniform',0,2,3,0,1,4,[1,2,3,4,0,0,0,0,0,0,0,0,0,0,0,0]]);
+  new Uint8Array(memory.buffer,160,8).set(new TextEncoder().encode('ink 🌽'));
+  imports.ui_shader_image(17,handle,160,8,2,5,96,4);
+  assert.deepEqual(calls.at(-1),['image','ink 🌽',2,5,[1,2,3,4]]);
   const output=imports.ui_shader_frame(17,handle,5,3);
   assert.equal(resources.get(output),texture);
   assert.deepEqual(calls.at(-1),['render',5,3]);

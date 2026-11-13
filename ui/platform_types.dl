@@ -13,6 +13,7 @@ class:
         buffer bytes as a pointer
         buffer records as a pointer
         index count as a pointer
+        images as a pointer
         close as a pointer
 
 class:

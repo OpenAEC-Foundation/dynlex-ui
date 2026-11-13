@@ -32,9 +32,19 @@ to get [a UI shader depth attachment using] {a pointer to JSON value:view} [load
     require condition (0.0 <= clear <= 1.0) reporting "A shader depth clear must be between zero and one"
     return a JSON object containing [JSON child "view" is view, JSON text "load" is load, JSON text "store" is store, JSON number "clear" is clear]
 
+to get [the UI shader blend description for] {C string:mode}:
+    if mode = "opaque":
+        return a new JSON-RPC null
+    require condition (((mode = "additive") or (mode = "alpha")) or (mode = "premultiplied")) reporting "Unknown shader blending mode"
+    set source to "src-alpha" if (mode = "alpha"), else "one"
+    set destination to "one" if (mode = "additive"), else "one-minus-src-alpha"
+    return a JSON object containing [
+        JSON child "color" is (a JSON object containing [JSON text "srcFactor" is source, JSON text "dstFactor" is destination, JSON text "operation" is "add"]),
+        JSON child "alpha" is (a JSON object containing [JSON text "srcFactor" is "one", JSON text "dstFactor" is destination, JSON text "operation" is "add"])
+    ]
+
 to get [a UI shader raster state culling] {C string:cull} [facing] {C string:face} [writing depth] {boolean:write} [comparing] {C string:compare} [blending] {C string:blend}:
     require condition (((cull = "none") or (cull = "front")) or (cull = "back")) reporting "Unknown shader culling mode"
     require condition ((face = "cw") or (face = "ccw")) reporting "Unknown shader front-face orientation"
     require condition ((compare is a UI shader comparison) and (compare != "none")) reporting "Unknown shader depth comparison"
-    require condition (((blend = "opaque") or (blend = "additive")) or ((blend = "alpha") or (blend = "premultiplied"))) reporting "Unknown shader blending mode"
-    return a JSON object containing [JSON text "cullMode" is cull, JSON text "frontFace" is face, JSON flag "depthWrite" is write, JSON text "depthCompare" is compare, JSON text "blend" is blend]
+    return a JSON object containing [JSON text "cullMode" is cull, JSON text "frontFace" is face, JSON flag "depthWrite" is write, JSON text "depthCompare" is compare, JSON child "blend" is (the UI shader blend description for blend)]

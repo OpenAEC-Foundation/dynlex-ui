@@ -85,11 +85,8 @@ export async function createWebGpu(device, reportError) {
   const image = (surface, pixels, width, height) => pixelsTexture(surface, pixels, width, height, true);
 
   function shader(surface, descriptor) {
-    return createWebGpuShader(device, descriptor, (width, height) => {
-      const texture = device.createTexture({ size: [width, height], format: 'rgba8unorm-srgb',
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT });
-      return textureResource(surface, texture, width, height, true);
-    }, retire);
+    return createWebGpuShader(device, descriptor,
+      record => textureResource(surface, record.storage, record.width, record.height, true), retire);
   }
 
   function surface(canvas) {

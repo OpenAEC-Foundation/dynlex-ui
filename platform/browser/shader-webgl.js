@@ -1,11 +1,14 @@
 import { createWebGlProgram } from './graphics-backend.js';
 import { createShaderGeometry } from './shader-streams.js';
 import { createShaderUniforms } from './shader-uniforms.js';
+import {createShaderAssets} from './shader-assets.js';
+import {webGlShaderAssetDriver} from './shader-assets-webgl.js';
+import {createWebGlShaderTargets} from './shader-targets-webgl.js';
 
 const fullscreen = `#version 300 es
 precision highp float;
 const vec2 points[3]=vec2[3](vec2(-1,-1),vec2(3,-1),vec2(-1,3));
-void main(){gl_Position=vec4(points[gl_VertexID],0,1);}`;
+void main(){vec2 point=points[gl_VertexID];gl_Position=vec4(point.x,-point.y,-1,1);}`;
 
 function validateAttributes(gl,program,layouts) {
   const types=new Map();
@@ -26,14 +29,11 @@ function validateAttributes(gl,program,layouts) {
   }
 }
 
+const emptyFragment='#version 300 es\nprecision highp float;void main(){}';
+
 export function createWebGlShader(gl,descriptor,target) {
-  const passes=[],framebuffer=gl.createFramebuffer(),depthEnabled=descriptor.passes.some(pass=>pass.depth);
-  const depth=depthEnabled?gl.createRenderbuffer():null;
+  const assets=createShaderAssets(descriptor.assets,webGlShaderAssetDriver(gl)),passes=[];
   let output=null,closed=false;
-  if(!framebuffer||(depthEnabled&&!depth)) {
-    gl.deleteFramebuffer(framebuffer);gl.deleteRenderbuffer(depth);
-    throw new Error('WebGL could not allocate shader attachments');
-  }
   const targetFor=usage=>usage==='vertex'?gl.ARRAY_BUFFER:gl.ELEMENT_ARRAY_BUFFER;
   const transfer={
     allocate(size,usage) {
@@ -48,49 +48,64 @@ export function createWebGlShader(gl,descriptor,target) {
   };
   const dispose=pass=>{
     if(pass.uniforms!==null) pass.uniforms.close();
-    pass.geometry.close();gl.deleteVertexArray(pass.array);gl.deleteProgram(pass.program);
+    pass.geometry.close();pass.targets.close();gl.deleteVertexArray(pass.array);gl.deleteProgram(pass.program);
   };
+  const comparison={never:gl.NEVER,less:gl.LESS,'less-equal':gl.LEQUAL,equal:gl.EQUAL,'not-equal':gl.NOTEQUAL,
+    greater:gl.GREATER,'greater-equal':gl.GEQUAL,always:gl.ALWAYS};
+  const factors={zero:gl.ZERO,one:gl.ONE,src:gl.SRC_COLOR,'one-minus-src':gl.ONE_MINUS_SRC_COLOR,
+    'src-alpha':gl.SRC_ALPHA,'one-minus-src-alpha':gl.ONE_MINUS_SRC_ALPHA,dst:gl.DST_COLOR,'one-minus-dst':gl.ONE_MINUS_DST_COLOR,
+    'dst-alpha':gl.DST_ALPHA,'one-minus-dst-alpha':gl.ONE_MINUS_DST_ALPHA,constant:gl.CONSTANT_COLOR,
+    'one-minus-constant':gl.ONE_MINUS_CONSTANT_COLOR,'src-alpha-saturated':gl.SRC_ALPHA_SATURATE};
+  const equations={add:gl.FUNC_ADD,subtract:gl.FUNC_SUBTRACT,'reverse-subtract':gl.FUNC_REVERSE_SUBTRACT,min:gl.MIN,max:gl.MAX};
   try {
     for(const description of descriptor.passes) {
-      const pass={geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,bindings:[],slots:new Map(),
-        depth:description.depth,blend:description.blend,
+      const pass={description,geometry:createShaderGeometry(description,transfer),program:null,array:null,uniforms:null,slots:new Map(),textures:[],
+        targets:createWebGlShaderTargets(gl,assets,description.color,description.depth),
         topology:{'triangle-list':gl.TRIANGLES,'line-list':gl.LINES,'point-list':gl.POINTS}[description.topology]};
       passes.push(pass);
       if(pass.topology===undefined) throw new Error('Unsupported shader list topology');
-      pass.program=createWebGlProgram(gl,description.vertex===null?fullscreen:description.vertex,description.fragment);
+      pass.program=createWebGlProgram(gl,description.vertex===null?fullscreen:description.vertex,
+        description.fragment===null?emptyFragment:description.fragment);
       pass.array=gl.createVertexArray();
       if(!pass.array) throw new Error('WebGL could not allocate a shader vertex array');
       validateAttributes(gl,pass.program,pass.geometry.layouts);
-      const active=Array.from({length:gl.getProgramParameter(pass.program,gl.ACTIVE_UNIFORMS)},(_,index)=>({index,name:gl.getActiveUniform(pass.program,index).name}));
       let nextBinding=0;
       pass.uniforms=createShaderUniforms(description.uniforms,{
         allocate(uniform,bytes) {
-          const matches=active.filter(item=>item.name.includes(`_group_${uniform.group}_binding_${uniform.binding}_`));
-          // A linker can eliminate a block that does not affect the output.
-          if(matches.length===0) return null;
-          const blocks=[...new Set(matches.map(match=>gl.getActiveUniforms(pass.program,[match.index],gl.UNIFORM_BLOCK_INDEX)[0]))];
+          const blocks=[...new Set(description.glslUniforms.filter(item=>item.group===uniform.group&&item.binding===uniform.binding)
+            .map(item=>gl.getUniformBlockIndex(pass.program,item.name)).filter(index=>index!==gl.INVALID_INDEX))];
+          // Linking may eliminate uniform blocks which do not affect the output.
+          if(blocks.length===0) return null;
           for(const block of blocks) if(gl.getActiveUniformBlockParameter(pass.program,block,gl.UNIFORM_BLOCK_DATA_SIZE)>bytes)
             throw new Error('Shader uniform block exceeds its reflected storage layout');
           const buffer=gl.createBuffer(),slot=nextBinding++;
           if(!buffer) throw new Error('WebGL could not allocate shader uniforms');
-          pass.slots.set(buffer,slot);
-          gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferData(gl.UNIFORM_BUFFER,bytes,gl.DYNAMIC_DRAW);
+          pass.slots.set(buffer,slot);gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferData(gl.UNIFORM_BUFFER,bytes,gl.DYNAMIC_DRAW);
           for(const block of blocks) gl.uniformBlockBinding(pass.program,block,slot);
           return buffer;
         },
         write(buffer,bytes) {gl.bindBuffer(gl.UNIFORM_BUFFER,buffer);gl.bufferSubData(gl.UNIFORM_BUFFER,0,bytes);},
         retire(buffer) {gl.deleteBuffer(buffer);}
       });
-      pass.bindings=pass.uniforms.bindings;
+      const units=new Map();
+      const resourceAt=slot=>description.resources.find(resource=>resource.group===slot.group&&resource.binding===slot.binding);
+      for(const mapping of description.glslBindings) {
+        const location=gl.getUniformLocation(pass.program,mapping.name);
+        if(location===null) continue;
+        const key=JSON.stringify([mapping.texture,mapping.sampler]);
+        let entry=units.get(key);
+        if(entry===undefined) {
+          entry={image:resourceAt(mapping.texture).name,sampler:mapping.sampler===null?null:resourceAt(mapping.sampler).name,locations:[]};
+          units.set(key,entry);pass.textures.push(entry);
+        }
+        entry.locations.push(location);
+      }
+      if(pass.textures.length>gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS)) throw new Error('Shader sampled resources exceed device limits');
     }
-  } catch(error) {
-    for(const pass of passes) dispose(pass);
-    gl.deleteFramebuffer(framebuffer);gl.deleteRenderbuffer(depth);throw error;
-  }
+  } catch(error) {for(const pass of passes) dispose(pass);assets.close();throw error;}
   const active=()=>{if(closed) throw new Error('The shader program is closed');};
   const passAt=index=>{
-    active();
-    if(!Number.isInteger(index)||index<0||index>=passes.length) throw new Error('Unknown shader pass');
+    active();if(!Number.isInteger(index)||index<0||index>=passes.length) throw new Error('Unknown shader pass');
     return passes[index];
   };
   return {
@@ -100,38 +115,39 @@ export function createWebGlShader(gl,descriptor,target) {
     bufferBytes(index,slot) {return passAt(index).geometry.bufferBytes(slot);},
     bufferRecords(index,slot) {return passAt(index).geometry.bufferRecords(slot);},
     indexCount(index) {return passAt(index).geometry.indexCount;},
-    uniformBuffer(index,group,binding,scalar,rows,columns,bytes) {
-      passAt(index).uniforms.upload(group,binding,scalar,rows,columns,bytes);
-    },
+    imageBytes(name,level,layer,bytes) {active();assets.upload(name,level,layer,bytes);},
+    uniformBuffer(index,group,binding,scalar,rows,columns,bytes) {passAt(index).uniforms.upload(group,binding,scalar,rows,columns,bytes);},
     render(width,height) {
       active();
       if(!Number.isInteger(width)||!Number.isInteger(height)||width<=0||height<=0||Math.max(width,height)>gl.getParameter(gl.MAX_TEXTURE_SIZE))
         throw new Error('Shader target dimensions exceed device limits');
       for(const pass of passes) pass.uniforms.requireReady();
       const plans=passes.map(pass=>pass.geometry.commands);
-      gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
-      if(output===null||output.width!==width||output.height!==height) {
-        if(output) output.texture.destroy();
-        output=target(width,height);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,output.texture.handle,0);
-        if(depthEnabled) {
-          gl.bindRenderbuffer(gl.RENDERBUFFER,depth);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT24,width,height);
-          gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
-        }
-        if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE) throw new Error('WebGL could not create the shader render target');
-      }
-      gl.viewport(0,0,width,height);gl.disable(gl.SCISSOR_TEST);gl.disable(gl.BLEND);
-      gl.depthMask(true);gl.clearDepth(1);gl.clearColor(0,0,0,1);
-      gl.clear(gl.COLOR_BUFFER_BIT|(depthEnabled?gl.DEPTH_BUFFER_BIT:0));
+      assets.resize(width,height);
+      const record=assets.image(descriptor.output);
+      if(output===null||output.texture!==record.storage) output=target(record);
       for(const [index,pass] of passes.entries()) {
-        if(plans[index].length===0) continue;
-        gl.useProgram(pass.program);gl.bindVertexArray(pass.array);
-        for(const binding of pass.bindings) {
-          gl.bindBufferBase(gl.UNIFORM_BUFFER,pass.slots.get(binding.buffer),binding.buffer);
+        pass.targets.begin();gl.useProgram(pass.program);gl.bindVertexArray(pass.array);
+        for(const binding of pass.uniforms.bindings) gl.bindBufferBase(gl.UNIFORM_BUFFER,pass.slots.get(binding.buffer),binding.buffer);
+        for(const [unit,binding] of pass.textures.entries()) {
+          const image=assets.image(binding.image).storage;
+          gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(image.target,image.handle);
+          gl.bindSampler(unit,binding.sampler===null?null:assets.sampler(binding.sampler).storage);
+          for(const location of binding.locations) gl.uniform1i(location,unit);
         }
-        if(pass.depth) gl.enable(gl.DEPTH_TEST);else gl.disable(gl.DEPTH_TEST);
-        gl.depthMask(pass.depth);gl.depthFunc(gl.LESS);
-        if(pass.blend==='additive') {gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);}else gl.disable(gl.BLEND);
+        const state=pass.description.state;
+        if(pass.description.depth!==null) gl.enable(gl.DEPTH_TEST);else gl.disable(gl.DEPTH_TEST);
+        gl.depthMask(state.depthWrite);gl.depthFunc(comparison[state.depthCompare]);
+        if(state.cullMode==='none') gl.disable(gl.CULL_FACE);
+        else {gl.enable(gl.CULL_FACE);gl.cullFace(state.cullMode==='front'?gl.FRONT:gl.BACK);}
+        // Naga's GLSL output adjusts clip-space Y relative to WebGPU.
+        gl.frontFace(state.frontFace==='ccw'?gl.CW:gl.CCW);
+        if(state.blend===null) gl.disable(gl.BLEND);
+        else {
+          const {color,alpha}=state.blend;gl.enable(gl.BLEND);
+          gl.blendFuncSeparate(factors[color.srcFactor],factors[color.dstFactor],factors[alpha.srcFactor],factors[alpha.dstFactor]);
+          gl.blendEquationSeparate(equations[color.operation],equations[alpha.operation]);
+        }
         for(const command of plans[index]) {
           for(const [slot,layout] of pass.geometry.layouts.entries()) {
             gl.bindBuffer(gl.ARRAY_BUFFER,pass.geometry.streams[slot].buffer);
@@ -143,20 +159,15 @@ export function createWebGlShader(gl,descriptor,target) {
               gl.vertexAttribDivisor(attribute.shaderLocation,layout.stepMode==='instance'?1:0);
             }
           }
-          if(command.indexed) {
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,pass.geometry.indices.buffer);
-            gl.drawElementsInstanced(pass.topology,command.count,gl.UNSIGNED_INT,command.first*4,command.instances);
-          } else gl.drawArraysInstanced(pass.topology,command.first,command.count,command.instances);
+          if(command.indexed) {gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,pass.geometry.indices.buffer);gl.drawElementsInstanced(pass.topology,command.count,gl.UNSIGNED_INT,command.first*4,command.instances);}
+          else gl.drawArraysInstanced(pass.topology,command.first,command.count,command.instances);
         }
+        pass.targets.end();
+        for(let unit=0;unit<pass.textures.length;unit++) gl.bindSampler(unit,null);
       }
-      gl.disable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-      return output;
+      gl.activeTexture(gl.TEXTURE0);gl.disable(gl.CULL_FACE);gl.disable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);return output;
     },
-    close() {
-      active();closed=true;
-      for(const pass of passes) dispose(pass);
-      if(output) output.texture.destroy();
-      gl.deleteFramebuffer(framebuffer);gl.deleteRenderbuffer(depth);
-    }
+    close() {active();closed=true;for(const pass of passes) dispose(pass);assets.close();}
   };
 }

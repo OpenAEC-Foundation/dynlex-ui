@@ -1,8 +1,8 @@
 # Portable GPU resource descriptions. The program owns their platform objects.
 import shader_types.dl
 
-{C string:value} [is a UI shader color format] means: ((value = "rgba8unorm") or (value = "rgba8unorm-srgb")) or (value = "rgba16float")
-{C string:value} [is a UI shader depth format] means: (value = "depth24plus") or (value = "depth32float")
+{a value:value} [is a UI shader color format] means: ((value = "rgba8unorm") or (value = "rgba8unorm-srgb")) or (value = "rgba16float")
+{a value:value} [is a UI shader depth format] means: (value = "depth24plus") or (value = "depth32float")
 {C string:value} [is a UI shader filter] means: (value = "nearest") or (value = "linear")
 {C string:value} [is a UI shader wrap mode] means: ((value = "clamp-to-edge") or (value = "repeat")) or (value = "mirror-repeat")
 {C string:value} [is a UI shader comparison] means: (((value = "none") or (value = "never")) or ((value = "less") or (value = "less-equal"))) or ((((value = "equal") or (value = "not-equal")) or ((value = "greater") or (value = "greater-equal"))) or (value = "always"))

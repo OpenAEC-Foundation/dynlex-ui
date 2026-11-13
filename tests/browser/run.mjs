@@ -42,6 +42,10 @@ const server = http.createServer(async (request, response) => {
       response.setHeader('Content-Type','text/javascript');
       response.end(await fs.readFile(new URL('./scene_rendering.mjs',import.meta.url)));return;
     }
+    if(request.url === '/__tests__/shader_fixtures.mjs') {
+      response.setHeader('Content-Type','text/javascript');
+      response.end(await fs.readFile(new URL('./shader_fixtures.mjs',import.meta.url)));return;
+    }
     const filename = path.resolve(directory, '.' + new URL(request.url, 'http://localhost').pathname);
     if (!filename.startsWith(directory + '/') && filename !== directory) throw new Error('Path');
     const resolved = filename === directory ? path.join(filename, 'index.html') : filename;

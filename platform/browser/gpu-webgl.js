@@ -106,14 +106,15 @@ export function createWebGl(reportError) {
     return { texture: texture(surface.gl, width, height, surface.gl.SRGB8_ALPHA8, pixels), width, height, colored: true };
   }
   function shader(surface, descriptor) {
-    return createWebGlShader(surface.gl, descriptor, (width, height) => ({
-      texture: texture(surface.gl, width, height, surface.gl.SRGB8_ALPHA8, null), width, height, colored: true
+    return createWebGlShader(surface.gl, descriptor, record => ({
+      texture: record.storage, width: record.width, height: record.height, colored: true
     }));
   }
 
   function present(surface, width, height, scale) {
     const { gl, canvas } = surface;
     gl.activeTexture(gl.TEXTURE0);
+    gl.bindSampler(0,null);gl.disable(gl.CULL_FACE);gl.disable(gl.DEPTH_TEST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, surface.framebuffer);
     if (surface.targetWidth !== canvas.width || surface.targetHeight !== canvas.height) {
       if (surface.target) surface.target.destroy();

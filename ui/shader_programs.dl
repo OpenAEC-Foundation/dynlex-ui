@@ -66,3 +66,62 @@ to get [the error from merging UI shader bindings from] {a pointer to JSON value
             add (a copy of JSON-RPC node uniform) to the JSON array bindings
         increment index
     return ""
+
+{a pointer to JSON value:left} [has the same UI shader slot as] {a pointer to JSON value:right} means: ((the JSON number named "group" in left) = (the JSON number named "group" in right)) and ((the JSON number named "binding" in left) = (the JSON number named "binding" in right))
+
+to get [the error from merging UI shader resources from] {a pointer to JSON value:stage} [into] {a pointer to JSON value:bindings}:
+    set resources to the JSON member named "resources" in stage
+    set index to 0
+    loop while index < resources's length:
+        set resource to the JSON value at index index in resources
+        set found to false
+        set cursor to 0
+        loop while cursor < bindings's length:
+            set existing to the JSON value at index cursor in bindings
+            if existing has the same UI shader slot as resource:
+                if ((the JSON text named "name" in existing) != (the JSON text named "name" in resource)) or ((the JSON text named "kind" in existing) != (the JSON text named "kind" in resource)):
+                    return "Shader stages disagree about a resource binding"
+                if (the JSON text named "kind" in resource) = "texture":
+                    if ((the JSON text named "dimension" in existing) != (the JSON text named "dimension" in resource)) or ((the JSON text named "sampleType" in existing) != (the JSON text named "sampleType" in resource)):
+                        return "Shader stages disagree about an image type"
+                else:
+                    if (the JSON boolean named "comparison" in existing) != (the JSON boolean named "comparison" in resource):
+                        return "Shader stages disagree about a sampler type"
+                set found to true
+            else:
+                if (the JSON text named "name" in existing) = (the JSON text named "name" in resource):
+                    return "A shader resource uses different bindings across stages"
+            increment cursor
+        if found = false:
+            add (a copy of JSON-RPC node resource) to the JSON array bindings
+        increment index
+    return ""
+
+to get [the error from merging UI shader GLSL metadata] {C string:member} [from] {a pointer to JSON value:stage} [into] {a pointer to JSON value:bindings}:
+    set entries to the JSON member named member in stage
+    set index to 0
+    loop while index < entries's length:
+        set entry to the JSON value at index index in entries
+        set found to false
+        set cursor to 0
+        loop while cursor < bindings's length:
+            set existing to the JSON value at index cursor in bindings
+            if (the JSON text named "name" in existing) = (the JSON text named "name" in entry):
+                if (the compact JSON form of existing) != (the compact JSON form of entry):
+                    return "Shader stages disagree about a GLSL binding name"
+                set found to true
+            increment cursor
+        if found = false:
+            add (a copy of JSON-RPC node entry) to the JSON array bindings
+        increment index
+    return ""
+
+to get [the error from linking UI shader stage] {a pointer to JSON value:stage} [into pass] {a pointer to JSON value:pass}:
+    set error to the error from merging UI shader bindings from stage into (the JSON member named "uniforms" in pass)
+    if error = "":
+        set error to the error from merging UI shader resources from stage into (the JSON member named "resources" in pass)
+    if error = "":
+        set error to the error from merging UI shader GLSL metadata "glslBindings" from stage into (the JSON member named "glslBindings" in pass)
+    if error = "":
+        set error to the error from merging UI shader GLSL metadata "glslUniforms" from stage into (the JSON member named "glslUniforms" in pass)
+    return error

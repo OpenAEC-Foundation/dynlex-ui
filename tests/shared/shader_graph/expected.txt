@@ -1,0 +1,1 @@
+Shader graphs link HDR resolves, depth-only passes and typed resources while rejecting invalid attachments and feedback.

@@ -31,6 +31,7 @@ set vertices to [1.0,2.0] as a 32 bit floating-point number array of 2 items
 set indices to [0,1,2] as a 32 bit unsigned integer array of 3 items
 set draws to [a UI shader draw counting 3 instanced 1 starting at 0 with vertex offset 0 and instance offset 0 indexed false]
 set UI shader shader pass pass in context vertex buffer slot from ((vertices + 0) as a pointer) spanning size bytes
+set UI shader shader image "paint" in context level pass layer slot from ((vertices + 0) as a pointer) spanning size bytes
 set UI shader shader pass pass in context to indices (indices + 0) counting index count
 set UI shader shader pass pass in context to draws (draws + 0) counting draw count
 require condition ((the byte count of UI shader shader pass pass buffer slot in context) = 48) reporting "Wrong byte count."
@@ -54,6 +55,7 @@ print line "Shader provider ABI retained."
       'opaque view':pointer=>pointer,
       argument:index=>values[index],
       ui_shader_vertex_buffer:(surface,shader,pass,slot,pointer,count)=>record('vertices',[surface,shader,pass,slot,count]),
+      ui_shader_image:(surface,shader,name,length,level,layer,pointer,count)=>record('image',[surface,shader,length,level,layer,count]),
       ui_shader_index_buffer:(surface,shader,pass,pointer,count)=>record('indices',[surface,shader,pass,count]),
       ui_shader_draws:(surface,shader,pass,pointer,count)=>record('draws',[surface,shader,pass,count]),
       ui_shader_buffer_bytes:(...args)=>{record('bytes',args);return 48;},
@@ -71,7 +73,7 @@ print line "Shader provider ABI retained."
     assert.ifError(result.error);
     assert.equal(result.output,'Shader provider ABI retained.\n');
     assert.deepEqual(result.calls,[
-      {kind:'vertices',args:[9,777,2,3,8]},{kind:'indices',args:[9,777,2,3]},
+      {kind:'vertices',args:[9,777,2,3,8]},{kind:'image',args:[9,777,5,2,3,8]},{kind:'indices',args:[9,777,2,3]},
       {kind:'draws',args:[9,777,2,1]},{kind:'bytes',args:[9,777,2,3]},
       {kind:'records',args:[9,777,2,3]},{kind:'index count',args:[9,777,2]},
       {kind:'frame',args:[9,777,40,20]},{kind:'close',args:[9,777]}
@@ -83,7 +85,7 @@ print line "Shader provider ABI retained."
         const rejected=await run(invalid);
         assert(rejected.error,`Field ${field} accepted ${value} at width ${bits}.`);
         assert.match(rejected.output,/UI operation integers must be between/);
-        assert.equal(rejected.calls.length,[0,0,0,6,6,1,2][field]);
+        assert.equal(rejected.calls.length,[0,0,0,7,7,2,3][field]);
       }
     }
     for(const field of [3,4]){
@@ -91,7 +93,7 @@ print line "Shader provider ABI retained."
       const rejected=await run(invalid);
       assert(rejected.error,'A zero texture dimension was accepted.');
       assert.match(rejected.output,/Shader texture dimensions must be positive/);
-      assert.equal(rejected.calls.length,6);
+      assert.equal(rejected.calls.length,7);
     }
     console.log('PASS shader provider integer widths',bits,optimization);
     }
