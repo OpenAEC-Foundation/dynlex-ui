@@ -1,0 +1,85 @@
+import ../../../ui/scene_orbit.dl
+import ../../../ui/appearance.dl
+
+to [expect orbit vector] {vector:actual} [near] {vector:expected}:
+    require condition ((the length of (actual - expected)) < 0.000001) reporting "An orbit camera moved to the wrong world position"
+
+set origin to a UI scene vector from [0.0,0.0,0.0]
+set camera to a UI scene camera at (a UI scene vector from [0.0,4.0,10.0]) aimed at origin with angle 35.0 aspect 1.0 near 0.1 far 1000.0
+set orbit to a UI scene orbit for camera between distances 2.0 and 100.0 and polar angles 0.05 and 1.5
+expect orbit vector (orbit's camera's position) near (camera's position)
+require condition ((UI scene orbit (the address of orbit) is moving) = false) reporting "A new orbit camera started animating without input"
+turn UI scene orbit (the address of orbit) by yaw 1.5707963267948966 polar 0.0
+require condition (UI scene orbit (the address of orbit) is moving) reporting "Orbit input did not schedule motion"
+require condition (advance UI scene orbit (the address of orbit) by 10.0 seconds) reporting "Orbit input did not move the camera"
+expect orbit vector (orbit's camera's position) near (a UI scene vector from [10.0,4.0,0.0])
+require condition ((advance UI scene orbit (the address of orbit) by 0.1 seconds) = false) reporting "A settled orbit kept requesting frames"
+
+# Damping must depend on elapsed time, rather than the number of drawn frames.
+set first to a UI scene orbit for camera between distances 2.0 and 100.0 and polar angles 0.05 and 1.5
+set second to first
+turn UI scene orbit (the address of first) by yaw 0.7 polar -0.3
+turn UI scene orbit (the address of second) by yaw 0.7 polar -0.3
+set changed to advance UI scene orbit (the address of first) by 0.2 seconds
+loop index from 0 to 20:
+    set changed to advance UI scene orbit (the address of second) by 0.01 seconds
+expect orbit vector (first's camera's position) near (second's camera's position)
+
+focus UI scene orbit (the address of orbit) on (a UI scene vector from [10.0,0.0,0.0]) viewed from (a UI scene vector from [10.0,4.0,-10.0]) over 0.65 seconds
+set changed to advance UI scene orbit (the address of orbit) by 0.325 seconds
+expect orbit vector (orbit's camera's target) near (a UI scene vector from [5.0,0.0,0.0])
+require condition ((the length of (orbit's camera's position - orbit's camera's target)) > 10.0) reporting "A focus animation crossed through its target"
+set changed to advance UI scene orbit (the address of orbit) by 0.325 seconds
+expect orbit vector (orbit's camera's position) near (a UI scene vector from [10.0,4.0,-10.0])
+require condition ((UI scene orbit (the address of orbit) is moving) = false) reporting "A completed focus animation kept requesting frames"
+
+zoom UI scene orbit (the address of orbit) by factor 0.0001
+turn UI scene orbit (the address of orbit) by yaw 0.0 polar -100.0
+set changed to advance UI scene orbit (the address of orbit) by 10.0 seconds
+require condition ((orbit's distance = 2.0) and (orbit's polar = 0.05)) reporting "Orbit zoom and pitch ignored their limits"
+pan UI scene orbit (the address of orbit) by (a UI scene vector from [1.0,2.0,3.0])
+set changed to advance UI scene orbit (the address of orbit) by 10.0 seconds
+expect orbit vector (orbit's camera's target) near (a UI scene vector from [11.0,2.0,3.0])
+
+# Camera-up is an axis, not an assumption that every scene uses world Y.
+set camera's position to a UI scene vector from [0.0,10.0,4.0]
+set camera's up to a UI scene vector from [0.0,0.0,1.0]
+set tilted to a UI scene orbit for camera between distances 2.0 and 100.0 and polar angles 0.05 and 1.5
+turn UI scene orbit (the address of tilted) by yaw 1.5707963267948966 polar 0.0
+set changed to advance UI scene orbit (the address of tilted) by 10.0 seconds
+expect orbit vector (tilted's camera's position) near (a UI scene vector from [-10.0,0.0,4.0])
+
+set camera's up to a UI scene vector from [0.0,1.0,0.0]
+set camera's position to a UI scene vector from [0.01,4.0,-10.0]
+set wrapped to a UI scene orbit for camera between distances 2.0 and 100.0 and polar angles 0.05 and 1.5
+turn UI scene orbit (the address of wrapped) by yaw 0.02 polar 0.0
+set changed to advance UI scene orbit (the address of wrapped) by 0.01 seconds
+require condition (wrapped's camera's position's z < -9.9) reporting "Crossing the yaw boundary spun the camera around the long route"
+focus UI scene orbit (the address of wrapped) on origin viewed from (a UI scene vector from [0.0,4.0,10.0]) over 0.0 seconds
+expect orbit vector (wrapped's camera's position) near (a UI scene vector from [0.0,4.0,10.0])
+require condition ((UI scene orbit (the address of wrapped) is moving) = false) reporting "Instant focus scheduled an animation"
+focus UI scene orbit (the address of wrapped) on (a UI scene vector from [50.0,0.0,0.0]) viewed from (a UI scene vector from [50.0,5.0,10.0]) over 1.0 seconds
+set changed to advance UI scene orbit (the address of wrapped) by 0.25 seconds
+set previous to wrapped's camera's position
+turn UI scene orbit (the address of wrapped) by yaw 0.1 polar 0.0
+expect orbit vector (wrapped's camera's position) near previous
+require condition (wrapped's duration = 0.0) reporting "Manual orbit did not cancel programmatic focus"
+
+set bounds to @intrinsic("construct", UI mesh bounds, a UI scene vector from [-10.0,-0.5,-10.0], a UI scene vector from [10.0,2.0,10.0])
+set target to a UI scene vector from [0.0,0.4,0.0]
+set direction to (a UI scene vector from [0.48,0.73,0.60]) normalized
+set camera to a UI scene camera at (target + direction) aimed at target with angle 35.0 aspect 1.0 near 0.1 far 1000.0
+for each aspect in [1.77777777777778,1.0,0.5625,0.2,4.0]:
+    set camera's aspect to aspect
+    set distance to the distance framing UI scene bounds bounds through camera within horizontal 0.96 vertical 0.86
+    set camera's position to target + direction * distance
+    set viewport to UI box at 0.0 0.0 sized (500.0 * aspect) 500.0
+    for each x in [-10.0,10.0]:
+        for each y in [-0.5,2.0]:
+            for each z in [-10.0,10.0]:
+                set projected to the UI scene projection for (a UI scene vector from [x,y,z]) through camera in viewport
+                require condition (projected's visible) reporting "Resizing clipped a corner of the framed scene"
+                set horizontal to ((projected's screen's x / viewport's width) * 2.0) - 1.0
+                set vertical to ((projected's screen's y / viewport's height) * 2.0) - 1.0
+                require condition (((the absolute value of horizontal) <= 0.96001) and ((the absolute value of vertical) <= 0.86001)) reporting "Scene framing did not preserve its viewport margins"
+print line "Scene cameras orbit, zoom, pan and focus smoothly with elapsed-time damping, arbitrary up axes, settled-frame detection and responsive bounds framing."

@@ -1,0 +1,79 @@
+# Camera motion is shared policy; applications translate normalized input to it.
+import scene_orbit_types.dl
+import scene_framing.dl
+
+to get [UI scene orbit] {a pointer to UI scene orbit:orbit} [is moving]:
+    if orbit's duration > 0.0:
+        return true
+    set yaw to the absolute value of (the UI scene orbit angle of (orbit's desired yaw - orbit's yaw))
+    set polar to the absolute value of (orbit's desired polar - orbit's polar)
+    set distance to the absolute value of (orbit's desired distance - orbit's distance)
+    set target to the length of (orbit's desired target - orbit's camera's target)
+    return ((yaw > 0.0000001) or (polar > 0.0000001)) or ((distance > 0.0000001) or (target > 0.0000001))
+
+to [turn UI scene orbit] {a pointer to UI scene orbit:orbit} [by yaw] {floating-point number:yaw} [polar] {floating-point number:polar}:
+    require condition ((yaw is finite) and (polar is finite)) reporting "Scene orbit turns require finite angles"
+    cancel UI scene orbit focus orbit
+    set orbit's desired yaw to the UI scene orbit angle of (orbit's desired yaw + (the UI scene orbit angle of yaw))
+    set orbit's desired polar to (orbit's desired polar + polar) clamped between (orbit's minimum polar) and (orbit's maximum polar)
+
+to [zoom UI scene orbit] {a pointer to UI scene orbit:orbit} [by factor] {floating-point number:factor}:
+    require condition ((factor is finite) and (factor > 0.0)) reporting "Scene orbit zoom requires a finite positive factor"
+    cancel UI scene orbit focus orbit
+    set orbit's desired distance to (orbit's desired distance * factor) clamped between (orbit's minimum distance) and (orbit's maximum distance)
+
+to [pan UI scene orbit] {a pointer to UI scene orbit:orbit} [by] {vector:offset}:
+    require finite UI scene vector offset
+    cancel UI scene orbit focus orbit
+    set target to orbit's desired target + (the UI scene vector form of offset)
+    require finite UI scene vector target
+    set orbit's desired target to target
+
+to [focus UI scene orbit] {a pointer to UI scene orbit:orbit} [on] {vector:target} [viewed from] {vector:eye} [over] {floating-point number:duration} [seconds]:
+    require condition ((duration is finite) and (duration >= 0.0)) reporting "Scene focus duration must be finite and nonnegative"
+    require finite UI scene vector target
+    require finite UI scene vector eye
+    set camera to orbit's camera
+    set camera's position to the UI scene vector form of eye
+    set camera's target to the UI scene vector form of target
+    set coordinates to the coordinates of UI scene camera camera in orbit orbit
+    set orbit's start yaw to orbit's yaw
+    set orbit's start polar to orbit's polar
+    set orbit's start distance to orbit's distance
+    set orbit's start target to orbit's camera's target
+    set orbit's desired yaw to coordinates's yaw
+    set orbit's desired polar to coordinates's polar clamped between (orbit's minimum polar) and (orbit's maximum polar)
+    set orbit's desired distance to coordinates's distance clamped between (orbit's minimum distance) and (orbit's maximum distance)
+    set orbit's desired target to camera's target
+    set orbit's duration to duration
+    set orbit's elapsed to 0.0
+    if duration = 0.0:
+        settle UI scene orbit orbit
+
+to get [advance UI scene orbit] {a pointer to UI scene orbit:orbit} [by] {floating-point number:seconds} [seconds]:
+    require condition ((seconds is finite) and (seconds >= 0.0)) reporting "Scene orbit time must be finite and nonnegative"
+    require condition (0.0 <= orbit's retention < 1.0) reporting "Scene orbit damping retention must be between zero inclusive and one exclusive"
+    if ((UI scene orbit orbit is moving) = false) or (seconds = 0.0):
+        return false
+    if orbit's duration > 0.0:
+        set orbit's elapsed to orbit's elapsed + (the minimum of seconds and (orbit's duration - orbit's elapsed))
+        set progress to orbit's elapsed / orbit's duration
+        set blend to progress * progress * (3.0 - 2.0 * progress)
+        set orbit's yaw to the UI scene orbit angle of (orbit's start yaw + (the UI scene orbit angle of (orbit's desired yaw - orbit's start yaw)) * blend)
+        set orbit's polar to orbit's start polar + (orbit's desired polar - orbit's start polar) * blend
+        set orbit's distance to orbit's start distance + (orbit's desired distance - orbit's start distance) * blend
+        set orbit's camera's target to orbit's start target + (orbit's desired target - orbit's start target) * blend
+        if progress = 1.0:
+            settle UI scene orbit orbit
+            return true
+    else:
+        set blend to 1.0 - (orbit's retention raised to the power of (seconds * 60.0))
+        set orbit's yaw to the UI scene orbit angle of (orbit's yaw + (the UI scene orbit angle of (orbit's desired yaw - orbit's yaw)) * blend)
+        set orbit's polar to orbit's polar + (orbit's desired polar - orbit's polar) * blend
+        set orbit's distance to orbit's distance + (orbit's desired distance - orbit's distance) * blend
+        set orbit's camera's target to orbit's camera's target + (orbit's desired target - orbit's camera's target) * blend
+        if (UI scene orbit orbit is moving) = false:
+            settle UI scene orbit orbit
+            return true
+    place UI scene orbit orbit
+    return true

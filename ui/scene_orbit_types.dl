@@ -1,0 +1,99 @@
+import scene_poses.dl
+import scene_mesh.dl
+
+class:
+    patterns:
+        UI scene orbit coordinates
+    members:
+        yaw as a floating-point number
+        polar as a floating-point number
+        distance as a floating-point number
+
+class:
+    patterns:
+        UI scene orbit
+    members:
+        camera as UI scene camera
+        up as UI scene vector
+        north as UI scene vector
+        east as UI scene vector
+        yaw as a floating-point number
+        polar as a floating-point number
+        distance as a floating-point number
+        desired yaw as a floating-point number
+        desired polar as a floating-point number
+        desired distance as a floating-point number
+        desired target as UI scene vector
+        minimum distance as a floating-point number
+        maximum distance as a floating-point number
+        minimum polar as a floating-point number
+        maximum polar as a floating-point number
+        retention as a floating-point number
+        start yaw as a floating-point number
+        start polar as a floating-point number
+        start distance as a floating-point number
+        start target as UI scene vector
+        elapsed as a floating-point number
+        duration as a floating-point number
+
+to get [the UI scene orbit angle of] {floating-point number:value}:
+    set angle to value % 6.283185307179586
+    if angle > 3.141592653589793:
+        set angle to angle - 6.283185307179586
+    if angle < -3.141592653589793:
+        set angle to angle + 6.283185307179586
+    return angle
+
+to get [the coordinates of UI scene camera] {UI scene camera:camera} [in orbit] {a pointer to UI scene orbit:orbit}:
+    set checked to the UI scene view matrix for camera
+    set relative to camera's position - camera's target
+    set east to the dot product of relative and (orbit's east)
+    set north to the dot product of relative and (orbit's north)
+    set up to the dot product of relative and (orbit's up)
+    return @intrinsic("construct", UI scene orbit coordinates, @intrinsic("atan2", east, north), @intrinsic("atan2", the square root of (east * east + north * north), up), the length of relative)
+
+to [place UI scene orbit] {a pointer to UI scene orbit:orbit}:
+    set horizontal to (orbit's north) * (the cosine of orbit's yaw) + (orbit's east) * (the sine of orbit's yaw)
+    set direction to horizontal * (the sine of orbit's polar) + (orbit's up) * (the cosine of orbit's polar)
+    set orbit's camera's position to orbit's camera's target + direction * orbit's distance
+
+to [settle UI scene orbit] {a pointer to UI scene orbit:orbit}:
+    set orbit's yaw to orbit's desired yaw
+    set orbit's polar to orbit's desired polar
+    set orbit's distance to orbit's desired distance
+    set orbit's camera's target to orbit's desired target
+    set orbit's duration to 0.0
+    place UI scene orbit orbit
+
+to [cancel UI scene orbit focus] {a pointer to UI scene orbit:orbit}:
+    if orbit's duration = 0.0:
+        return nothing
+    set orbit's duration to 0.0
+    set orbit's desired yaw to orbit's yaw
+    set orbit's desired polar to orbit's polar
+    set orbit's desired distance to orbit's distance
+    set orbit's desired target to orbit's camera's target
+
+to get [a UI scene orbit for] {UI scene camera:camera} [between distances] {floating-point number:near} [and] {floating-point number:far} [and polar angles] {floating-point number:low} [and] {floating-point number:high}:
+    require condition (((near is finite) and (far is finite)) and (0.0 < near <= far)) reporting "Scene orbit distance limits must be finite and positive"
+    require condition ((0.0 < low <= high) and (high < 3.141592653589793)) reporting "Scene orbit polar limits must stay strictly between its poles"
+    set result to a new UI scene orbit
+    set result's camera to camera
+    set result's up to camera's up normalized
+    set reference to a UI scene vector from [0.0,0.0,1.0]
+    if (the absolute value of result's up's z) > 0.9:
+        set reference to a UI scene vector from [0.0,1.0,0.0]
+    set result's north to (reference - (result's up) * (the dot product of reference and (result's up))) normalized
+    set result's east to the cross product of (result's up) and (result's north)
+    set result's minimum distance to near
+    set result's maximum distance to far
+    set result's minimum polar to low
+    set result's maximum polar to high
+    set result's retention to 0.85
+    set coordinates to the coordinates of UI scene camera camera in orbit (the address of result)
+    set result's desired yaw to coordinates's yaw
+    set result's desired polar to coordinates's polar clamped between low and high
+    set result's desired distance to coordinates's distance clamped between near and far
+    set result's desired target to camera's target
+    settle UI scene orbit (the address of result)
+    return result

@@ -1,0 +1,1 @@
+Scene cameras orbit, zoom, pan and focus smoothly with elapsed-time damping, arbitrary up axes, settled-frame detection and responsive bounds framing.

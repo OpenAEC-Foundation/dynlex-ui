@@ -46,6 +46,37 @@ Triangle winding selects the front face. Enable backfaces for two-sided geometry
 Parallel rays, degenerate triangles and intersections behind the ray report no
 hit. Integer and floating-point vertex coordinates share the camera conversion.
 
+## Camera controls and framing
+
+`ui/scene_orbit.dl` supplies orbit, zoom, pan and focus motion independently of
+input devices and renderers. Its up axis comes from the supplied camera.
+
+```dynlex
+set orbit to a UI scene orbit for camera between distances 4.0 and 100.0 and polar angles 0.05 and 1.38
+turn UI scene orbit (the address of orbit) by yaw 0.2 polar -0.1
+zoom UI scene orbit (the address of orbit) by factor 0.9
+pan UI scene orbit (the address of orbit) by offset
+focus UI scene orbit (the address of orbit) on target viewed from eye over 0.65 seconds
+set changed to advance UI scene orbit (the address of orbit) by seconds seconds
+```
+
+Render using `orbit's camera`. Request further animation frames while `UI scene
+orbit (the address of orbit) is moving`. Motion uses elapsed seconds, with a
+default damping retention of 0.85 per nominal 60 Hz frame. `retention` accepts
+zero through less than one; zero applies manual changes on the next advance.
+Focus transitions follow the shortest angular path and interpolate radius,
+polar angle and target with smoothstep timing, keeping the camera clear of its
+target. Manual input cancels a focus transition from its current placement.
+Changing the camera's up axis requires creating a new orbit; aspect, field of
+view and clip planes can be updated on its camera as the viewport changes.
+
+`the distance framing UI scene bounds bounds through camera within horizontal
+0.96 vertical 0.86` solves the required perspective distance along the camera's
+current target-to-eye direction. The fractions specify usable viewport extents.
+It accounts for every bounds corner and the near plane, without repeated
+projection trials. Move the camera to `target + direction * distance`; adjust
+its far plane and orbit distance limits to contain the resulting view.
+
 ## Object submission
 
 `ui/scene_draws.dl` builds color and shadow instance streams from the same

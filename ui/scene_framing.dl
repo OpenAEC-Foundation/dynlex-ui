@@ -1,0 +1,26 @@
+# Solve perspective framing from the camera basis instead of repeated projection.
+import scene_mesh.dl
+import scene_poses.dl
+
+to get [the distance framing UI scene bounds] {UI mesh bounds:bounds} [through] {UI scene camera:camera} [within horizontal] {floating-point number:horizontal} [vertical] {floating-point number:vertical}:
+    require condition ((0.0 < horizontal <= 1.0) and (0.0 < vertical <= 1.0)) reporting "Scene framing margins must be positive fractions of the viewport"
+    require finite UI scene vector (bounds's minimum)
+    require finite UI scene vector (bounds's maximum)
+    require condition ((bounds's minimum's x <= bounds's maximum's x) and ((bounds's minimum's y <= bounds's maximum's y) and (bounds's minimum's z <= bounds's maximum's z))) reporting "Scene framing requires ordered bounds"
+    set view to the UI scene view matrix for camera
+    set projection to the UI scene projection matrix for camera
+    set right to a UI scene vector from [(the item at 0 in view),(the item at 4 in view),(the item at 8 in view)]
+    set up to a UI scene vector from [(the item at 1 in view),(the item at 5 in view),(the item at 9 in view)]
+    set toward to a UI scene vector from [(the item at 2 in view),(the item at 6 in view),(the item at 10 in view)]
+    set xscale to (the absolute value of (the item at 0 in projection)) / horizontal
+    set yscale to (the absolute value of (the item at 5 in projection)) / vertical
+    set distance to 0.0
+    for each x in [bounds's minimum's x,bounds's maximum's x]:
+        for each y in [bounds's minimum's y,bounds's maximum's y]:
+            for each z in [bounds's minimum's z,bounds's maximum's z]:
+                set point to (a UI scene vector from [x,y,z]) - camera's target
+                set depth to the dot product of point and toward
+                set distance to the maximum of distance and (depth + camera's near)
+                set distance to the maximum of distance and (depth + (the absolute value of (the dot product of point and right)) * xscale)
+                set distance to the maximum of distance and (depth + (the absolute value of (the dot product of point and up)) * yscale)
+    return distance + (the maximum of 1.0 and distance) * 0.000001
