@@ -1,0 +1,1 @@
+Scene motion preserves queued turns, braking, backward strides, delays and elapsed-time animation across independent reference transitions.

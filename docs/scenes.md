@@ -77,6 +77,35 @@ It accounts for every bounds corner and the near plane, without repeated
 projection trials. Move the camera to `target + direction * distance`; adjust
 its far plane and orbit distance limits to contain the resulting view.
 
+## Queued object motion
+
+`ui/scene_motion.dl` keeps visual motion separate from simulation positions.
+Create `a UI scene motion at position facing angle with stride 0.85`, then use
+`aim UI scene motion motion at target facing angle over duration seconds` as
+simulation steps arrive. `advance UI scene motion motion by elapsed seconds`
+returns whether motion still changes the image. Its `position`, `yaw`, `weight`
+and signed walking `phase` drive ordinary instance poses. Headings are radians
+around positive Y; zero faces positive Z.
+
+New paths buffer 0.10 seconds, accelerate and brake over 0.10 seconds, and advance
+in steps no larger than 1/120 second. Queued corners preserve the complete path;
+backward movement reverses the stride phase while retaining the intended facing.
+`place UI scene motion motion at point facing angle` immediately settles it and
+clears its queue. `close UI scene motion motion` releases the motion and any
+pending waypoints. The FIFO releases passed waypoints without shifting a list.
+
+The shared `the UI scene angle of value` wraps radians. Articulations can use
+`the UI scene angle from current toward target at rate rate over elapsed seconds`
+for a shortest-path exponential approach, or `the UI scene blend at rate rate
+over elapsed seconds` for scalar blending. Orbit controls use the same angle
+wrapping. Hosts contain no second motion implementation.
+
+The motion fixture checks 53 transitions from six independently recorded original
+scenarios, including mixed speeds, turns, height changes, backward walking and
+idle turning. Its reference records the source revision and SHA-256. The explicit
+recorder reads that revision with Git, so reference generation remains independent
+of the DynLex implementation and does not require shipped JavaScript scene code.
+
 ## Object submission
 
 `ui/scene_draws.dl` builds color and shadow instance streams from the same
@@ -213,6 +242,12 @@ report `hit = false`. The local ray retains its magnitude so nonuniform scales
 and non-unit input directions do not change which intersection is nearest.
 
 ## Articulated models
+
+`ui/scene_attachments.dl` composes a prototype beneath an existing socket. Call
+`append UI scene model item under hand to parts` while building the combined
+model. Every attached root receives `hand` as its parent; descendants keep their
+relative hierarchy. Geometry and immutable source models remain shared. Use -1
+for independent roots. An attachment offset belongs in an ordinary group pose.
 
 `ui/scene_models.dl` defines model prototypes as immutable sequences of parts.
 A part carries a name, parent index, mesh, material, local pose, visibility,

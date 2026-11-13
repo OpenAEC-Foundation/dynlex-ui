@@ -1,0 +1,27 @@
+import ../../../ui/scene_attachments.dl
+import ../../../ui/scene_instances.dl
+import ../../../ui/scene_surfaces.dl
+
+set material to a UI scene material with color (UI ink 200 100 50) roughness 0.8 metalness 0.0
+set cube to a UI box mesh with 1 by 1 by 1 segments
+set identity to an identity UI scene pose
+set root to a UI scene group named "body" under -1 at identity
+set socket to a UI scene group named "socket" under 0 at (a UI scene pose at (a UI scene vector from [2.0,0.0,0.0]) rotated (a UI scene vector from [0.0,0.0,0.0]) scaled (a UI scene vector from [1.0,1.0,1.0]))
+set base to a UI scene model from [root,socket]
+set piece to a UI scene mesh part named "tip" under 0 using cube with material material at identity
+set attachment to a UI scene model from [a UI scene group named "tool" under -1 at identity,piece,a UI scene group named "second root" under -1 at identity]
+set parts to an empty list of UI scene part
+append UI scene model base under -1 to parts
+append UI scene model attachment under 1 to parts
+set composed to a UI scene model taking parts parts
+free parts
+require condition ((the length of composed's parts) = 5) reporting "Model composition lost an attachment"
+require condition (((the item at 2 in composed's parts)'s parent = 1) and ((the item at 3 in composed's parts)'s parent = 2)) reporting "Attachment parents were not relocated"
+require condition ((the item at 4 in composed's parts)'s parent = 1) reporting "A second model root was not attached to its socket"
+require condition ((the item at 3 in composed's parts)'s mesh's vertices' data = cube's vertices' data) reporting "Attaching a model duplicated immutable geometry"
+require condition (((the item at 1 in attachment's parts)'s parent = 0) and ((the length of base's parts) = 2)) reporting "Composition changed its source models"
+set instance to a UI scene instance of composed
+set placement to the UI scene placement of part 3 in instance
+require condition ((the absolute value of (placement's bounds' minimum's x - 1.5)) < 0.00001) reporting "The attachment did not inherit its socket's transform"
+close UI scene instance instance
+print line "Scene attachments relocate every root and child while sharing immutable models and geometry."

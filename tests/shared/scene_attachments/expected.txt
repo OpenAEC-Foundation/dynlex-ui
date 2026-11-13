@@ -1,0 +1,1 @@
+Scene attachments relocate every root and child while sharing immutable models and geometry.

@@ -1,0 +1,10 @@
+# Compose immutable prototypes at named sockets without copying mesh storage.
+import scene_models.dl
+
+to [append UI scene model] {UI scene model:model} [under] {integer:parent} [to] {a pointer to a list:parts}:
+    set offset to the length of parts
+    require condition (-1 <= parent < offset) reporting "A model attachment requires an existing parent or -1 for independent roots"
+    for each source in model's parts:
+        set part to source
+        set part's parent to parent if source's parent = -1, else (offset + source's parent)
+        append part to parts

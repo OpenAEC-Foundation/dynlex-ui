@@ -1,0 +1,8 @@
+# Exponential approach is stable across frame durations and shared by poses.
+import scene_angles.dl
+
+to get [the UI scene blend at rate] {floating-point number:rate} [over] {floating-point number:seconds} [seconds]:
+    return 1.0 - @intrinsic("exp", 0.0 - rate * seconds)
+
+to get [the UI scene angle from] {floating-point number:current} [toward] {floating-point number:target} [at rate] {floating-point number:rate} [over] {floating-point number:seconds} [seconds]:
+    return current + (the UI scene angle of (target - current)) * (the UI scene blend at rate rate over seconds seconds)

@@ -1,0 +1,51 @@
+import ../../../ui/scene_motion.dl
+import lib/filesystem.dl
+import lib/json.dl
+
+to get [the motion test vector named] {a value:name} [in] {a pointer to JSON value:entry}:
+    set values to the JSON member named name in entry
+    return a new vector with x (the JSON number at index 0 in values), y (the JSON number at index 1 in values) and z (the JSON number at index 2 in values)
+
+to [check motion number] {floating-point number:actual} [against] {a value:name} [in] {a pointer to JSON value:expected}:
+    set wanted to the JSON number named name in expected
+    if (the absolute value of (actual - wanted)) >= 0.00000001:
+        print line formatted "Motion reference differs at {name}: {actual} instead of {wanted}"
+        require condition false reporting "Scene motion differs from the independent reference"
+
+read the file at "tests/shared/scene_motion/reference.json" and set input to it
+require condition (input succeeded) reporting "The independent scene motion reference is missing"
+parse (input's contents) as JSON and set document to it
+require condition (document succeeded) reporting "The scene motion reference is invalid"
+set cases to the JSON member named "cases" in (document's value)
+loop index from 0 to (cases's length):
+    set motion to a UI scene motion at (a new vector with x 0.0, y 0.0 and z 0.0) facing 0.0 with stride 0.85
+    set actions to the JSON value at index index in cases
+    loop step from 0 to (actions's length):
+        set action to the JSON value at index step in actions
+        set kind to the JSON text named "kind" in action
+        set active to false
+        if kind = "place":
+            place UI scene motion motion at (the motion test vector named "point" in action) facing (the JSON number named "heading" in action)
+        else if kind = "target":
+            aim UI scene motion motion at (the motion test vector named "point" in action) facing (the JSON number named "heading" in action) over (the JSON number named "duration" in action) seconds
+        else:
+            set active to advance UI scene motion motion by (the JSON number named "seconds" in action) seconds
+        set expected to the JSON member named "expected" in action
+        require condition ((the length of (motion's position - (the motion test vector named "position" in expected))) < 0.00000001) reporting "Scene motion position differs from the reference"
+        require condition ((the length of (motion's target - (the motion test vector named "target" in expected))) < 0.00000001) reporting "Scene motion changed its queued target"
+        check motion number (motion's yaw) against "yaw" in expected
+        check motion number (motion's heading) against "heading" in expected
+        check motion number (motion's speed) against "speed" in expected
+        check motion number (motion's weight) against "weight" in expected
+        check motion number (motion's phase) against "phase" in expected
+        check motion number (motion's delay) against "delay" in expected
+        check motion number ((motion's queued) as a floating-point number) against "queued" in expected
+        require condition (active = (the JSON boolean named "active" in expected)) reporting "Scene motion has the wrong invalidation state"
+    close UI scene motion motion
+free document's value
+set point to a new vector with x 1.0, y 2.0 and z 3.0
+set motion to a UI scene motion at point facing 0.0 with stride 1.7
+aim UI scene motion motion at (point + (a new vector with x 0.0, y 0.0 and z 1.0)) facing 0.0 over 0.5 seconds
+require condition ((the z of point) = 3.0) reporting "Motion changed its caller's point"
+close UI scene motion motion
+print line "Scene motion preserves queued turns, braking, backward strides, delays and elapsed-time animation across independent reference transitions."

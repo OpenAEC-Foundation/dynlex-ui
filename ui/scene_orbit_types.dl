@@ -1,5 +1,6 @@
 import scene_poses.dl
 import scene_mesh.dl
+import scene_angles.dl
 
 class:
     patterns:
@@ -35,14 +36,6 @@ class:
         start target as UI scene vector
         elapsed as a floating-point number
         duration as a floating-point number
-
-to get [the UI scene orbit angle of] {floating-point number:value}:
-    set angle to value % 6.283185307179586
-    if angle > 3.141592653589793:
-        set angle to angle - 6.283185307179586
-    if angle < -3.141592653589793:
-        set angle to angle + 6.283185307179586
-    return angle
 
 to get [the coordinates of UI scene camera] {UI scene camera:camera} [in orbit] {a pointer to UI scene orbit:orbit}:
     set checked to the UI scene view matrix for camera

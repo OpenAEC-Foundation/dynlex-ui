@@ -1,0 +1,148 @@
+# Buffered waypoint motion is UI policy; hosts only supply elapsed time.
+# Timing follows the Farm's original ActorMotion; see tests/shared/scene_motion.
+import scene_poses.dl
+import scene_animation.dl
+
+class:
+    patterns:
+        UI scene waypoint
+    members:
+        position as UI scene vector
+        speed as a floating-point number
+        backward as a boolean
+        next as a pointer to UI scene waypoint
+
+class:
+    patterns:
+        UI scene motion
+    members:
+        position as UI scene vector
+        target as UI scene vector
+        yaw as a floating-point number
+        heading as a floating-point number
+        speed as a floating-point number
+        weight as a floating-point number
+        phase as a floating-point number
+        delay as a floating-point number
+        stride as a floating-point number
+        first as a pointer to UI scene waypoint
+        last as a pointer to UI scene waypoint
+        queued as an integer
+
+to [clear UI scene motion waypoints in] {a pointer to UI scene motion:motion}:
+    set cursor to motion's first
+    loop while cursor != (0 as a pointer to UI scene waypoint):
+        set next to cursor's next
+        destroy the value at cursor
+        deallocate cursor
+        set cursor to next
+    set motion's first to 0 as a pointer to UI scene waypoint
+    set motion's last to 0 as a pointer to UI scene waypoint
+    set motion's queued to 0
+
+to [place UI scene motion] {a pointer to UI scene motion:motion} [at] {vector:point} [facing] {floating-point number:angle}:
+    require finite UI scene vector point
+    require condition (angle is finite) reporting "Scene motion requires a finite heading"
+    clear UI scene motion waypoints in motion
+    set motion's position to the UI scene vector form of point
+    set motion's target to motion's position
+    set motion's yaw to angle
+    set motion's heading to angle
+    set motion's speed, motion's weight, motion's phase and motion's delay to 0.0
+
+to get [a UI scene motion at] {vector:point} [facing] {floating-point number:angle} [with stride] {floating-point number:stride}:
+    require condition ((stride is finite) and (stride > 0.0)) reporting "Scene motion stride must be finite and positive"
+    set result to storage for one slot initialized with (a new UI scene motion)
+    set result's stride to stride
+    place UI scene motion result at point facing angle
+    return result
+
+to [aim UI scene motion] {a pointer to UI scene motion:motion} [at] {vector:point} [facing] {floating-point number:angle} [over] {floating-point number:duration} [seconds]:
+    require finite UI scene vector point
+    require condition ((angle is finite) and ((duration is finite) and (duration > 0.0))) reporting "Scene motion requires a finite heading and positive duration"
+    set motion's heading to angle
+    set delta to (the UI scene vector form of point) - motion's target
+    set squared to the squared length of delta
+    if squared < 0.0000000001:
+        return nothing
+    set distance to the square root of squared
+    if motion's queued = 0:
+        set motion's delay to 0.10
+    set backward to (delta's x * (the sine of angle) + delta's z * (the cosine of angle)) < (0.0 - distance * 0.5)
+    set waypoint to storage for one slot initialized with (@intrinsic("construct", UI scene waypoint, the UI scene vector form of point, distance / duration, backward, 0 as a pointer to UI scene waypoint))
+    if motion's queued = 0:
+        set motion's first to waypoint
+    else:
+        set motion's last's next to waypoint
+    set motion's last to waypoint
+    increment motion's queued
+    set motion's target to waypoint's position
+
+to get [advance UI scene motion] {a pointer to UI scene motion:motion} [by one step of] {floating-point number:seconds} [seconds]:
+    set before to motion's position
+    set heading to motion's heading
+    set backward to false
+    if motion's delay > 0.0:
+        set motion's delay to the maximum of 0.0 and (motion's delay - seconds)
+    else if motion's queued > 0:
+        set first to motion's first
+        set backward to first's backward
+        set remaining to the length of (first's position - motion's position)
+        set cursor to first's next
+        set previous to first
+        loop while cursor != (0 as a pointer to UI scene waypoint):
+            set remaining to remaining + (the length of (cursor's position - previous's position))
+            set previous to cursor
+            set cursor to cursor's next
+        set acceleration to first's speed / 0.10
+        set wanted to the minimum of (first's speed) and (the square root of (2.0 * acceleration * remaining))
+        set change to (wanted - motion's speed) clamped between (0.0 - acceleration * seconds) and (acceleration * seconds)
+        set motion's speed to motion's speed + change
+        set travel to motion's speed * seconds
+        loop while (travel > 0.0) and (motion's queued > 0):
+            set next to motion's first
+            set delta to next's position - motion's position
+            set distance to the length of delta
+            if travel >= distance:
+                set motion's position to next's position
+                set travel to travel - distance
+                set motion's first to next's next
+                decrement motion's queued
+                destroy the value at next
+                deallocate next
+            else:
+                set motion's position to motion's position + delta * (travel / distance)
+                set travel to 0.0
+        if motion's queued = 0:
+            set motion's last to 0 as a pointer to UI scene waypoint
+            set motion's speed to 0.0
+    set direction to motion's position - before
+    set distance to the length of direction
+    if distance > 0.000001:
+        set heading to @intrinsic("atan2", direction's x, direction's z) + (3.141592653589793 if backward, else 0.0)
+    set turn to the UI scene angle of (heading - motion's yaw)
+    set motion's yaw to motion's yaw + turn * (the UI scene blend at rate 14.0 over seconds seconds)
+    set phase to (distance * 6.283185307179586) / motion's stride
+    if backward:
+        set phase to 0.0 - phase
+    set motion's phase to motion's phase + phase
+    set motion's weight to motion's weight + ((1.0 if distance > 0.000001, else 0.0) - motion's weight) * (the UI scene blend at rate 16.0 over seconds seconds)
+    return (distance > 0.0) or ((motion's weight > 0.001) or ((the absolute value of turn) > 0.001))
+
+to get [advance UI scene motion] {a pointer to UI scene motion:motion} [by] {floating-point number:seconds} [seconds]:
+    require condition ((seconds is finite) and (seconds >= 0.0)) reporting "Scene motion time must be finite and nonnegative"
+    set elapsed to seconds
+    set active to false
+    loop while elapsed > 0.000000001:
+        set step to the minimum of elapsed and (1.0 / 120.0)
+        set moving to advance UI scene motion motion by one step of step seconds
+        set active to moving or active
+        set elapsed to elapsed - step
+        if (moving = false) and (motion's queued = 0):
+            return active
+    return active
+
+to [close UI scene motion] {a pointer to UI scene motion:motion}:
+    clear UI scene motion waypoints in motion
+    destroy the value at motion
+    deallocate motion
