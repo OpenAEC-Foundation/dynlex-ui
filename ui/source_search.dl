@@ -1,10 +1,11 @@
+import view_lookup.dl
 # Source panes share one Find/Replace controller, independent of application code.
 import source_search_edits.dl
 import key_bindings.dl
 
 to [focus UI search field labeled] {C string:label} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
     set node to the UI search control labeled label in editor
-    set layout to the UI layout for element node in (view's layout)
+    set layout to the UI layout for element node in view
     activate UI layout layout in view
     if view's text focus != node:
         return nothing

@@ -1,3 +1,4 @@
+import view_lookup.dl
 # Inspection follows retained source geometry, independent of application and
 # keyboard focus. The ordinary text popover owns wrapping, selection and copy.
 import source_buffers.dl
@@ -59,7 +60,7 @@ to [update UI source hover in] {a pointer to UI source tools:tools}:
         if (retain UI source hover while leaving hover in view) = false:
             dismiss UI source hover hover in view
         return nothing
-    set layout to the UI layout for element (editor's node) in (view's layout)
+    set layout to the UI layout for element (editor's node) in view
     if (((editor's document's available = false) or (run's source's text != editor's document's source)) or (layout's content != editor's document's source)) or ((UI source element (editor's node) is active within (view's instance's description) in (view's instance)) = false):
         dismiss UI source hover hover in view
         return nothing
@@ -102,7 +103,7 @@ function [paint UI source hover in] {a pointer to UI source tools:tools} [on] {U
         if (tools's mode != 0) or (hover's popover's visible = false):
             return nothing
         set view to frame's view
-        set layout to the UI layout for element (hover's editor's node) in (view's layout)
+        set layout to the UI layout for element (hover's editor's node) in view
         if ((UI source hover hover is current) = false) or (layout's paint generation != view's paint count):
             dismiss UI source hover hover in view
             return nothing

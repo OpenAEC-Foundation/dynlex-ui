@@ -4,7 +4,7 @@ import source_language.dl
 import source_annotations.dl
 import tabs.dl
 import view.dl
-import layout_lookup.dl
+import view_lookup.dl
 import source_tools_types.dl
 import source_palette.dl
 import source_buffer_types.dl
@@ -245,7 +245,7 @@ to get [the UI source focus in] {a pointer to UI view:view} [for] {a pointer to 
         if UI source element (entry's node) is active within (workspace's instance's description) in (workspace's instance):
             if entry's node = view's text focus:
                 return entry's node
-            set layout to the UI layout for element (entry's node) in (view's layout)
+            set layout to the UI layout for element (entry's node) in view
             require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source editor is missing from its view layout"
             if (chosen = @intrinsic("construct", UI reference)) and (layout's paint generation = view's paint count):
                 if (layout's hit bounds' width > 0.0) and (layout's hit bounds' height > 0.0):

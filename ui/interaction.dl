@@ -1,3 +1,4 @@
+import view_lookup.dl
 import key_handling.dl
 # Descriptions and instance option models share view-owned popup capture.
 import view.dl
@@ -36,10 +37,10 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
         return nothing
     if (node's kind = 29) and (layout's parent's kind = 48):
         clear UI selection in view
-        set group to the UI layout for element (layout's parent) in (view's layout)
+        set group to the UI layout for element (layout's parent) in view
         set view's focus order to group's order
     if node's kind = 38:
-        set ribbon to the UI layout for element (layout's parent) in (view's layout)
+        set ribbon to the UI layout for element (layout's parent) in view
         set tab to the active UI tab in ribbon for (view's instance)
         scroll ribbon tab tab in direction (node's columns) within (the ribbon viewport width for tab in ribbon)
         return nothing

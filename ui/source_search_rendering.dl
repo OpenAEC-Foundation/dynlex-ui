@@ -1,3 +1,4 @@
+import view_lookup.dl
 import source_buffers.dl
 import text_marks.dl
 import document_forms.dl
@@ -74,7 +75,7 @@ to [reveal the UI source search match in] {a pointer to UI source editor:editor}
     if view's text focus = editor's node:
         restore UI source location (editor's current) in editor in view
         set view's reveal caret to true
-    set layout to the UI layout for element (editor's node) in (view's layout)
+    set layout to the UI layout for element (editor's node) in view
     refresh UI text geometry for (the address of (layout's text source)) in view
     reveal UI text byte (match's end) in layout within (the UI form text bounds of layout in (layout's painted bounds))
     set view's damaged to true

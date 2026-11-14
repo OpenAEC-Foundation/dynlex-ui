@@ -2,7 +2,7 @@ import key_handling.dl
 import view.dl
 import text.dl
 import tabs.dl
-import layout_lookup.dl
+import view_lookup.dl
 
 to navigate UI tabs in {a pointer to UI view:view}:
     if (view's keyboard focus = false) or (view's focused = @intrinsic("construct", a pointer to UI layout)):
@@ -36,7 +36,7 @@ to navigate UI tabs in {a pointer to UI view:view}:
         consume the UI key in view
         return nothing
     if group's kind = 28:
-        set target to the UI layout for element (the UI child at index in group) in (view's layout)
+        set target to the UI layout for element (the UI child at index in group) in view
         set view's focus order to target's order
     else:
         clear UI selection in view

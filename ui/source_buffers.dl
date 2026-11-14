@@ -1,3 +1,4 @@
+import view_lookup.dl
 # A source control presents one buffer at a time. Its project always owns the
 # main document, so opening a definition never changes Run, Save or Share.
 import source_workspace.dl
@@ -20,7 +21,7 @@ to get [the UI source buffer for] {a pointer to UI source document:document} [in
 
 to [remember the UI source location of] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
     set buffer to editor's current
-    set layout to the UI layout for element (editor's node) in (view's layout)
+    set layout to the UI layout for element (editor's node) in view
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
     if view's selection's caret source = (the address of (layout's text source)):
         set buffer's caret to view's selection's caret
@@ -33,7 +34,7 @@ to [remember the UI source location of] {a pointer to UI source editor:editor} [
 
 to [restore UI source location] {a pointer to UI source buffer:buffer} [in] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view}:
     require condition (editor's current = buffer) reporting "Only the visible source buffer can receive focus"
-    set layout to the UI layout for element (editor's node) in (view's layout)
+    set layout to the UI layout for element (editor's node) in view
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
     refresh UI focus in view
     set text to (the UI value for (editor's node) in (view's instance))'s text
@@ -73,7 +74,7 @@ to [bind UI source document] {a pointer to UI source document:document} [in] {a 
         set editor's colors revision to 0
         set editor's shown to false
         set UI control (editor's node) text protected (document's writable = false) in (view's instance)
-        set layout to the UI layout for element (editor's node) in (view's layout)
+        set layout to the UI layout for element (editor's node) in view
         require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
         forget UI text source (the address of (layout's text source)) in view
         set layout's text source's text to document's source
@@ -134,7 +135,7 @@ to [replace UI main source of] {a pointer to UI source editor:editor} [in] {a po
     set buffer's anchor and buffer's caret to 0
     set buffer's horizontal and buffer's vertical to 0.0
     if main = editor's document:
-        set layout to the UI layout for element (editor's node) in (view's layout)
+        set layout to the UI layout for element (editor's node) in view
         require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
         set focused to view's selection's caret source = (the address of (layout's text source))
         set replacement to a new UI text state
@@ -155,7 +156,7 @@ to [replace UI main source of] {a pointer to UI source editor:editor} [in] {a po
     edit UI source document main to content at seconds seconds
 
 to [load UI main source of] {a pointer to UI source editor:editor} [in] {a pointer to UI view:view} [from] {string:text} [at] {floating-point number:seconds} [seconds]:
-    set layout to the UI layout for element (editor's node) in (view's layout)
+    set layout to the UI layout for element (editor's node) in view
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A source view is missing its layout"
     set focused to view's selection's caret source = (the address of (layout's text source))
     replace UI main source of editor in view with text at seconds seconds

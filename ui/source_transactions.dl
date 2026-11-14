@@ -1,3 +1,4 @@
+import view_lookup.dl
 # Atomic text changes over the source project's owned document models.
 # Protocol parsing, Unicode ranges and edit ordering belong to the standard planner.
 import source_buffers.dl
@@ -157,7 +158,7 @@ to get [commit UI source transaction] {a pointer to UI source transaction:transa
         set patch's buffer's anchor and patch's buffer's caret to caret
         edit UI source document document to (patch's change's text) at (view's seconds) seconds
         if document = editor's document:
-            set layout to the UI layout for element (editor's node) in (view's layout)
+            set layout to the UI layout for element (editor's node) in view
             set focused to view's selection's caret source = (the address of (layout's text source))
             forget UI text source (the address of (layout's text source)) in view
             set layout's text source's text to state's text

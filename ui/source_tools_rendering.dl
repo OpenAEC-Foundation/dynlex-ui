@@ -2,11 +2,11 @@ import source_tools_types.dl
 import source_hover.dl
 import shapes.dl
 import clipping.dl
-import layout_lookup.dl
+import view_lookup.dl
 
 to get [the UI source tool anchor in] {a pointer to UI source tools:tools}:
     set view to tools's view
-    set layout to the UI layout for element (tools's node) in (view's layout)
+    set layout to the UI layout for element (tools's node) in view
     set anchor to UI box at (layout's hit bounds' x + 8.0) (layout's hit bounds' y + 8.0) sized 1 (layout's typeface's size + 2)
     set run to view's texts
     loop while run != @intrinsic("construct", a pointer to UI text run):
@@ -29,7 +29,7 @@ to [paint UI source tools] {a pointer:context} [on] {UI frame:frame}:
     set popup's rows to 0
     set popup's bounds to UI box at 0 0 sized 0 0
     set view to frame's view
-    set layout to the UI layout for element (tools's node) in (view's layout)
+    set layout to the UI layout for element (tools's node) in view
     if layout's paint generation != view's paint count:
         return nothing
     set surface to the UI viewport bounds in view

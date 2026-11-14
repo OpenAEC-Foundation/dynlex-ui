@@ -1,7 +1,7 @@
 # Keyboard commands use the same scoped handler/context machinery as controls.
 import key_handling.dl
 import focus.dl
-import layout_lookup.dl
+import view_lookup.dl
 import interaction.dl
 
 to get [the UI event for key] {integer:key} [with modifiers] {integer:modifiers}:
@@ -17,7 +17,7 @@ to [unbind UI key] {integer:key} [with modifiers] {integer:modifiers} [from] {UI
 
 to [activate a UI key target in] {a pointer to UI view:view}:
     set target to view's instance's event context as UI reference
-    set layout to the UI layout for element target in (view's layout)
+    set layout to the UI layout for element target in view
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "The keyboard action targets a control outside its view"
     activate UI layout layout in view
 
@@ -43,8 +43,7 @@ to get [process UI key bindings in] {a pointer to UI view:view}:
                 return true
         if layout = view's layout:
             return false
-        set layout to the UI layout for element (layout's parent) in (view's layout)
-        require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "A key scope has no retained parent"
+        set layout to the UI parent of layout in view
 
 section when the {C string:label} control receives key {integer:key} with modifiers {integer:modifiers}:
     receiver: a pointer to UI view

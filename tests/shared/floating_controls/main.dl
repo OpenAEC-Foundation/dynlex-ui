@@ -35,6 +35,9 @@ to [click floating point] {UI point:point} [in] {a pointer to UI view:view}:
 to [remove floating click] {a pointer to UI instance:instance}:
     remove UI floating control (instance's event context as a pointer to UI floating control)
 
+to [count floating key] {a pointer to UI view:view}:
+    count floating click (view's instance)
+
 to [paint empty stage] {a pointer to UI canvas frame:painting}:
     ignore painting
 
@@ -51,6 +54,8 @@ set UI text of (the address of (first's node)) in (the address of instance) to "
 set UI text of (the address of (second's node)) in (the address of instance) to "Alex"
 bind (the address of (first's node)) in (the address of instance) to (the function named "count floating click $") for event 0 with context ((the address of clicks) as a pointer)
 bind (the address of (second's node)) in (the address of instance) to (the function named "count floating click $") for event 0 with context ((the address of clicks) as a pointer)
+bind UI key 75 with modifiers 2 from controls page in (the address of instance) to (the function named "count floating key $") with context ((the address of clicks) as a pointer)
+bind UI key 76 with modifiers 2 from controls page in (the address of instance) activating second node
 set viewport to UI box at 20 200 sized 700 260
 place UI floating control first at (a UI point at 220.0 and 280.0) within viewport
 place UI floating control second at (a UI point at 420.0 and 280.0) within viewport
@@ -76,12 +81,18 @@ queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (t
 queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
 process UI input in (the address of view)
 require condition ((view's focused = first's layout) and (clicks = 1)) reporting "Tab and Enter did not activate the floating button through shared input"
+queue UI input of kind 3 key 75 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+queue UI input of kind 3 key 76 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition (clicks = 3) reporting "A floating button lost its document key scope or keyboard target lookup"
+unbind UI key 75 with modifiers 2 from controls page in (the address of instance)
+unbind UI key 76 with modifiers 2 from controls page in (the address of instance)
 set point to a UI point at (first's layout's painted bounds' x + 10.0) and (first's layout's painted bounds' y + 10.0)
 click floating point point in (the address of view)
-require condition ((view's hot = first's layout) and (clicks = 2)) reporting "The floating button did not use shared pointer activation"
+require condition ((view's hot = first's layout) and (clicks = 4)) reporting "The floating button did not use shared pointer activation"
 set UI control first node enabled false in (the address of instance)
 click floating point point in (the address of view)
-require condition (clicks = 2) reporting "A disabled floating button remained interactive"
+require condition (clicks = 4) reporting "A disabled floating button remained interactive"
 set UI control first node enabled true in (the address of instance)
 hide UI floating control first
 refresh UI focus in (the address of view)

@@ -3,7 +3,9 @@ import floating_control_rendering.dl
 import focus.dl
 import text.dl
 
-to [remove UI floating control] {a pointer to UI floating control:control}:
+to [remove UI floating control] {a pointer to UI floating control:target}:
+    # Unlinking can change the caller's field used as this by-reference argument.
+    set control to target
     set controls to control's owner
     set view to controls's view
     set entry to controls's first

@@ -1,9 +1,9 @@
 # Navigation reads retained source geometry, including edits queued before paint.
 import text_layout.dl
-import layout_lookup.dl
+import view_lookup.dl
 
 to refresh UI text geometry for {a pointer to UI text source:source} in {a pointer to UI view:view}:
-    set layout to the UI layout for element (source's element) in (view's layout)
+    set layout to the UI layout for element (source's element) in view
     require condition (layout != @intrinsic("construct", a pointer to UI layout)) reporting "Editable text has no retained layout"
     set content to the presented UI text of source in view
     set changed to false

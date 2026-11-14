@@ -1,5 +1,5 @@
 import floating_control_types.dl
-import layout_lookup.dl
+import view_lookup.dl
 
 to [paint UI floating control] {a pointer to UI floating control:control} [on] {UI frame:frame}:
     set view to frame's view
@@ -36,7 +36,7 @@ to [paint UI floating controls] {a pointer:context} [on] {UI frame:frame}:
     retire UI floating layout (the address of (controls's layout))
     set bounds to the UI viewport bounds in view
     if controls's anchor != (0 as UI reference):
-        set anchor to the UI layout for element (controls's anchor) in (view's layout)
+        set anchor to the UI layout for element (controls's anchor) in view
         require condition (anchor != (0 as a pointer to UI layout)) reporting "The floating controls anchor does not belong to its view"
         if anchor's paint generation != view's paint count:
             return nothing

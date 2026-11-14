@@ -1,8 +1,9 @@
+import view_lookup.dl
 import text.dl
 import text_geometry.dl
 
 to get the UI caret row for {a pointer to UI text source:source} at {integer:position} in {a pointer to UI view:view}:
-    set layout to the UI layout for element (source's element) in (view's layout)
+    set layout to the UI layout for element (source's element) in view
     set line to layout's lines
     loop while line != @intrinsic("construct", a pointer to UI text line):
         set ending to true
@@ -16,7 +17,7 @@ to get the UI caret row for {a pointer to UI text source:source} at {integer:pos
 
 to get the UI vertical destination from {integer:position} in {a pointer to UI text source:source} toward {integer:direction} in {a pointer to UI view:view}:
     set current to the UI caret row for source at position in view
-    set layout to the UI layout for element (source's element) in (view's layout)
+    set layout to the UI layout for element (source's element) in view
     if view's selection's vertical = false:
         set view's selection's preferred x to the width of (the substring of (source's text) from (current's start) spanning (position - current's start) bytes) using (layout's typeface)
     set view's selection's vertical to true

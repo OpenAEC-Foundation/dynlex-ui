@@ -1,0 +1,26 @@
+# A view owns a forest: its document plus any retained floating layers.
+import view.dl
+import layout_lookup.dl
+
+to get [the UI layout for element] {UI reference:node} [in] {a pointer to UI view:view}:
+    set found to the UI layout for element node in (view's layout)
+    if found != (0 as a pointer to UI layout):
+        return found
+    set overlay to view's overlays
+    loop while overlay != (0 as a pointer to UI overlay):
+        if overlay's layout != (0 as a pointer to UI layout):
+            set found to the UI layout for element node in (overlay's layout)
+            if found != (0 as a pointer to UI layout):
+                return found
+        set overlay to overlay's next
+    return 0 as a pointer to UI layout
+
+to get [the UI parent of] {a pointer to UI layout:layout} [in] {a pointer to UI view:view}:
+    set overlay to view's overlays
+    loop while overlay != (0 as a pointer to UI overlay):
+        if overlay's layout = layout:
+            return view's layout
+        set overlay to overlay's next
+    set parent to the UI layout for element (layout's parent) in view
+    require condition (parent != (0 as a pointer to UI layout)) reporting "The UI layout has no retained parent"
+    return parent
