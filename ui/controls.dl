@@ -4,6 +4,7 @@ import ribbon_rendering.dl
 import animation.dl
 import text_field.dl
 import switch_states.dl
+import range_rendering.dl
 
 to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with cursor {UI point:cursor} in {a pointer to UI view:view} on {UI frame:frame}:
     set view's text layout to layout
@@ -43,6 +44,9 @@ to paint UI control {a pointer to UI layout:layout} in {UI bounds:box} with curs
             set ink to view's theme's accent
             set text to UI ink 12 31 24
             set lit to true
+    if node's kind = the UI range kind:
+        draw UI range layout in box in view on frame
+        return nothing
     set target to 0.0
     if inside:
         set view's hot to layout

@@ -1,0 +1,116 @@
+import ../../../testing/driver.dl
+import lib/text_scan.dl
+
+appearance range page appearance:
+    maximum width is 440
+    padding is 12
+    gap is 12
+
+appearance range field appearance:
+    padding is 10
+    minimum height is 52
+    background is UI ink 245 247 249
+    text is UI ink 22 28 36
+    accent is UI ink 65 100 210
+    border is UI ink 170 180 190
+    border width is 1
+    corner radius is 6
+
+document range controls using range page appearance:
+    range field "Progress" from 0.0 through 100.0 stepping 0.5 initially 25.0 using range field appearance
+    range field "Trim" from -2.0 through 2.0 stepping 0.25 initially -0.75 using range field appearance
+    range field "Fixed" from 2.0 through 2.0 stepping 0.5 initially 2.0 using range field appearance
+    code:
+        when the "Progress" control changes:
+            notice test range this window
+
+window range desktop:
+    group at 0 0 sized 400 by 180:
+        range field "Desktop frame" from 0.0 through 1.0 stepping 0.01 initially 0.25 using range field appearance
+
+# Programmatic updates and user changes have separate effects.
+to notice test range {a pointer to UI instance:instance}:
+    set changes to instance's state as a pointer to an integer
+    set the value at changes to (the value at changes) + 1
+
+to press range test key {integer:key} in {a pointer to UI view:view}:
+    queue UI input of kind 3 key key at 0.0 0.0 with modifiers 0 containing "" in view
+    ignore update UI view view
+
+set changes to 0
+set instance to an instance of range controls with state (the address of changes)
+set window to the address of instance
+set other to an instance of range controls
+require condition ((the range value of "Progress" in window) = 25.0) reporting "A range lost its declared initial value."
+require condition ((the range value of "Trim" in window) = -0.75) reporting "A range lost its negative fractional bounds."
+set the range value of "Progress" in window to 18.4
+require condition ((the range value of "Progress" in window) = 18.5) reporting "A range did not snap to its authored step."
+require condition ((the range value of "Progress" in (the address of other)) = 25.0) reporting "Two instances shared a range value."
+set revision to window's revision
+set the range value of "Progress" in window to 18.5
+require condition (window's revision = revision) reporting "Assigning the same range value invalidated the UI."
+set the range value of "Progress" in window to -5.0
+require condition ((the range value of "Progress" in window) = 0.0) reporting "A range accepted a value below its minimum."
+set the range value of "Progress" in window to 150.0
+require condition ((the range value of "Progress" in window) = 100.0) reporting "A range accepted a value above its maximum."
+set the range value of "Progress" in window to 25.0
+require condition (changes = 0) reporting "Programmatic range updates invoked an input callback."
+
+set view to a UI view of window sized 600 by 500 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set progress to the UI layout labeled "Progress" in (view's layout)
+require condition ((progress's bounds' width > 100.0) and (progress's bounds' height >= 52.0)) reporting "A range did not reserve its authored layout."
+require condition (progress's appearance's accent's blue = 210) reporting "A range ignored its authored accent color."
+require condition ((view's window as a pointer to test UI surface)'s drawn contains "Progress") reporting "A range did not paint its caption."
+set middle to progress's painted bounds' y + progress's bounds' height / 2.0
+set center to progress's painted bounds' x + progress's bounds' width / 2.0
+queue UI input of kind 1 key 0 at center middle with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the range value of "Progress" in window) = 50.0) reporting "Clicking the middle of a range did not choose its midpoint."
+queue UI input of kind 1 key 0 at (progress's painted bounds' x - 100.0) middle with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition ((the range value of "Progress" in window) = 0.0) reporting "Dragging outside a range lost pointer capture."
+queue UI input of kind 1 key 0 at (progress's painted bounds' x + progress's bounds' width + 100.0) middle with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the range value of "Progress" in window) = 100.0) and (changes = 3)) reporting "Dragging did not report each changed range value exactly once."
+
+press range test key 258 in (the address of view)
+require condition ((view's focused = progress) and view's keyboard focus) reporting "A range was missing from keyboard focus."
+press range test key 263 in (the address of view)
+require condition ((the range value of "Progress" in window) = 99.5) reporting "A range ignored its keyboard step."
+press range test key 267 in (the address of view)
+require condition ((the range value of "Progress" in window) = 94.5) reporting "A range ignored its page step."
+press range test key 268 in (the address of view)
+require condition ((the range value of "Progress" in window) = 0.0) reporting "Home did not reach the range minimum."
+press range test key 269 in (the address of view)
+require condition (((the range value of "Progress" in window) = 100.0) and (changes = 7)) reporting "End did not reach the range maximum."
+set the "Progress" control in window enabled false
+queue UI input of kind 1 key 0 at center middle with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the range value of "Progress" in window) = 100.0) and (changes = 7)) reporting "A disabled range accepted pointer input."
+set view's width to 300
+ignore update UI view (the address of view)
+require condition (progress's bounds' width <= 300.0) reporting "A range did not follow its resized viewport."
+require condition ((the range value of "Fixed" in window) = 2.0) reporting "A zero-span range lost its fixed value."
+close the address of view
+close window
+close the address of other
+
+set desktop to an instance of range desktop
+set surface to a UI view of (the address of desktop) sized 600 by 500 using font "regular" with the test UI driver
+ignore update UI view (the address of surface)
+set field to the UI layout labeled "Desktop frame" in (surface's layout)
+require condition ((surface's window as a pointer to test UI surface)'s drawn contains "Desktop frame") reporting "A classic window did not paint its range."
+set location to field's painted bounds
+queue UI input of kind 1 key 0 at (location's x + location's width / 2.0) (location's y + location's height / 2.0) with modifiers 0 containing "" in (the address of surface)
+queue UI input of kind 2 key 1 at 0.0 0.0 with modifiers 0 containing "" in (the address of surface)
+queue UI input of kind 2 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of surface)
+ignore update UI view (the address of surface)
+require condition ((the range value of "Desktop frame" in (the address of desktop)) = 0.5) reporting "A classic window range disagreed with document input."
+close the address of surface
+close the address of desktop
+print line "Ranges share stepped values, pointer capture, keyboard navigation, disabled states and responsive drawing."

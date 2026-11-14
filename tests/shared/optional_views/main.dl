@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 import ../../../ui/key_bindings.dl
 import ../../../ui/source_workspace.dl
 

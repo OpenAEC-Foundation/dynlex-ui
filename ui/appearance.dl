@@ -51,6 +51,8 @@ font size is {integer:number} means: UI appearance rule 4 valued number
 line spacing is {a value:number} means: UI appearance rule 5 valued number
 text is {UI paint:ink} means: UI appearance rule 6 colored ink
 text is palette color {C string:name} means: UI appearance rule 6 using palette color name
+accent is {UI paint:ink} means: UI appearance rule 27 colored ink
+accent is palette color {C string:name} means: UI appearance rule 27 using palette color name
 background is {UI paint:ink} means: UI appearance rule 7 colored ink
 background is palette color {C string:name} means: UI appearance rule 7 using palette color name
 background is transparent means: UI appearance rule 26 valued 0
@@ -86,6 +88,7 @@ class:
         font size as an integer
         line spacing as a floating-point number
         foreground as UI paint
+        accent as UI paint
         background as UI paint
         filled as a boolean
         radius as a floating-point number
@@ -112,6 +115,7 @@ to get default UI appearance settings:
     set result's font size to 16
     set result's line spacing to 1.5
     set result's foreground to UI ink 25 29 35
+    set result's accent to UI ink 32 123 87
     set result's columns to 1
     set result's font path to ""
     return result
@@ -182,6 +186,8 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
             set settings's aspect ratio to rule's number
         if kind = 26:
             set settings's filled to false
+        if kind = 27:
+            set settings's accent to the ink of UI appearance rule rule using palette
         increment index
 
 to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport} using {UI palette:palette}:

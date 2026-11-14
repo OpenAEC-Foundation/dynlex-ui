@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 palette daylight colors:
     color "Paper" is UI ink 250 250 249
@@ -13,6 +13,7 @@ palette midnight colors:
 appearance paper appearance:
     background is palette color "Paper"
     text is palette color "Text"
+    accent is palette color "Accent"
     border width is 1
     border is palette color "Accent"
     padding is 12
@@ -51,8 +52,10 @@ ignore update UI view (the address of view)
 ignore update UI view (the address of other)
 require paint (view's layout's appearance's background) equals (UI ink 250 250 249)
 require paint (view's layout's appearance's foreground) equals (UI ink 30 34 40)
+require paint (view's layout's appearance's accent) equals (UI ink 130 50 10)
 require paint (view's layout's appearance's border ink) equals (UI ink 130 50 10)
 require paint (other's layout's appearance's background) equals (UI ink 18 24 32)
+require paint (other's layout's appearance's accent) equals (UI ink 245 198 91)
 set link to the UI layout labeled "the colors" in (view's layout)
 require paint (link's appearance's foreground) equals (UI ink 130 50 10)
 
@@ -77,6 +80,7 @@ require condition (first's revision > revision) reporting "A palette change did 
 ignore update UI view (the address of view)
 require paint (view's layout's appearance's background) equals (UI ink 18 24 32)
 require paint (view's layout's appearance's foreground) equals (UI ink 235 240 246)
+require paint (draft's appearance's accent) equals (UI ink 245 198 91)
 require paint (link's appearance's foreground) equals (UI ink 245 198 91)
 require condition ((value's text = "kept draft") and (value's undo = history)) reporting "Changing a palette replaced an editor draft or its undo history"
 require condition ((the selected UI text in (the address of view)) = "kept draft") reporting "Changing a palette moved the editor selection"

@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 document replacement test:
     editor "Source" containing "abcd" using no UI appearance

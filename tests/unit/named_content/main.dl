@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 document content test:
     paragraph "Output" containing "" using no UI appearance

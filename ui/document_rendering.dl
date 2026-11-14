@@ -10,6 +10,7 @@ import composition_rendering.dl
 import control_presentation.dl
 import document_forms.dl
 import canvas_rendering.dl
+import range_rendering.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to the UI appearance of layout displayed in view
@@ -36,6 +37,11 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
         draw a rounded UI box box with radius (appearance's radius) in (appearance's background) on frame
     if appearance's border width > 0.0:
         draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
+    if kind = the UI range kind:
+        set layout's paint generation to view's paint count
+        set layout's hit bounds to the UI intersection of box and (view's hit bounds)
+        draw UI range layout in box in view on frame
+        return nothing
     if ((((((kind = 2) or (kind = 17)) or (kind = 34)) or (kind = 42)) or (kind = 43)) or text control) or (kind = 46):
         if (kind = 2) or (kind = 43):
             set target to 0.0

@@ -1,0 +1,64 @@
+# Value changes track the pointer immediately; hover and keyboard focus share
+# the existing animation and disabled-color policy on both platform drivers.
+import range_geometry.dl
+import document_fonts.dl
+import shapes.dl
+import outlines.dl
+import clipping.dl
+import animation.dl
+import control_presentation.dl
+
+to draw UI range {a pointer to UI layout:layout} in {UI bounds:box} in {a pointer to UI view:view} on {UI frame:frame}:
+    set node to layout's node
+    set appearance to layout's appearance
+    set value to the UI value for node in (view's instance)
+    set typeface to a document UI font for appearance in view
+    set available to the UI element node is enabled in (view's instance)
+    set inside to (the UI cursor in view) is inside (layout's hit bounds)
+    set target to 0.0
+    if available and (view's popup = (0 as a pointer to UI layout)):
+        if inside:
+            set view's hot to layout
+        if inside or ((view's pressed = layout) or ((view's focused = layout) and view's keyboard focus)):
+            set target to 1.0
+    if available = false:
+        set layout's hover to 0.0
+    set layout's hover to UI value (layout's hover) approaching target at speed 14.0 in view
+    set saved to a UI clip restricted to box in view on frame
+    if view's instance's description's kind != 40:
+        if appearance's filled:
+            draw a rounded UI box box with radius (appearance's radius) in (appearance's background) on frame
+        if appearance's border width > 0.0:
+            draw a rounded UI outline box with radius (appearance's radius) width (appearance's border width) in (appearance's border ink) on frame
+    set ink to the UI ink (appearance's foreground) displayed for node over (appearance's background) in (view's instance)
+    set accent to the UI ink (appearance's accent) displayed for node over (appearance's background) in (view's instance)
+    set {track ink} to the UI ink (UI ink between (appearance's background) and (appearance's foreground) at 0.18) displayed for node over (appearance's background) in (view's instance)
+    set selectable to view's selectable
+    set view's selectable to false
+    set number to the string form of (value's amount)
+    set {number width} to the width of number using typeface
+    set right to ((box's x + box's width) - appearance's padding) - number width
+    set width to the maximum of 0.0 and (((right - box's x) - appearance's padding) - 10.0)
+    set caption to UI box at (box's x + appearance's padding) (box's y + appearance's padding) sized width (typeface's size + 4)
+    set {caption clip} to a UI clip restricted to caption in view on frame
+    draw UI text (node's text) at (caption's x) (caption's y + typeface's size) with typeface in ink on frame
+    restore UI clip caption clip in view on frame
+    draw UI text number at right (caption's y + typeface's size) with typeface in ink on frame
+    set view's selectable to selectable
+    set track to the UI range track in box padded by (appearance's padding)
+    set position to the UI range fraction of node in (view's instance)
+    draw a rounded UI box track with radius 2.0 in track ink on frame
+    if position > 0.0:
+        draw a rounded UI box (UI box at (track's x) (track's y) sized (track's width * position) (track's height)) with radius 2.0 in accent on frame
+    set center to a UI point at (track's x + track's width * position) and (track's y + track's height / 2.0)
+    set knob to UI box at (center's x - 8.0) (center's y - 8.0) sized 16 16
+    if available:
+        draw a UI shadow under knob with radius 8.0 softness 2.0 strength 8 in (UI ink 0 0 0) on frame
+    set light to the UI ink (UI ink 255 255 255) displayed for node over (appearance's background) in (view's instance)
+    set shade to the UI ink (UI ink 245 247 249) displayed for node over (appearance's background) in (view's instance)
+    draw a UI disc at center with radius 8.0 from light to shade opacity 255 on frame
+    set outline to UI ink between track ink and accent at (layout's hover)
+    draw a rounded UI outline knob with radius 8.0 width 1.0 in outline on frame
+    if available and ((view's focused = layout) and view's keyboard focus):
+        draw a rounded UI outline (UI box at (box's x + 1.0) (box's y + 1.0) sized (box's width - 2.0) (box's height - 2.0)) with radius (appearance's radius) width 1.5 in accent on frame
+    restore UI clip saved in view on frame

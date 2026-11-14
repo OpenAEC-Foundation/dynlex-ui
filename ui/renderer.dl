@@ -25,7 +25,7 @@ to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} wit
     set box's y to box's y + y
     if node's kind = 28:
         draw UI ribbon layout in box with cursor cursor in view on frame
-    else if (node's kind = 39) or (node's kind = 2) or (((node's kind = 17) or (node's kind = 19)) or ((node's kind = 33) or (node's kind = 34))):
+    else if (node's kind = the UI range kind) or (node's kind = 39) or (node's kind = 2) or (((node's kind = 17) or (node's kind = 19)) or ((node's kind = 33) or (node's kind = 34))):
         draw UI control layout in box with cursor cursor in view on frame
     else if node's kind = 3:
         draw UI table node at (box's x) (box's y) in view on frame

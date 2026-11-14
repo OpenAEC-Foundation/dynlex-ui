@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 window queued tabs:
     ribbon "Tabs" at 0 0 sized 600 by 168:
         tab "A":

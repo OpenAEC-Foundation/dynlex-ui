@@ -106,7 +106,7 @@ try {
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `
     // Test-side instrumentation: the application has no paint counters or test API.
     const frames = new Set();
-    let drawn = []; const images = new Set(), masks = new Set();
+    let drawn = [], textBounds = []; const images = new Set(), masks = new Map();
     const instantiate = WebAssembly.instantiate.bind(WebAssembly);
     WebAssembly.instantiate = function(bytes, imports, ...args) {
       const env = imports?.env;
@@ -114,14 +114,26 @@ try {
         const triangles = env.ui_triangles;
         env.ui_triangles = (surface,pointer,count,texture,...args) => {
           if (texture && !masks.has(texture)) images.add(texture);
+          if (masks.has(texture)) {
+            const vertices = new Float32Array(env.__linear_memory.buffer, pointer, count * 8);
+            let left=Infinity, top=Infinity, right=-Infinity, bottom=-Infinity;
+            for (let index=0;index<count;index++) {
+              const x=vertices[index*8], y=vertices[index*8+1];
+              left=Math.min(left,x);top=Math.min(top,y);
+              right=Math.max(right,x);bottom=Math.max(bottom,y);
+            }
+            textBounds.push({text:masks.get(texture),x:left,y:top,width:right-left,height:bottom-top});
+          }
           return triangles(surface,pointer,count,texture,...args);
         };
         const begin = env.ui_begin, mask = env.ui_text_mask, decoder = new TextDecoder();
-        env.ui_begin = (...args) => { drawn = []; return begin(...args); };
+        env.ui_begin = (...args) => { drawn = []; textBounds = []; return begin(...args); };
         env.ui_text_mask = (font, pointer, count, ...args) => {
           const result = mask(font, pointer, count, ...args);
-          if (result) masks.add(result);
-          if (result) drawn.push(decoder.decode(new Uint8Array(env.__linear_memory.buffer, pointer, count)));
+          if (result) {
+            const text=decoder.decode(new Uint8Array(env.__linear_memory.buffer, pointer, count));
+            masks.set(result,text);drawn.push(text);
+          }
           return result;
         };
       }
@@ -170,7 +182,7 @@ try {
       return adapter;
     };
     }
-    window.uiTest = { drawn: () => drawn, images: () => images.size, stats() {
+    window.uiTest = { drawn: () => drawn, texts: () => textBounds, images: () => images.size, stats() {
       const canvas = document.querySelector('canvas');
       return canvas ? [{ paints, api, scheduled: frames.size > 0,
         width: canvas.clientWidth, height: canvas.clientHeight }] : [];

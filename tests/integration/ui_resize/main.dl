@@ -13,7 +13,7 @@ window nested pins:
 
 set state to 0
 set instance to an instance of ribbon studio with state (the address of state)
-set layout to a UI layout for ribbon studio inside ribbon studio with width 1280 using (the UI theme for ribbon studio)
+set layout to a UI layout for ribbon studio inside ribbon studio with width 1280 using (the UI theme for ribbon studio) with palette (a new UI palette)
 prepare UI layout layout for ribbon studio sized 1280 by 800
 set editor to the UI layout labeled "Editor" in layout
 set ribbon to the UI layout labeled "Main ribbon" in layout
@@ -94,7 +94,7 @@ require condition ((the selected tab of (ribbon's node) in (the address of insta
 require condition (((the UI value for (font's node) in (the address of instance))'s text) = "Georgia") reporting "Resizing reset a selected field value"
 release UI layout layout
 close the address of instance
-set nested to a UI layout for nested pins inside nested pins with width 300 using (the UI theme for nested pins)
+set nested to a UI layout for nested pins inside nested pins with width 300 using (the UI theme for nested pins) with palette (a new UI palette)
 prepare UI layout nested for nested pins sized 300 by 200
 resize UI layout nested to 500 by 400
 set inner to the UI layout labeled "Inner" in nested

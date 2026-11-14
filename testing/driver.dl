@@ -1,5 +1,6 @@
-# A recording platform adapter for shared-engine tests; never imported by applications.
-import ../../ui/application.dl
+# A recording platform adapter for UI tests, without windows or host resources.
+# Applications import their platform driver; tests import this module instead.
+import ../ui/application.dl
 
 class:
     patterns:

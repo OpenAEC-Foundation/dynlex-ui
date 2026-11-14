@@ -90,8 +90,12 @@ appearance themed paper appearance:
 use UI palette daylight colors in (the address of instance)
 ```
 
-`border is palette color "Name"` also accepts a named color. Palette entries
-are static data; each instance selects its own palette. Names must be nonempty
+`border is palette color "Name"` also accepts a named color. An appearance
+can set `accent is palette color "Name"`; `accent is UI ink 40 90 180`
+uses a literal. Accents inherit through document regions and color range tracks,
+switches and field focus outlines.
+
+Palette entries are static data; each instance selects its own palette. Names must be nonempty
 and unique, and every referenced color must exist. Selecting a different palette
 invalidates the instance's views and preserves editor drafts, selections and undo
 history. Selecting the same palette leaves an unchanged view idle. Literal inks
@@ -102,6 +106,29 @@ when the appearance contains only literal inks.
 `paragraph "Name" containing "Text"` separates an element's name from its initial
 content, including empty content. Editors use that same distinction. Links store
 their destinations separately from content and visual variants.
+
+Ranges declare their limits, step and initial value as immutable data:
+
+```dynlex
+document preview:
+    range field "Frame" from 0.0 through 100.0 stepping 0.5 initially 50.0 using no UI appearance
+    paragraph "Frame preview" containing "50" using no UI appearance
+    code:
+        when the "Frame" control changes:
+            set the text of "Frame preview" in this window to (the string form of (the range value of "Frame" in this window))
+```
+
+The callback body is application code. `the range value of "Frame" in instance`
+returns a floating-point value. `set the range value of "Frame" in instance to
+amount` clamps to the bounds, snaps interior values to the nearest step and
+invalidates only a changed value. Programmatic assignments do not invoke input
+callbacks. Equal bounds describe a fixed value; bounds, initial values and steps
+must be finite, and steps must be positive.
+
+Pointer input captures a drag until release, including outside the field.
+Arrow keys adjust one step, Page Up and Page Down adjust ten, and Home and End
+reach the bounds. Disabled ranges reject input and leave keyboard navigation.
+Documents and classic windows use the same value, input and painting code.
 
 Single-line fields, switches and choices participate in document layout and use
 the same input, undo, focus and activation code as classic windows and ribbons:

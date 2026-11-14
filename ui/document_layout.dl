@@ -30,6 +30,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     set node to layout's node
     set appearance to default UI appearance settings
     set appearance's foreground to inherited's foreground
+    set appearance's accent to inherited's accent
     # Unfilled descendants inherit their surrounding surface color.
     set appearance's background to inherited's background
     set appearance's font size to inherited's font size
@@ -46,6 +47,9 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     if node's kind = 17:
         set appearance's padding to 8.0
         set appearance's minimum height to 36.0
+    if node's kind = the UI range kind:
+        set appearance's padding to 10.0
+        set appearance's minimum height to 52.0
     apply UI appearance (node's appearance) for (view's width as a floating-point number) using (view's instance's palette) to (the address of appearance)
     if (node's kind = 22) and (node != view's instance's page):
         set appearance's hidden to true
@@ -97,6 +101,10 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set layout's bounds' height to layout's text height + appearance's padding * 2.0
         if (node's kind = 17) or (node's kind = 34):
             set layout's bounds' height to the maximum of (layout's bounds' height) and (28.0 + appearance's padding * 2.0)
+    else if node's kind = the UI range kind:
+        ignore (the UI value for node in (view's instance))
+        set layout's typeface to a document UI font for appearance in view
+        set layout's bounds' height to layout's typeface's size + 26.0 + appearance's padding * 2.0
     else if node's kind = 45:
         set path to (the UI value for node in (view's instance))'s destination
         set image to UI image from path in view
@@ -187,6 +195,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
 to reflow the UI document in {a pointer to UI view:view}:
     set inherited to default UI appearance settings
     set inherited's background to view's theme's background
+    set inherited's accent to view's theme's accent
     reflow document UI layout (view's layout) within (view's width as a floating-point number) inheriting inherited in view
     set limit to the maximum of 0.0 and (view's layout's bounds' height - view's height)
     set view's layout's scroll position to the minimum of limit and (view's layout's scroll position)

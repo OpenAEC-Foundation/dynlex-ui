@@ -1,0 +1,60 @@
+# A range's configuration is immutable; its amount belongs to the UI instance.
+import components.dl
+
+the UI range kind means: 51
+
+class:
+    patterns:
+        UI range specification
+    members:
+        minimum as a floating-point number
+        maximum as a floating-point number
+        step as a floating-point number
+        initial as a floating-point number
+
+range field {C string:name} from {floating-point number:minimum} through {floating-point number:maximum} stepping {floating-point number:step} initially {floating-point number:initial} using {UI appearance reference:appearance} means: (((a UI text component (the UI range kind) labeled name styled "") with configuration @intrinsic("cast", (a static reference to @intrinsic("construct", UI range specification, minimum, maximum, step, initial)), a pointer)) wearing appearance)
+
+to get the UI range specification of {UI reference:node}:
+    require condition (node's kind = the UI range kind) reporting "The UI control is not a range"
+    require condition (node's configuration != (0 as a pointer)) reporting "A UI range requires a specification"
+    return node's configuration as a pointer to UI range specification
+
+to validate UI range {a pointer to UI range specification:specification}:
+    require condition ((specification's minimum is finite) and (specification's maximum is finite)) reporting "UI range bounds must be finite"
+    require condition (specification's minimum <= specification's maximum) reporting "A UI range minimum cannot exceed its maximum"
+    require condition ((specification's step is finite) and (specification's step > 0.0)) reporting "A UI range step must be finite and positive"
+    require condition (specification's initial is finite) reporting "A UI range initial value must be finite"
+    set span to specification's maximum - specification's minimum
+    require condition ((span is finite) and ((span / specification's step) is finite)) reporting "A UI range must have finite extent and resolution"
+
+to get UI range amount {floating-point number:amount} within {a pointer to UI range specification:specification}:
+    require condition (amount is finite) reporting "A UI range value must be finite"
+    if amount <= specification's minimum:
+        return specification's minimum
+    if amount >= specification's maximum:
+        return specification's maximum
+    set steps to the floor of (((amount - specification's minimum) / specification's step) + 0.5)
+    return the minimum of (specification's maximum) and (the maximum of (specification's minimum) and (specification's minimum + steps * specification's step))
+
+to get the initial UI range amount of {UI reference:node}:
+    set specification to the UI range specification of node
+    validate UI range specification
+    return UI range amount (specification's initial) within specification
+
+to get the range value of {C string:label} in {a pointer to UI instance:instance}:
+    set node to the control labeled label in instance
+    ignore (the UI range specification of node)
+    return (the UI value for node in instance)'s amount
+
+to get set UI range {UI reference:node} in {a pointer to UI instance:instance} to {floating-point number:amount}:
+    set specification to the UI range specification of node
+    set value to the UI value for node in instance
+    set accepted to UI range amount amount within specification
+    if accepted = value's amount:
+        return false
+    set value's amount to accepted
+    invalidate instance
+    return true
+
+to set the range value of {C string:label} in {a pointer to UI instance:instance} to {floating-point number:amount}:
+    ignore (set UI range (the control labeled label in instance) in instance to amount)

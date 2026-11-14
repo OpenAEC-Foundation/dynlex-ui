@@ -157,6 +157,11 @@ so long fields do not allocate textures as wide as their entire contents.
 
 ## Tests
 
+Import `testing/driver.dl` in UI test programs to use `the test UI driver`. It
+records drawn text, clipboard data, cursor changes, paint counts and image
+lifetimes. Tests create ordinary views and queue ordinary UI input, without
+opening platform windows. The SDK includes this test adapter.
+
 ```sh
 python3 scripts/test.py --dynlex ../dynlex
 python3 scripts/test.py --dynlex /absolute/path/to/dynlex --case shared/source_hover

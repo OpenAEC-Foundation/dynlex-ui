@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 class:
     patterns:
@@ -36,11 +36,14 @@ to [count scoped paint] {a pointer to UI canvas frame:painting}:
     require condition (instance's event target = (the control labeled "Paint" in instance)) reporting "A paint callback did not receive its target scope."
     increment the value at (instance's event context as a pointer to integer)
 
+appearance paint appearance:
+    height is 100
+
 document context example:
     button "One"
     button "Two"
     button "Other"
-    surface "Paint" using no UI appearance
+    surface "Paint" using paint appearance
     code:
         when the "Other" button is clicked:
             require condition @intrinsic("equal", this window's event context, @intrinsic("construct", a pointer)) reporting "An ordinary callback inherited another binding's context."
@@ -90,8 +93,11 @@ require condition (application = 8) reporting "Callback contexts overwrote the a
 set paints to 0
 bind (the control labeled "Paint" in window) in window to (the function named "count scoped paint $") for event 1 with context ((the address of paints) as a pointer)
 set view to a UI view of window sized 500 by 400 using font "regular" with the test UI driver
+set surface to the UI layout labeled "Paint" in (view's layout)
+require condition ((surface's bounds' width > 0.0) and (surface's bounds' height > 0.0)) reporting "The callback fixture requires a visible paint surface."
 ignore update UI view (the address of view)
-require condition ((paints > 0) and @intrinsic("equal", instance's event context, @intrinsic("construct", a pointer))) reporting "Paint dispatch did not restore its callback context."
+require condition (paints > 0) reporting "The visible paint callback did not run."
+require condition @intrinsic("equal", instance's event context, @intrinsic("construct", a pointer)) reporting "Paint dispatch did not restore its callback context."
 close the address of view
 close window
 print line "UI callback contexts nest, replace and remove bindings while preserving application state."

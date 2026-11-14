@@ -29,6 +29,7 @@ class:
         content as a C string
         destination as a C string
         read only as a boolean
+        configuration as a pointer
 
 UI reference means: a pointer to UI element
 default UI cell width means: 220
@@ -37,14 +38,16 @@ no UI children means: @intrinsic("construct", UI reference array of 0 items)
 UI children of values means: @intrinsic("cast", a static reference to values, a pointer to UI reference)
 no UI action means: @intrinsic("construct", a pointer)
 
-UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} at {integer:left} {integer:top} measuring {integer:width} by {integer:height} styled {C string:variant} means: a static reference to @intrinsic("construct", UI element, kind, text, color, columns, rows, border, UI children of children, the length of children, action, left, top, width, height, variant, no UI appearance, text, "", false)
+UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} at {integer:left} {integer:top} measuring {integer:width} by {integer:height} styled {C string:variant} means: a static reference to @intrinsic("construct", UI element, kind, text, color, columns, rows, border, UI children of children, the length of children, action, left, top, width, height, variant, no UI appearance, text, "", false, @intrinsic("construct", a pointer))
 UI node {integer:kind} with {C string:text} colored {C string:color} sized {integer:columns} by {integer:rows} bordered {integer:border} containing {an array:children} acting {a pointer:action} means: UI node kind with text colored color sized columns by rows bordered border containing children acting action at 0 0 measuring 0 by 0 styled ""
 a UI container of kind {integer:kind} containing {an array:children} means: UI node kind with "" colored "" sized 0 by 0 bordered 0 containing children acting no UI action
 
-{UI reference:node} wearing {UI appearance reference:appearance} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, appearance, node's content, node's destination, node's read only)
-{UI reference:node} with initial text {C string:content} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, content, node's destination, node's read only)
-{UI reference:node} leading to {C string:destination} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, destination, node's read only)
-{UI reference:node} with read only text means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, node's destination, true)
+{UI reference:node} wearing {UI appearance reference:appearance} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, appearance, node's content, node's destination, node's read only, node's configuration)
+{UI reference:node} with initial text {C string:content} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, content, node's destination, node's read only, node's configuration)
+{UI reference:node} leading to {C string:destination} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, destination, node's read only, node's configuration)
+{UI reference:node} with read only text means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, node's destination, true, node's configuration)
+
+{UI reference:node} with configuration {a pointer:configuration} means: a static reference to @intrinsic("construct", UI element, node's kind, node's text, node's color, node's columns, node's rows, node's border, node's children, node's count, node's action, node's left, node's top, node's width, node's height, node's variant, node's appearance, node's content, node's destination, node's read only, configuration)
 
 button {C string:label} means: UI node 2 with label colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
 col {C string:label} means: UI node 5 with label colored "" sized 0 by 0 bordered 0 containing no UI children acting no UI action
@@ -111,6 +114,7 @@ class:
         target as UI reference
         text state as UI text state
         number as an integer
+        amount as a floating-point number
         next as a pointer to UI value
         destination as a string
         enabled as a boolean

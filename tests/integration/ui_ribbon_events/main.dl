@@ -1,6 +1,6 @@
 import ../../../ui/ribbon.dl
 import ../../../ui/layout.dl
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 window menu example:
     ribbon "Example ribbon" at 0 0 sized 400 by 168:
@@ -29,15 +29,14 @@ window menu example:
 
 set count to 0
 set instance to an instance of menu example with state (the address of count)
-set theme to the UI theme for menu example
-set layout to a UI layout for menu example inside menu example with width 400 using theme
+set view to a UI view of (the address of instance) sized 500 by 400 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+set layout to view's layout
 set ribbon to layout's first
 set home to ribbon's first
 set field to home's first's first
 set menu to field's next
 require condition (((the UI value for (menu's next's node) in (the address of instance))'s number) = 1) reporting "A field's default text did not select its matching option"
-set view to a UI view of (the address of instance) sized 500 by 400 using font "regular" with the test UI driver
-ignore update UI view (the address of view)
 activate UI layout field in (the address of view)
 require condition ((view's popup = field) and (count = 0)) reporting "Opening a field invoked its callback"
 set view's popup choices' selected to 1
@@ -82,7 +81,6 @@ require condition ((the UI close key was pressed in (the address of view)) = fal
 set view's key press to 256
 require condition (the UI close key was pressed in (the address of view)) reporting "A second Escape press did not request a close"
 require condition ((the UI close key was pressed in (the address of view)) = false) reporting "A close request reused its key event"
-release UI layout layout
 close the address of view
 close the address of instance
 print line "Ribbon events passed"

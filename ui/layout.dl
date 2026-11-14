@@ -2,8 +2,9 @@
 import theme.dl
 import ribbon_layout.dl
 import text_lines.dl
+import range_geometry.dl
 
-to get a UI layout for {UI reference:node} inside {UI reference:parent} with [width] {integer:available} using {UI theme:theme}:
+to get a UI layout for {UI reference:node} inside {UI reference:parent} with [width] {integer:available} using {UI theme:theme} with palette {UI palette:palette}:
     if (((node's kind >= 6) and (node's kind <= 10)) or ((node's kind = 25) or (node's kind = 26))) or ((node's kind = 36) or (node's kind = 37)):
         return @intrinsic("construct", a pointer to UI layout)
     set record to a new UI layout
@@ -12,11 +13,16 @@ to get a UI layout for {UI reference:node} inside {UI reference:parent} with [wi
     set record's bounds to UI box at (node's left) (node's top) sized (node's width) (node's height)
     if node's width = 0:
         set record's bounds' width to available as a floating-point number
-        if (((parent's kind != 1) and (parent's kind != 18)) and ((node's kind != 1) and (node's kind != 3))) and ((node's kind < 28) or (node's kind = 39)):
+        if (((parent's kind != 1) and (parent's kind != 18)) and ((node's kind != 1) and (node's kind != 3))) and ((node's kind < 28) or (node's kind = 39) or (node's kind = the UI range kind)):
             set record's horizontal pin to 2
     set result to storage for one slot initialized with record
     if (node's kind >= 28) and (node's kind <= 34):
-        arrange ribbon UI layout result using theme
+        arrange ribbon UI layout result using theme with palette palette
+        return result
+    if node's kind = the UI range kind:
+        set result's appearance to the UI range appearance for node within (available as a floating-point number) using theme with palette palette
+        set appearance to result's appearance
+        set result's bounds' height to the maximum of (appearance's minimum height) and (appearance's font size + 26.0 + appearance's padding * 2.0)
         return result
     if node's kind = 2:
         set width to ((the length of (node's text)) * 9) + 36
@@ -75,7 +81,7 @@ to get a UI layout for {UI reference:node} inside {UI reference:parent} with [wi
     set last to @intrinsic("construct", a pointer to UI layout)
     loop while index < node's count:
         set item to the UI child at index in node
-        set child to a UI layout for item inside node with width inner width using theme
+        set child to a UI layout for item inside node with width inner width using theme with palette palette
         if child != @intrinsic("construct", a pointer to UI layout):
             if last = @intrinsic("construct", a pointer to UI layout):
                 set result's first to child

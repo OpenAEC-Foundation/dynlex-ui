@@ -1,0 +1,1 @@
+Ranges share stepped values, pointer capture, keyboard navigation, disabled states and responsive drawing.

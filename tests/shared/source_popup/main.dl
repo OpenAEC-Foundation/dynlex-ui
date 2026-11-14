@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 import ../../../ui/source_tools.dl
 
 to [inspect popup triangles in] {a pointer to UI view:view} [vertices] {a pointer to UI vertex:vertices} [counting] {integer:count} [with] {a pointer:texture}:

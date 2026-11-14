@@ -2,7 +2,7 @@
 import layout.dl
 import ribbon_scroll.dl
 
-to arrange ribbon UI layout {a pointer to UI layout:layout} using {UI theme:theme}:
+to arrange ribbon UI layout {a pointer to UI layout:layout} using {UI theme:theme} with palette {UI palette:palette}:
     set node to layout's node
     if node's kind = 33:
         set width to (the maximum of 92 and (((the length of (node's text)) * 7) + 38)) as a floating-point number
@@ -54,7 +54,7 @@ to arrange ribbon UI layout {a pointer to UI layout:layout} using {UI theme:them
             require condition (item's kind = 29) reporting "A ribbon contains tabs"
         if node's kind = 29:
             require condition (item's kind = 30) reporting "A ribbon tab contains ribbon groups"
-        set child to a UI layout for item inside node with width 0 using theme
+        set child to a UI layout for item inside node with width 0 using theme with palette palette
         if last = @intrinsic("construct", a pointer to UI layout):
             set layout's first to child
         else:
@@ -81,7 +81,7 @@ to arrange ribbon UI layout {a pointer to UI layout:layout} using {UI theme:them
     if node's kind = 32:
         set layout's bounds to UI box at 0 0 sized width (the maximum of 0.0 and (vertical - 3.0))
     if node's kind = 28:
-        set earlier to a UI layout for (a ribbon scroll arrow -1) inside node with width 24 using theme
-        set later to a UI layout for (a ribbon scroll arrow 1) inside node with width 24 using theme
+        set earlier to a UI layout for (a ribbon scroll arrow -1) inside node with width 24 using theme with palette palette
+        set later to a UI layout for (a ribbon scroll arrow 1) inside node with width 24 using theme with palette palette
         set last's next to earlier
         set earlier's next to later

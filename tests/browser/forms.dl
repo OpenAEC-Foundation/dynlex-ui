@@ -38,6 +38,14 @@ appearance action appearance:
     text is UI ink 255 255 255
     text is centered
 
+appearance range appearance:
+    padding is 12
+    minimum height is 70
+    corner radius is 8
+    background is UI ink 245 247 251
+    text is UI ink 32 42 58
+    accent is UI ink 31 91 185
+
 document form workspace using page appearance:
     paragraph "Title" containing "Your workspace." using title appearance
     paragraph "Introduction" containing "Make room for the way you work." using no UI appearance
@@ -61,6 +69,12 @@ document form workspace using page appearance:
             choice "Resting"
         paragraph "Summary" containing "Ada · Focused · Auto save off" using no UI appearance
         (button "Reset preferences") wearing action appearance
+        range field "Preview frame" from 0.0 through 100.0 stepping 0.5 initially 25.0 using range appearance
+        paragraph "Frame value" containing "Frame: 25%" using no UI appearance
+    code:
+        when the "Preview frame" control changes:
+            set frame to the range value of "Preview frame" in this window
+            set the text of "Frame value" in this window to ("Frame: " + (the string form of frame) + "%")
 
 to [refresh form summary] {a pointer to UI instance:instance}:
     set name to (the UI value for (the control labeled "Name" in instance) in instance)'s text

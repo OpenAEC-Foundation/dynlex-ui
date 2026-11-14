@@ -50,7 +50,7 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
         set result's layout to a document UI layout for (instance's description) inside (instance's description)
         reflow the UI document in (the address of result)
     else:
-        set result's layout to a UI layout for (instance's description) inside (instance's description) with width available width using (result's theme)
+        set result's layout to a UI layout for (instance's description) inside (instance's description) with width available width using (result's theme) with palette (instance's palette)
         prepare UI layout (result's layout) for (instance's description) sized available width by available height
     return result
 

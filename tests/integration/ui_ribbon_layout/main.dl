@@ -26,7 +26,7 @@ require condition ((the selected tab of ribbon in (the address of instance))'s t
 require condition ((the control labeled "New slide" in (the address of instance))'s count = 4) reporting "The New slide menu has no layouts"
 require condition ((the control labeled "20" in (the address of instance))'s count >= 6) reporting "Font sizes are missing"
 set theme to the UI theme for ribbon studio
-set layout to a UI layout for ribbon inside ribbon studio with width 1256 using theme
+set layout to a UI layout for ribbon inside ribbon studio with width 1256 using theme with palette (a new UI palette)
 set tab to layout's first
 loop while tab != @intrinsic("construct", a pointer to UI layout):
     set group to tab's first

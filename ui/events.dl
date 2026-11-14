@@ -5,6 +5,7 @@ import focus.dl
 import tab_navigation.dl
 
 import hit_testing.dl
+import range_input.dl
 
 to handle UI input in {a pointer to UI view:view}:
     set cursor to the UI cursor in view
@@ -45,6 +46,7 @@ to handle UI input in {a pointer to UI view:view}:
         set view's cursor shape to shape
         @intrinsic("call pointer", view's driver's cursor, nothing, view, shape)
     handle UI text pointer at cursor over hot in view
+    handle UI range keys in view
     handle UI text keys in view
     if view's key press >= 0:
         set view's damaged to true
@@ -89,6 +91,7 @@ to handle UI input in {a pointer to UI view:view}:
                 if selected = false:
                     activate UI layout hot in view
             set view's pressed to @intrinsic("construct", a pointer to UI layout)
+    handle UI range pointer in view
     set view's was down to view's down
     if (view's scroll x != 0.0) or (view's scroll y != 0.0):
         if view's instance's description's kind = 40:

@@ -11,7 +11,7 @@ const scenarios=process.argv.includes('--font-only')?[1]:[0,1];
 const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(
   pathToFileURL(path.join(checkout,'src/web/ide/public/compiler/runtimeImports.js')));
 const directory=await fs.mkdtemp(path.join(os.tmpdir(),'dynlex-ui-driver-widths-'));
-const template=`import ${path.resolve('tests/helpers/driver.dl')}
+const template=`import ${path.resolve('testing/driver.dl')}
 window example:
     button "Action"
 set instance to an instance of example

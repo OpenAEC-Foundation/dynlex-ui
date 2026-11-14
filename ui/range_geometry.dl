@@ -1,0 +1,25 @@
+import ranges.dl
+import view.dl
+
+to get the UI range track in {UI bounds:box} padded by {floating-point number:padding}:
+    set left to (box's x + padding) + 8.0
+    set top to ((box's y + box's height) - padding) - 10.0
+    set width to the maximum of 1.0 and ((box's width - padding * 2.0) - 16.0)
+    return UI box at left top sized width 4.0
+
+to get the UI range fraction of {UI reference:node} in {a pointer to UI instance:instance}:
+    set specification to the UI range specification of node
+    set amount to (the UI value for node in instance)'s amount
+    if specification's maximum = specification's minimum:
+        return 0.0
+    return (amount - specification's minimum) / (specification's maximum - specification's minimum)
+
+to get the UI range appearance for {UI reference:node} within {floating-point number:width} using {UI theme:theme} with palette {UI palette:palette}:
+    set result to default UI appearance settings
+    set result's foreground to theme's text
+    set result's accent to theme's accent
+    set result's background to theme's surface
+    set result's padding to 10.0
+    set result's minimum height to 52.0
+    apply UI appearance (node's appearance) for width using palette to (the address of result)
+    return result

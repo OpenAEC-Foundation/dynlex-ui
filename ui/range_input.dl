@@ -1,0 +1,55 @@
+import range_geometry.dl
+import key_handling.dl
+import layout_visibility.dl
+
+to change UI range {UI reference:node} to {floating-point number:amount} in {a pointer to UI instance:instance}:
+    if (set UI range node in instance to amount) = false:
+        return nothing
+    set handler to the UI handler for node in instance for event 0
+    if handler != (0 as a pointer to UI handler):
+        invoke UI handler handler for node in instance receiving instance
+
+to handle UI range pointer in {a pointer to UI view:view}:
+    set layout to view's pressed
+    if (layout = (0 as a pointer to UI layout)) or (view's down = false):
+        return nothing
+    if layout's node's kind != the UI range kind:
+        return nothing
+    if ((the UI element (layout's node) is enabled in (view's instance)) = false) or ((the UI layout layout is active in view) = false):
+        set view's pressed to 0 as a pointer to UI layout
+        return nothing
+    set track to the UI range track in (layout's painted bounds) padded by (layout's appearance's padding)
+    set fraction to the minimum of 1.0 and (the maximum of 0.0 and (((the UI cursor in view)'s x - track's x) / track's width))
+    set specification to the UI range specification of (layout's node)
+    set amount to specification's minimum + fraction * (specification's maximum - specification's minimum)
+    change UI range (layout's node) to amount in (view's instance)
+    set view's input handled to true
+
+to handle UI range keys in {a pointer to UI view:view}:
+    set layout to view's focused
+    if (layout = (0 as a pointer to UI layout)) or (view's key press < 0):
+        return nothing
+    if (layout's node's kind != the UI range kind) or (view's popup != (0 as a pointer to UI layout)):
+        return nothing
+    if (the UI element (layout's node) is enabled in (view's instance)) = false:
+        return nothing
+    set key to view's key press
+    set specification to the UI range specification of (layout's node)
+    set amount to (the UI value for (layout's node) in (view's instance))'s amount
+    if (key = 262) or (key = 265):
+        set amount to amount + specification's step
+    else if (key = 263) or (key = 264):
+        set amount to amount - specification's step
+    else if key = 266:
+        set amount to amount + specification's step * 10.0
+    else if key = 267:
+        set amount to amount - specification's step * 10.0
+    else if key = 268:
+        set amount to specification's minimum
+    else if key = 269:
+        set amount to specification's maximum
+    else:
+        return nothing
+    set view's keyboard focus to true
+    change UI range (layout's node) to amount in (view's instance)
+    consume the UI key in view

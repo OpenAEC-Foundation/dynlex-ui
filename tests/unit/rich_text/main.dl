@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 to count link activation {a pointer to UI instance:instance}:
     increment the value at (instance's state as a pointer to integer)

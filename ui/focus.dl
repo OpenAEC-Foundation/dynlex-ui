@@ -76,6 +76,9 @@ to collect UI focus from {a pointer to UI layout:layout} in {a pointer to UI vie
     if (((((kind = 2) or (kind = 17)) or ((kind = 19) or (kind = 29))) or ((kind = 33) or (kind = 34))) or (kind = 43)) or (the UI element (layout's node) is a text control):
         append UI focus layout in view
         return nothing
+    if kind = the UI range kind:
+        append UI focus layout in view
+        return nothing
     set child to layout's first
     loop while child != @intrinsic("construct", a pointer to UI layout):
         collect UI focus from child in view

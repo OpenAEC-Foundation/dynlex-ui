@@ -39,6 +39,7 @@ class ExportTests(unittest.TestCase):
                     self.assertFalse(name.endswith(('.wasm', '.out')))
                     self.assertEqual(hashlib.sha256(package.read(name)).hexdigest(), digest)
                 self.assertEqual(package.read('ui/browser.dl'), (PROJECT / 'ui/browser.dl').read_bytes())
+                self.assertEqual(package.read('testing/driver.dl'), (PROJECT / 'testing/driver.dl').read_bytes())
                 self.assertEqual(package.read('platform/browser/graphics-backend.js'),
                                  (COMPILER / 'web/graphics-backend.js').read_bytes())
 

@@ -70,4 +70,26 @@ export async function verifyForms({click,key,evaluate,command,waitFor,settled,sc
   await key('Enter','Enter',13);
   await waitFor(visible('Ada · Focused · Auto save off'));
   await screenshot('forms-mobile-reset');
+  await key('Tab','Tab',9);
+  await key('End','End',35);
+  await waitFor(visible('Frame: 100%'));
+  await key('ArrowLeft','ArrowLeft',37);
+  await waitFor(visible('Frame: 99.5%'));
+  await key('Home','Home',36);
+  await waitFor(visible('Frame: 0%'));
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:300,y:700,deltaX:0,deltaY:600});
+  await waitFor('window.uiTest.texts().some(item=>item.text==="Preview frame" && item.y>0 && item.y<innerHeight)');
+  await settled();
+  const range=await evaluate(`(() => {
+    const text=window.uiTest.texts().find(item=>item.text==='Preview frame');
+    if (!text) throw Error('The range caption did not paint');
+    return {x:innerWidth/2,y:text.y+text.height/2};
+  })()`);
+  await click(range.x,range.y);
+  await waitFor(visible('Frame: 50%'));
+  await command('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,x:range.x,y:range.y});
+  await command('Input.dispatchMouseEvent',{type:'mouseMoved',buttons:1,x:374,y:range.y});
+  await command('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:374,y:range.y});
+  await waitFor(visible('Frame: 100%'));
+  await screenshot('forms-mobile-range');
 }

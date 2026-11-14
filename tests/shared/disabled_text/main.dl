@@ -1,4 +1,4 @@
-import ../../helpers/driver.dl
+import ../../../testing/driver.dl
 
 appearance control appearance:
     background is UI ink 0 0 0

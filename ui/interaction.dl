@@ -25,6 +25,8 @@ to activate UI layout {a pointer to UI layout:layout} in {a pointer to UI view:v
     if node's kind != 35:
         if (the UI layout layout is active in view) = false:
             return nothing
+    if node's kind = the UI range kind:
+        return nothing
     if the UI element node is a text control:
         refresh UI focus in view
         set view's focus order to layout's order
