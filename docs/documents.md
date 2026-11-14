@@ -39,6 +39,12 @@ Model changes made during a canvas paint callback reflow on the next frame.
 Changes made by a frame callback participate in that frame's layout. Once those
 changes have been painted, an unchanged view remains idle.
 
+A surface's painting callback runs only when its bounds intersect the current
+clip. A partly visible surface still paints; scrolling it completely out of view
+stops paint-driven animation. Its retained layout and pointer bounds still update,
+so returning to it resumes painting. Use a frame callback for application work
+that must run independently of surface visibility.
+
 Tab selection is zero-based. Mouse, arrow keys, Home and End use the same
 selection state. In a document, Tab enters the selected header and then its
 active panel; inactive panels retain their editor values and undo history.
@@ -64,7 +70,7 @@ view group "Results" using no UI appearance:
 set the value of "Results" in (the address of instance) to (the value of "Files" in (the address of instance))
 ```
 
-Selection is zero-based and must identify an existing child.
+Nonnegative selections are zero-based and must identify an existing child.
 
 `paragraph "Name" containing "Text"` separates an element's name from its initial
 content, including empty content. Editors use that same distinction. Links store

@@ -95,8 +95,10 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
     else if kind = 20:
         set handler to the UI handler for (layout's node) in (view's instance) for event 1
         require condition (handler != @intrinsic("construct", a pointer to UI handler)) reporting "The UI surface has no painting callback"
-        set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
-        invoke UI handler handler for (layout's node) in (view's instance) receiving (the address of painting)
+        set visible to the UI intersection of box and (view's clip)
+        if (visible's width > 0.0) and (visible's height > 0.0):
+            set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
+            invoke UI handler handler for (layout's node) in (view's instance) receiving (the address of painting)
     else:
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):

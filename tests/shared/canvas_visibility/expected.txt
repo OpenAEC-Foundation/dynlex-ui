@@ -1,0 +1,1 @@
+Canvas callbacks animate while visible and stop when scrolled out of view.
