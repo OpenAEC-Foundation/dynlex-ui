@@ -1,0 +1,77 @@
+# Own repeated leaf buttons while reusing document painting and retained input.
+import floating_control_rendering.dl
+import focus.dl
+import text.dl
+
+to [remove UI floating control] {a pointer to UI floating control:control}:
+    set controls to control's owner
+    set view to controls's view
+    set entry to controls's first
+    set previous to 0 as a pointer to UI floating control
+    loop while (entry != (0 as a pointer to UI floating control)) and (entry != control):
+        set previous to entry
+        set entry to entry's next
+    require condition (entry = control) reporting "The floating control does not belong to its owner"
+    if previous = (0 as a pointer to UI floating control):
+        set controls's first to control's next
+        set controls's layout's first to control's layout's next
+    else:
+        set previous's next to control's next
+        set previous's layout's next to control's layout's next
+    if controls's last = control:
+        set controls's last to previous
+    if view's hot = control's layout:
+        set view's hot to 0 as a pointer to UI layout
+    if view's pressed = control's layout:
+        set view's pressed to 0 as a pointer to UI layout
+    forget UI text source (the address of (control's layout's text source)) in view
+    refresh UI focus in view
+    forget UI state for (the address of (control's node)) in (view's instance)
+    release UI layout (control's layout)
+    destroy the value at control
+    deallocate control
+    set view's damaged to true
+
+to [release UI floating controls] {a pointer:context} [in] {a pointer to UI view:view}:
+    set controls to context as a pointer to UI floating controls
+    loop while controls's first != (0 as a pointer to UI floating control):
+        remove UI floating control (controls's first)
+    destroy the value at controls
+    deallocate controls
+
+to get [UI floating controls in] {a pointer to UI view:view}:
+    set result to storage for one slot initialized with (a new UI floating controls)
+    set result's view to view
+    set result's node to the value at (a UI container of kind 41 containing no UI children named "Floating controls")
+    set result's layout's node to the address of (result's node)
+    set result's overlay to a UI overlay in view with context (result as a pointer) handling input (0 as a pointer) painting ((the function named "paint UI floating controls $ on $") as a pointer) closing ((the function named "release UI floating controls $ in $") as a pointer)
+    set result's overlay's layout to the address of (result's layout)
+    return result
+
+to get [a UI floating control from] {UI reference:prototype} [named] {string:key} [in] {a pointer to UI floating controls:controls}:
+    require condition ((prototype's count = 0) and ((prototype's kind = 2) or (prototype's kind = 43))) reporting "Floating controls require a leaf button or link description"
+    set result to storage for one slot initialized with (a new UI floating control)
+    set result's owner to controls
+    set result's key to key
+    set result's node to the value at prototype
+    set result's revision to -1
+    set result's layout to a document UI layout for (the address of (result's node)) inside (the address of (controls's node))
+    set result's layout's appearance's hidden to true
+    if controls's first = (0 as a pointer to UI floating control):
+        set controls's first to result
+        set controls's layout's first to result's layout
+    else:
+        set controls's last's next to result
+        set controls's last's layout's next to result's layout
+    set controls's last to result
+    return result
+
+to get [UI floating controls attached to] {UI reference:anchor} [in] {a pointer to UI view:view}:
+    set result to UI floating controls in view
+    set result's anchor to anchor
+    return result
+
+to [close UI floating controls] {a pointer to UI floating controls:controls}:
+    set view to controls's view
+    detach UI overlay (controls's overlay) in view
+    release UI floating controls (controls as a pointer) in view

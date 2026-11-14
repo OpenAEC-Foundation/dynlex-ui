@@ -532,3 +532,44 @@ performs the declared attachment operations again. Keep uniforms and draw ranges
 valid as for every other pass. A cached shadow map can therefore clear and redraw
 when its casters move, then remain untouched between changes. Activation is a
 runtime operation; shader description data is unchanged.
+
+## Projected controls
+
+`ui/scene_labels.dl` projects ordinary retained buttons or links above world
+positions. A collection owns each repeated control's identity, layout, instance
+value and callbacks. The prototype stays static data; names and other values can
+change without replacing that identity.
+
+With an existing view, instance, scene surface, camera, callback `selection` and
+its `context`:
+
+```dynlex
+import ui/scene_labels.dl
+
+appearance name appearance:
+    background is UI ink 30 50 40
+    text is UI ink 245 235 200
+    font size is 12
+    padding is 6
+    corner radius is 8
+
+name prototype means: (button "Person") wearing name appearance
+
+set names to UI floating controls attached to (the control labeled "Scene" in instance) in view
+set ada to a UI floating control from name prototype named (the string form of "worker-a") in names
+set UI text of (the address of (ada's node)) in instance to "Ada"
+bind (the address of (ada's node)) in instance to selection for event 0 with context context
+
+# During the scene's painting callback, using its current logical viewport:
+project UI floating control ada above (a new vector with x 2.0, y 1.25 and z 3.0) through camera in viewport
+```
+
+The callback and context use the normal instance event API. Hover, pointer
+activation, keyboard focus and clipping use the document renderer. Controls
+behind the camera are hidden; an attached collection also stops painting and
+receiving focus when its source surface is hidden or offscreen.
+
+Use `hide UI floating control ada` to hide one item, or `remove UI floating
+control ada` to release its layout, value and callbacks. `close UI floating
+controls names` releases a collection; closing its view releases it automatically.
+The shared `floating_controls` fixture exercises these paths on both frontends.

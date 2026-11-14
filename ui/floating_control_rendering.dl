@@ -1,0 +1,54 @@
+import floating_control_types.dl
+import layout_lookup.dl
+
+to [paint UI floating control] {a pointer to UI floating control:control} [on] {UI frame:frame}:
+    set view to frame's view
+    set layout to control's layout
+    retire UI floating layout layout
+    set layout's appearance's hidden to true
+    if control's visible = false:
+        return nothing
+    set available to the minimum of 240.0 and (control's clip's width)
+    if available <= 0.0:
+        return nothing
+    if ((control's revision != view's instance's revision) or (control's available != available)) or (control's screen width != view's width):
+        reflow document UI layout layout within available inheriting (default UI appearance settings) in view
+        set width to the minimum of available and (the maximum of (layout's appearance's minimum width) and (layout's text width + layout's appearance's padding * 2.0))
+        reflow document UI layout layout within width inheriting (default UI appearance settings) in view
+        set control's revision to view's instance's revision
+        set control's available to available
+        set control's screen width to view's width
+    set box to layout's bounds
+    set box's x to control's anchor's x - (box's width * 0.5)
+    set box's y to control's anchor's y - box's height
+    set visible to the UI intersection of box and (control's clip)
+    if (visible's width <= 0.0) or (visible's height <= 0.0):
+        return nothing
+    set layout's appearance's hidden to false
+    set saved to a UI clip restricted to (control's clip) in view on frame
+    record UI floating layout layout in box on frame
+    draw document UI layout layout at 0.0 0.0 in view on frame
+    restore UI clip saved in view on frame
+
+to [paint UI floating controls] {a pointer:context} [on] {UI frame:frame}:
+    set controls to context as a pointer to UI floating controls
+    set view to frame's view
+    retire UI floating layout (the address of (controls's layout))
+    set bounds to the UI viewport bounds in view
+    if controls's anchor != (0 as UI reference):
+        set anchor to the UI layout for element (controls's anchor) in (view's layout)
+        require condition (anchor != (0 as a pointer to UI layout)) reporting "The floating controls anchor does not belong to its view"
+        if anchor's paint generation != view's paint count:
+            return nothing
+        set bounds to anchor's hit bounds
+        if (bounds' width <= 0.0) or (bounds' height <= 0.0):
+            return nothing
+    set saved to a UI clip restricted to bounds in view on frame
+    # The container joins focus/activation without intercepting the page below it.
+    set controls's layout's paint generation to frame's view's paint count
+    set controls's layout's hit bounds to UI box at 0 0 sized 0 0
+    set control to controls's first
+    loop while control != (0 as a pointer to UI floating control):
+        paint UI floating control control on frame
+        set control to control's next
+    restore UI clip saved in view on frame

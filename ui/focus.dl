@@ -130,6 +130,12 @@ to refresh UI focus in {a pointer to UI view:view}:
     set view's focus last to @intrinsic("construct", a pointer to UI layout)
     set view's control count to 0
     collect UI focus from (view's layout) in view
+    set overlay to view's overlays
+    loop while overlay != (0 as a pointer to UI overlay):
+        if overlay's layout != (0 as a pointer to UI layout):
+            if overlay's layout's paint generation = view's paint count:
+                collect UI focus from (overlay's layout) in view
+        set overlay to overlay's next
     if retained != @intrinsic("construct", a pointer to UI layout):
         if retained's order > 0:
             set view's focus order to retained's order

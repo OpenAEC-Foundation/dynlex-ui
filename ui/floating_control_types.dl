@@ -1,0 +1,51 @@
+import overlays.dl
+import document_rendering.dl
+
+class:
+    patterns:
+        UI floating control
+    members:
+        owner as a pointer to UI floating controls
+        key as a string
+        node as UI element
+        layout as a pointer to UI layout
+        visible as a boolean
+        anchor as UI point
+        clip as UI bounds
+        revision as an integer
+        available as a floating-point number
+        screen width as an integer
+        next as a pointer to UI floating control
+
+class:
+    patterns:
+        UI floating controls
+    members:
+        view as a pointer to UI view
+        overlay as a pointer to UI overlay
+        anchor as UI reference
+        node as UI element
+        layout as UI layout
+        first as a pointer to UI floating control
+        last as a pointer to UI floating control
+
+to [hide UI floating control] {a pointer to UI floating control:control}:
+    if control's visible:
+        set control's owner's view's damaged to true
+    set control's visible to false
+    set control's layout's appearance's hidden to true
+    retire UI floating layout (control's layout)
+
+to [place UI floating control] {a pointer to UI floating control:control} [at] {UI point:point} [within] {UI bounds:clip}:
+    if (control's visible = false) or (((control's anchor's x != point's x) or (control's anchor's y != point's y)) or (((control's clip's x != clip's x) or (control's clip's y != clip's y)) or ((control's clip's width != clip's width) or (control's clip's height != clip's height)))):
+        set control's owner's view's damaged to true
+    set control's anchor to point
+    set control's clip to clip
+    set control's visible to true
+
+to [style UI floating control] {a pointer to UI floating control:control} [using] {UI appearance reference:appearance}:
+    if control's node's appearance = appearance:
+        return nothing
+    set control's node's appearance to appearance
+    set control's revision to -1
+    set control's owner's view's damaged to true

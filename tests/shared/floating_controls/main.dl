@@ -1,0 +1,119 @@
+import ../../../testing/driver.dl
+import ../../../ui/floating_controls.dl
+import ../../../ui/scene_labels.dl
+
+appearance stage appearance:
+    height is 300
+
+document controls page:
+    button "Before"
+    button "After"
+    view group "Stage views" using no UI appearance:
+        region "Stage content" using no UI appearance:
+            surface "Stage" using stage appearance
+        region "Without stage" using no UI appearance:
+
+appearance marker appearance:
+    background is UI ink 30 50 40
+    text is UI ink 240 235 210
+    padding is 6
+    font size is 12
+    corner radius is 8
+
+marker prototype means: (button "Person") wearing marker appearance
+
+to [count floating click] {a pointer to UI instance:instance}:
+    set count to instance's event context as a pointer to an integer
+    set the value at count to (the value at count) + 1
+
+to [click floating point] {UI point:point} [in] {a pointer to UI view:view}:
+    queue UI input of kind 1 key 0 at (point's x) (point's y) with modifiers 0 containing "" in view
+    queue UI input of kind 2 key 1 at (point's x) (point's y) with modifiers 0 containing "" in view
+    queue UI input of kind 2 key 0 at (point's x) (point's y) with modifiers 0 containing "" in view
+    ignore update UI view view
+
+to [remove floating click] {a pointer to UI instance:instance}:
+    remove UI floating control (instance's event context as a pointer to UI floating control)
+
+to [paint empty stage] {a pointer to UI canvas frame:painting}:
+    ignore painting
+
+set clicks to 0
+set instance to an instance of controls page
+bind (the control labeled "Stage" in (the address of instance)) in (the address of instance) to (the function named "paint empty stage $") for event 1
+set view to a UI view of (the address of instance) sized 800 by 500 using font "regular" with the test UI driver
+set controls to UI floating controls attached to (the control labeled "Stage" in (the address of instance)) in (the address of view)
+set first to a UI floating control from marker prototype named (the string form of "alpha") in controls
+set second to a UI floating control from marker prototype named (the string form of "beta") in controls
+set {first node} to the address of (first's node)
+set {second node} to the address of (second's node)
+set UI text of (the address of (first's node)) in (the address of instance) to "Alex"
+set UI text of (the address of (second's node)) in (the address of instance) to "Alex"
+bind (the address of (first's node)) in (the address of instance) to (the function named "count floating click $") for event 0 with context ((the address of clicks) as a pointer)
+bind (the address of (second's node)) in (the address of instance) to (the function named "count floating click $") for event 0 with context ((the address of clicks) as a pointer)
+set viewport to UI box at 20 200 sized 700 260
+place UI floating control first at (a UI point at 220.0 and 280.0) within viewport
+place UI floating control second at (a UI point at 420.0 and 280.0) within viewport
+ignore update UI view (the address of view)
+require condition ((the address of (first's node)) != (the address of (second's node))) reporting "Repeated controls shared an identity"
+set point to a UI point at (first's layout's painted bounds' x + 10.0) and (first's layout's painted bounds' y + 10.0)
+require condition ((the UI hit at point in (the address of view)) = first's layout) reporting "The retained overlay did not expose the drawn button to hit testing"
+set before to the UI layout labeled "Before" in (view's layout)
+set point to a UI point at (before's painted bounds' x + 10.0) and (before's painted bounds' y + 10.0)
+require condition ((the UI hit at point in (the address of view)) = before) reporting "A floating container intercepted the underlying page"
+refresh UI focus in (the address of view)
+require condition (view's control count = 4) reporting "Floating controls were omitted from keyboard navigation"
+set the value of "Stage views" in (the address of instance) to -1
+ignore update UI view (the address of view)
+refresh UI focus in (the address of view)
+require condition (((first's layout's paint generation = 0) and (second's layout's paint generation = 0)) and (view's control count = 2)) reporting "A hidden source surface retained floating controls"
+set the value of "Stage views" in (the address of instance) to 0
+ignore update UI view (the address of view)
+refresh UI focus in (the address of view)
+set view's focus order to 2
+set view's keyboard focus to true
+queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 3 key 257 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+process UI input in (the address of view)
+require condition ((view's focused = first's layout) and (clicks = 1)) reporting "Tab and Enter did not activate the floating button through shared input"
+set point to a UI point at (first's layout's painted bounds' x + 10.0) and (first's layout's painted bounds' y + 10.0)
+click floating point point in (the address of view)
+require condition ((view's hot = first's layout) and (clicks = 2)) reporting "The floating button did not use shared pointer activation"
+set UI control first node enabled false in (the address of instance)
+click floating point point in (the address of view)
+require condition (clicks = 2) reporting "A disabled floating button remained interactive"
+set UI control first node enabled true in (the address of instance)
+hide UI floating control first
+refresh UI focus in (the address of view)
+require condition ((view's control count = 3) and (view's focused != first's layout)) reporting "A hidden floating button retained keyboard focus"
+set camera to a UI scene camera at (a new vector with x 0.0, y 0.0 and z 5.0) aimed at (a new vector with x 0.0, y 0.0 and z 0.0) with angle 45.0 aspect 1.0 near 0.1 far 100.0
+project UI floating control first above (a new vector with x 0.0, y 0.0 and z 0.0) through camera in viewport
+ignore update UI view (the address of view)
+require condition (first's visible and (first's layout's hit bounds' width > 0.0)) reporting "A projected scene label did not become interactive"
+project UI floating control first above (a new vector with x 0.0, y 0.0 and z 6.0) through camera in viewport
+ignore update UI view (the address of view)
+require condition ((first's visible = false) and (first's layout's paint generation = 0)) reporting "A label behind the camera remained visible"
+remove UI floating control second
+require condition ((controls's first = first) and (first's next = (0 as a pointer to UI floating control))) reporting "Removing a floating control left a list entry"
+set removed to a UI floating control from marker prototype named (the string form of "self") in controls
+bind (the address of (removed's node)) in (the address of instance) to (the function named "remove floating click $") for event 0 with context (removed as a pointer)
+place UI floating control removed at (a UI point at 500.0 and 320.0) within viewport
+ignore update UI view (the address of view)
+set point to a UI point at (removed's layout's painted bounds' x + 10.0) and (removed's layout's painted bounds' y + 10.0)
+click floating point point in (the address of view)
+require condition (first's next = (0 as a pointer to UI floating control)) reporting "A floating button could not remove itself during activation"
+close UI floating controls controls
+require condition (view's overlays = (0 as a pointer to UI overlay)) reporting "Closing the control owner retained its overlay"
+set entry to instance's values
+loop while entry != (0 as a pointer to UI value):
+    require condition ((entry's target != first node) and (entry's target != second node)) reporting "Removing controls retained their instance state"
+    set entry to entry's next
+require condition ((instance's handlers' target's text = "Stage") and (instance's handlers' next = (0 as a pointer to UI handler))) reporting "Removing controls retained their callbacks"
+set controls to UI floating controls in (the address of view)
+set automatic to a UI floating control from marker prototype named (the string form of "automatic") in controls
+place UI floating control automatic at (a UI point at 300.0 and 300.0) within viewport
+ignore update UI view (the address of view)
+close the address of view
+require condition (view's overlays = (0 as a pointer to UI overlay)) reporting "Closing a view did not release its floating controls"
+close the address of instance
+print line "Floating controls share painting, clipping, hit testing, keyboard activation, scene projection and owned lifetime."

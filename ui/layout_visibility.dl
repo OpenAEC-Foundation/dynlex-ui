@@ -45,7 +45,8 @@ to get [the UI layout] {a pointer to UI layout:layout} [is active in] {a pointer
     set overlay to view's overlays
     loop while overlay != (0 as a pointer to UI overlay):
         if overlay's layout != (0 as a pointer to UI layout):
-            set scope to the UI activation scope of layout inside (overlay's layout) visible true in (view's instance)
+            set visible to overlay's layout's paint generation = view's paint count
+            set scope to the UI activation scope of layout inside (overlay's layout) visible visible in (view's instance)
             if scope != 0:
                 return scope = 2
         set overlay to overlay's next

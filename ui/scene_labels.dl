@@ -1,0 +1,9 @@
+import floating_controls.dl
+import scene_camera.dl
+
+to [project UI floating control] {a pointer to UI floating control:control} [above] {vector:point} [through] {UI scene camera:camera} [in] {UI bounds:viewport}:
+    set projection to the UI scene projection for point through camera in viewport
+    if projection's visible:
+        place UI floating control control at (projection's screen) within viewport
+    else:
+        hide UI floating control control
