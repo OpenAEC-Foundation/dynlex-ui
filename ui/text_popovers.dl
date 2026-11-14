@@ -82,11 +82,11 @@ to [paint UI text popover] {a pointer to UI text popover:popover} [anchored at] 
         ignore the number of wrapped UI rows in layout within inner
         set popover's width to inner
     set height to the minimum of (viewport's height - 16.0) and (layout's text height + style's padding * 2.0)
-    set left to the maximum of (viewport's x + 8.0) and (the minimum of (anchor's x) and ((viewport's x + viewport's width) - width - 8.0))
+    set left to the maximum of (viewport's x + 8.0) and (the minimum of (anchor's x) and (((viewport's x + viewport's width) - width) - 8.0))
     set top to anchor's y + anchor's height + 4.0
-    if (top + height) > (viewport's y + viewport's height - 8.0):
-        set top to anchor's y - height - 4.0
-    set top to the maximum of (viewport's y + 8.0) and (the minimum of top and ((viewport's y + viewport's height) - height - 8.0))
+    if (top + height) > ((viewport's y + viewport's height) - 8.0):
+        set top to (anchor's y - height) - 4.0
+    set top to the maximum of (viewport's y + 8.0) and (the minimum of top and (((viewport's y + viewport's height) - height) - 8.0))
     set box to UI box at left top sized width height
     set popover's bounds to box
     set view to frame's view
@@ -110,7 +110,7 @@ to [paint UI text popover] {a pointer to UI text popover:popover} [anchored at] 
     set view's text source to the address of (layout's text source)
     set line to layout's lines
     loop while line != @intrinsic("construct", a pointer to UI text line):
-        draw UI row line in layout at (clip's x) (clip's y + line's top + line's ascent - popover's scroll) on frame
+        draw UI row line in layout at (clip's x) (((clip's y + line's top) + line's ascent) - popover's scroll) on frame
         set line to line's next
     set view's selectable to previous selectable
     set view's text source to previous source
