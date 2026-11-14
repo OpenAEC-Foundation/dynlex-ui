@@ -72,6 +72,33 @@ set the value of "Results" in (the address of instance) to (the value of "Files"
 
 Nonnegative selections are zero-based and must identify an existing child.
 
+Named palettes let controllers change colors without changing declarations:
+
+```dynlex
+palette daylight colors:
+    color "Paper" is UI ink 250 250 249
+    color "Text" is UI ink 30 34 40
+
+palette midnight colors:
+    color "Paper" is UI ink 18 24 32
+    color "Text" is UI ink 235 240 246
+
+appearance themed paper appearance:
+    background is palette color "Paper"
+    text is palette color "Text"
+
+use UI palette daylight colors in (the address of instance)
+```
+
+`border is palette color "Name"` also accepts a named color. Palette entries
+are static data; each instance selects its own palette. Names must be nonempty
+and unique, and every referenced color must exist. Selecting a different palette
+invalidates the instance's views and preserves editor drafts, selections and undo
+history. Selecting the same palette leaves an unchanged view idle. Literal inks
+can be mixed with named colors. Standalone resolution uses
+`UI appearance appearance resolved for width using palette`; use `no UI palette`
+when the appearance contains only literal inks.
+
 `paragraph "Name" containing "Text"` separates an element's name from its initial
 content, including empty content. Editors use that same distinction. Links store
 their destinations separately from content and visual variants.

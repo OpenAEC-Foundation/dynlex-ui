@@ -1,0 +1,1 @@
+Named palettes resolve inherited, responsive and inline colors per instance without replacing editor state or repainting unchanged selections.

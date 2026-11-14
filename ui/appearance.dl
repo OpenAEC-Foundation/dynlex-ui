@@ -1,6 +1,7 @@
 # Immutable appearance rules. Resolution is shared by native and browser views.
 import lib/sections.dl
 import geometry.dl
+import palettes.dl
 import lib/check.dl
 
 class:
@@ -24,6 +25,7 @@ UI appearance reference means: a pointer to UI appearance
 no UI appearance means: a static reference to @intrinsic("construct", UI appearance, @intrinsic("construct", a pointer to UI appearance rule), 0)
 UI appearance rule {integer:kind} valued {a value:number} means: @intrinsic("construct", UI appearance rule, kind, number as a floating-point number, UI ink 0 0 0, "", no UI appearance)
 UI appearance rule {integer:kind} colored {UI paint:ink} means: @intrinsic("construct", UI appearance rule, kind, 0.0, ink, "", no UI appearance)
+UI appearance rule {integer:kind} using palette color {C string:name} means: @intrinsic("construct", UI appearance rule, kind, 1.0, UI ink 0 0 0, name, no UI appearance)
 a UI appearance with rules {an array:rules} means: a static reference to @intrinsic("construct", UI appearance, @intrinsic("cast", a static reference to rules, a pointer to UI appearance rule), the length of rules)
 
 section appearance {name}:
@@ -48,11 +50,14 @@ maximum width is {a value:number} means: UI appearance rule 3 valued number
 font size is {integer:number} means: UI appearance rule 4 valued number
 line spacing is {a value:number} means: UI appearance rule 5 valued number
 text is {UI paint:ink} means: UI appearance rule 6 colored ink
+text is palette color {C string:name} means: UI appearance rule 6 using palette color name
 background is {UI paint:ink} means: UI appearance rule 7 colored ink
+background is palette color {C string:name} means: UI appearance rule 7 using palette color name
 background is transparent means: UI appearance rule 26 valued 0
 corner radius is {a value:number} means: UI appearance rule 8 valued number
 border width is {a value:number} means: UI appearance rule 9 valued number
 border is {UI paint:ink} means: UI appearance rule 10 colored ink
+border is palette color {C string:name} means: UI appearance rule 10 using palette color name
 columns are {integer:number} means: UI appearance rule 11 valued number
 stack below {a value:number} means: UI appearance rule 12 valued number
 minimum height is {a value:number} means: UI appearance rule 13 valued number
@@ -111,13 +116,18 @@ to get default UI appearance settings:
     set result's font path to ""
     return result
 
-to apply UI appearance {UI appearance reference:appearance} for {floating-point number:viewport} to {a pointer to UI appearance settings:settings}:
+to get the ink of UI appearance rule {UI appearance rule:rule} using {UI palette:palette}:
+    if rule's number = 0.0:
+        return rule's ink
+    return UI palette color (rule's text) in palette
+
+to apply UI appearance {UI appearance reference:appearance} for {floating-point number:viewport} using {UI palette:palette} to {a pointer to UI appearance settings:settings}:
     set index to 0
     loop while index < appearance's count:
         set rule to the item at index in (appearance's rules)
         set kind to rule's kind
         if (kind = 0) or ((kind = 100) and (viewport < rule's number)):
-            apply UI appearance (rule's appearance) for viewport to settings
+            apply UI appearance (rule's appearance) for viewport using palette to settings
         if kind = 1:
             set settings's padding to rule's number
         if kind = 2:
@@ -129,16 +139,16 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
         if kind = 5:
             set settings's line spacing to rule's number
         if kind = 6:
-            set settings's foreground to rule's ink
+            set settings's foreground to the ink of UI appearance rule rule using palette
         if kind = 7:
-            set settings's background to rule's ink
+            set settings's background to the ink of UI appearance rule rule using palette
             set settings's filled to true
         if kind = 8:
             set settings's radius to rule's number
         if kind = 9:
             set settings's border width to rule's number
         if kind = 10:
-            set settings's border ink to rule's ink
+            set settings's border ink to the ink of UI appearance rule rule using palette
         if kind = 11:
             set settings's columns to rule's number as an integer
         if kind = 12:
@@ -174,9 +184,9 @@ to apply UI appearance {UI appearance reference:appearance} for {floating-point 
             set settings's filled to false
         increment index
 
-to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport}:
+to get UI appearance {UI appearance reference:appearance} resolved for {floating-point number:viewport} using {UI palette:palette}:
     set result to default UI appearance settings
-    apply UI appearance appearance for viewport to (the address of result)
+    apply UI appearance appearance for viewport using palette to (the address of result)
     require condition ((result's font size > 0) and (result's line spacing > 0.0)) reporting "Text size and line spacing must be positive"
     require condition ((result's padding >= 0.0) and (result's columns > 0)) reporting "Appearance padding and columns must be valid"
     return result

@@ -30,7 +30,7 @@ function [paint test popover] {a pointer:context} [on] {UI frame:frame}:
         hint appearance
         test viewport
     execute:
-        set style to UI appearance hint appearance resolved for (frame's view's width as a floating-point number)
+        set style to UI appearance hint appearance resolved for (frame's view's width as a floating-point number) using (frame's view's instance's palette)
         paint UI text popover (context as a pointer to UI text popover) anchored at (UI box at 30 15 sized 10 18) within test viewport using (frame's view's typeface) styled style on frame
 
 to [close test popover] {a pointer:context} [in] {a pointer to UI view:view}:

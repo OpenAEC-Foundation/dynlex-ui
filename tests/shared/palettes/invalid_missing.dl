@@ -1,0 +1,6 @@
+import ../../../ui/appearance.dl
+
+appearance missing color appearance:
+    text is palette color "Unknown"
+
+ignore UI appearance missing color appearance resolved for 500.0 using (no UI palette)

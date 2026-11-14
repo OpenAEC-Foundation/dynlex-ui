@@ -1,0 +1,6 @@
+import ../../../ui/palettes.dl
+
+palette unnamed colors:
+    color "" is UI ink 1 2 3
+
+validate UI palette unnamed colors

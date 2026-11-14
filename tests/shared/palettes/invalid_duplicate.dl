@@ -1,0 +1,7 @@
+import ../../../ui/palettes.dl
+
+palette repeated colors:
+    color "Text" is UI ink 1 2 3
+    color "Text" is UI ink 4 5 6
+
+validate UI palette repeated colors

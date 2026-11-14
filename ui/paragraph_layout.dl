@@ -12,7 +12,7 @@ to prepare UI paragraph {a pointer to UI layout:layout} in {a pointer to UI view
         set appearance's font path to layout's appearance's font path
         set appearance's bold to layout's appearance's bold
         set appearance's line spacing to layout's appearance's line spacing
-        apply UI appearance (child's node's appearance) for (view's width as a floating-point number) to (the address of appearance)
+        apply UI appearance (child's node's appearance) for (view's width as a floating-point number) using (view's instance's palette) to (the address of appearance)
         set child's appearance to appearance
         set child's typeface to a document UI font for appearance in view
         set child's content to (the UI value for (child's node) in (view's instance))'s text

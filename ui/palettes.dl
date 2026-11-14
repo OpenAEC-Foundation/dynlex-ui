@@ -1,0 +1,53 @@
+# Named colors are immutable data; each UI instance chooses its own palette.
+import geometry.dl
+import lib/sections.dl
+import lib/check.dl
+
+class:
+    patterns:
+        UI palette entry
+    members:
+        name as a C string
+        ink as UI paint
+
+class:
+    patterns:
+        UI palette
+    members:
+        colors as a pointer to UI palette entry
+        count as an integer
+
+no UI palette means: @intrinsic("construct", UI palette, 0 as a pointer to UI palette entry, 0)
+a UI palette with colors {an array:colors} means: @intrinsic("construct", UI palette, (a static reference to colors) as a pointer to UI palette entry, the length of colors)
+color {C string:name} is {UI paint:ink} means: @intrinsic("construct", UI palette entry, name, ink)
+
+section palette {name}:
+    declares: name
+    result: UI palette
+    body:
+        colors: many UI palette entry
+    value:
+        a UI palette with colors (the body's colors)
+
+to validate UI palette {UI palette:palette}:
+    set index to 0
+    loop while index < palette's count:
+        set entry to the item at index in (palette's colors)
+        require condition (entry's name != "") reporting "Palette colors need nonempty names"
+        set previous to 0
+        loop while previous < index:
+            set earlier to the item at previous in (palette's colors)
+            require condition (earlier's name != entry's name) reporting "Palette color names must be unique"
+            increment previous
+        increment index
+
+to get UI palette color {C string:name} in {UI palette:palette}:
+    require condition (name != "") reporting "Palette color references need nonempty names"
+    set index to 0
+    loop while index < palette's count:
+        set entry to the item at index in (palette's colors)
+        if entry's name = name:
+            return entry's ink
+        increment index
+    require condition false reporting "An appearance names an undefined palette color"
+    return UI ink 0 0 0

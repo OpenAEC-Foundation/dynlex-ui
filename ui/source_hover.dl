@@ -106,7 +106,7 @@ function [paint UI source hover in] {a pointer to UI source tools:tools} [on] {U
         if ((UI source hover hover is current) = false) or (layout's paint generation != view's paint count):
             dismiss UI source hover hover in view
             return nothing
-        set style to UI appearance UI text popover appearance resolved for (view's width as a floating-point number)
+        set style to UI appearance UI text popover appearance resolved for (view's width as a floating-point number) using (view's instance's palette)
         set style's background to layout's appearance's background
         set style's foreground to layout's appearance's foreground
         set style's border ink to UI ink between (style's background) and (style's foreground) at 0.2

@@ -158,6 +158,7 @@ class:
         observers as a pointer to UI observer
         event target as UI reference
         event context as a pointer
+        palette as UI palette
 
 to invalidate {a pointer to UI instance:instance}:
     increment instance's revision
@@ -165,6 +166,13 @@ to invalidate {a pointer to UI instance:instance}:
     loop while observer != @intrinsic("construct", a pointer to UI observer):
         @intrinsic("call pointer", observer's notify, nothing, observer's context)
         set observer to observer's next
+
+to use UI palette {UI palette:palette} in {a pointer to UI instance:instance}:
+    if (instance's palette's colors = palette's colors) and (instance's palette's count = palette's count):
+        return nothing
+    validate UI palette palette
+    set instance's palette to palette
+    invalidate instance
 
 the UI window of {a pointer to UI instance:instance} means: instance
 this window means: the UI window of @intrinsic("receiver")

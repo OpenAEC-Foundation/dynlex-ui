@@ -46,7 +46,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
     if node's kind = 17:
         set appearance's padding to 8.0
         set appearance's minimum height to 36.0
-    apply UI appearance (node's appearance) for (view's width as a floating-point number) to (the address of appearance)
+    apply UI appearance (node's appearance) for (view's width as a floating-point number) using (view's instance's palette) to (the address of appearance)
     if (node's kind = 22) and (node != view's instance's page):
         set appearance's hidden to true
     set layout's appearance to appearance
