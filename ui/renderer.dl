@@ -30,10 +30,7 @@ to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} wit
     else if node's kind = 3:
         draw UI table node at (box's x) (box's y) in view on frame
     else if node's kind = 20:
-        set handler to the UI handler for node in (view's instance) for event 1
-        require condition (handler != @intrinsic("construct", a pointer to UI handler)) reporting "The UI canvas has no paint callback"
-        set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
-        invoke UI handler handler for node in (view's instance) receiving (the address of painting)
+        paint UI canvas node inside box on frame
     else:
         draw UI presentation node in box in view on frame
         set child to layout's first

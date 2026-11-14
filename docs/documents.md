@@ -514,6 +514,12 @@ before closing its UI instance. Transport failures should call `fail UI source
 workspace workspace`; shared presentation then reports the failure in each active
 source editor.
 
+Use `the light UI source token theme` for a light editor and
+`the default UI source token theme` for a dark editor. Both use the compiler's
+canonical colors for nested calls. Tokens without a matching style inherit the
+editor's foreground; an explicit `*` selector can color every token instead.
+Changing themes keeps execution backgrounds, editor contents and undo history.
+
 The shared client handles both directions of the language protocol. It replies
 to semantic-token refresh requests and reports method-not-found for unsupported
 server requests, preserving numeric and string identifiers. Replies are sent

@@ -41,6 +41,40 @@ require condition (span's visible = false) reporting "A project-context error wa
 free document's diagnostics
 set document's diagnostics to a JSON array containing [hidden]
 require condition ((the UI source diagnostic text of document) = "test.dl (project context): Missing vocabulary\n") reporting "A hidden import error invented a visible source location."
+
+# Tokens without a theme rule keep the editor's authored foreground.
+free document's token types
+set document's token types to a JSON array containing [a new JSON-RPC text for "operator"]
+free document's tokens
+set document's tokens to a JSON object containing [JSON child "data" is (a JSON array containing [
+    a new JSON-RPC integer for 1, a new JSON-RPC integer for 3, a new JSON-RPC integer for 2, a new JSON-RPC integer for 0, a new JSON-RPC integer for 0
+])]
+apply UI source colors from document to node in instance using (the default UI source token theme)
+require condition (value's colors = (0 as a pointer to UI text color span)) reporting "An unstyled token replaced the editor foreground with a fixed color"
+set wildcard to [@intrinsic("construct", UI source token style, "*", UI ink 12 34 56)]
+apply UI source colors from document to node in instance using wildcard
+require condition ((value's colors' ink's red = 12) and (value's colors' end = 4)) reporting "An explicit wildcard color did not style the unmatched token"
+
+free document's token types
+set document's token types to a JSON array containing [a new JSON-RPC text for "variable", a new JSON-RPC text for "function", a new JSON-RPC text for "operator"]
+free document's token modifiers
+set document's token modifiers to a JSON array containing [a new JSON-RPC text for "callDepth0"]
+free document's tokens
+set document's tokens to a JSON object containing [JSON child "data" is (a JSON array containing [
+    a new JSON-RPC integer for 1, a new JSON-RPC integer for 3, a new JSON-RPC integer for 2, a new JSON-RPC integer for 0, a new JSON-RPC integer for 0,
+    a new JSON-RPC integer for 0, a new JSON-RPC integer for 3, a new JSON-RPC integer for 2, a new JSON-RPC integer for 1, a new JSON-RPC integer for 1,
+    a new JSON-RPC integer for 1, a new JSON-RPC integer for 0, a new JSON-RPC integer for 4, a new JSON-RPC integer for 2, a new JSON-RPC integer for 0
+])]
+mark UI text (document's source) in layer "execution" at priority 10 in node in instance
+add UI text mark (UI ink 40 90 150) from 8 to 12 with opacity 80 in layer "execution" in node in instance
+apply UI source colors from document to node in instance using (the light UI source token theme)
+require condition ((value's colors' ink's red = 54) and (value's last color's ink's red = 48)) reporting "The light source theme lost its base or canonical nested-call colors"
+require condition ((value's last color's ink's green = 79) and (value's last color's ink's blue = 195)) reporting "The light call palette did not follow the compiler's canonical colors"
+require condition ((value's colors' next = value's last color) and (value's last color's end = 7)) reporting "The light theme colored an unmatched token"
+apply UI source colors from document to node in instance using (the default UI source token theme)
+require condition ((value's colors' ink's red = 159) and (value's last color's ink's red = 184)) reporting "Switching back to the dark source theme retained light colors"
+set execution to the UI text mark layer named "execution" in node in instance
+require condition ((execution's marks' start = 8) and (execution's marks' ink's red = 40)) reporting "Switching source themes changed the execution overlay"
 edit UI source document document to (the string form of "changed") at 2.0 seconds
 set the text of "Source" in instance to "changed"
 apply UI source colors from document to node in instance using (the default UI source token theme)

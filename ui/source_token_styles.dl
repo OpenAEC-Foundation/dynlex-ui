@@ -37,15 +37,15 @@ to get [the UI token selector score of] {string:selector} [for] {string:name} [w
         set offset to end + 1
     return score
 
-to get [the UI source token ink for] {string:name} [with modifiers] {integer:bits} [from] {a pointer to JSON value:legend} [using] {an array:theme}:
+to get [the UI source token style index for] {string:name} [with modifiers] {integer:bits} [from] {a pointer to JSON value:legend} [using] {an array:theme}:
     set selected to -1
-    set ink to UI ink 245 245 244
+    set specificity to -1
     set index to 0
     loop while index < the length of theme:
         set entry to the item at index in theme
         set score to the UI token selector score of (the string form of (entry's name)) for name with modifiers bits from legend
-        if (score >= 0) and (score >= selected):
-            set ink to entry's ink
-            set selected to score
+        if (score >= 0) and (score >= specificity):
+            set selected to index
+            set specificity to score
         increment index
-    return ink
+    return selected

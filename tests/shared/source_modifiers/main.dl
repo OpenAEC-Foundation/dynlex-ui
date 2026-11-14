@@ -94,10 +94,10 @@ set tie to [
     @intrinsic("construct", UI source token style, "*.constant", UI ink 70 0 0),
     @intrinsic("construct", UI source token style, "function.constant", UI ink 80 0 0)
 ]
-set ink to the UI source token ink for "function" with modifiers 2 from modifiers using tie
-require condition (ink's red = 80) reporting "Exact types and final equally specific rules did not win their style ties."
-set ink to the UI source token ink for "function" with modifiers 1 from modifiers using tie
-require condition (ink's red = 245) reporting "A style matched a modifier absent from the token."
+set selected to the UI source token style index for "function" with modifiers 2 from modifiers using tie
+require condition (selected = 2) reporting "Exact types and final equally specific rules did not win their style ties."
+set selected to the UI source token style index for "function" with modifiers 1 from modifiers using tie
+require condition (selected = -1) reporting "A style matched a modifier absent from the token."
 free modifiers
 set modifiers to a new JSON-RPC array
 set index to 0
@@ -105,8 +105,8 @@ loop while index < 31:
     add (a new JSON-RPC text for ("flag" + (the string form of index))) to the JSON array modifiers
     increment index
 set high to [@intrinsic("construct", UI source token style, "function.flag30", UI ink 90 0 0)]
-set ink to the UI source token ink for "function" with modifiers 1073741824 from modifiers using high
-require condition (ink's red = 90) reporting "The highest protocol modifier bit overflowed its style lookup."
+set selected to the UI source token style index for "function" with modifiers 1073741824 from modifiers using high
+require condition (selected = 0) reporting "The highest protocol modifier bit overflowed its style lookup."
 free modifiers
 free UI source workspace workspace
 close window

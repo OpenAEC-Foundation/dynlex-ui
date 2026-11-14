@@ -1,0 +1,12 @@
+# Every layout mode uses the same canvas callback and logical clip.
+import platform.dl
+import clipping.dl
+
+to paint UI canvas {UI reference:node} inside {UI bounds:box} on {UI frame:frame}:
+    set view to frame's view
+    set handler to the UI handler for node in (view's instance) for event 1
+    require condition (handler != (0 as a pointer to UI handler)) reporting "The UI surface has no painting callback"
+    set visible to the UI intersection of box and (view's clip)
+    if (visible's width > 0.0) and (visible's height > 0.0):
+        set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
+        invoke UI handler handler for node in (view's instance) receiving (the address of painting)

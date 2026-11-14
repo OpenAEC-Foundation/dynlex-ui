@@ -9,6 +9,7 @@ import editor_rendering.dl
 import composition_rendering.dl
 import control_presentation.dl
 import document_forms.dl
+import canvas_rendering.dl
 
 to draw document UI layout {a pointer to UI layout:layout} at {floating-point number:x} {floating-point number:y} in {a pointer to UI view:view} on {UI frame:frame}:
     set appearance to the UI appearance of layout displayed in view
@@ -93,12 +94,7 @@ to draw document UI layout {a pointer to UI layout:layout} at {floating-point nu
             set child to child's next
         draw document UI layout child at (box's x) (box's y) in view on frame
     else if kind = 20:
-        set handler to the UI handler for (layout's node) in (view's instance) for event 1
-        require condition (handler != @intrinsic("construct", a pointer to UI handler)) reporting "The UI surface has no painting callback"
-        set visible to the UI intersection of box and (view's clip)
-        if (visible's width > 0.0) and (visible's height > 0.0):
-            set painting to @intrinsic("construct", UI canvas frame, view's instance, frame, box, view's seconds)
-            invoke UI handler handler for (layout's node) in (view's instance) receiving (the address of painting)
+        paint UI canvas (layout's node) inside box on frame
     else:
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):

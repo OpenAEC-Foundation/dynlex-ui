@@ -43,6 +43,23 @@ set surface to view's window as a pointer to test UI surface
 set paints to surface's paints
 ignore update UI view (the address of view)
 require condition (surface's paints = paints) reporting "An offscreen canvas kept its view repainting"
+
+# The window/ribbon layout path obeys the same clip as responsive documents.
+set layout to a new UI layout
+set layout's node to the control labeled "Canvas" in window
+set layout's bounds to UI box at 0 260 sized 100 100
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+draw UI layout (the address of layout) at 0 0 with cursor (view's cursor) in (the address of view) on frame
+require condition (calls = 3) reporting "The window layout path painted an offscreen canvas"
+set layout's bounds to UI box at 0 10 sized 100 100
+draw UI layout (the address of layout) at 0 0 with cursor (view's cursor) in (the address of view) on frame
+require condition (calls = 4) reporting "The window layout path skipped a visible canvas"
+set layout's bounds to UI box at 0 -40 sized 100 100
+draw UI layout (the address of layout) at 0 0 with cursor (view's cursor) in (the address of view) on frame
+require condition (calls = 5) reporting "The window layout path skipped a partly visible canvas"
+set layout's bounds to UI box at 310 10 sized 100 100
+draw UI layout (the address of layout) at 0 0 with cursor (view's cursor) in (the address of view) on frame
+require condition (calls = 5) reporting "The window layout path ignored horizontal clipping"
 close the address of view
 close window
 print line "Canvas callbacks animate while visible and stop when scrolled out of view."
