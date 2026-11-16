@@ -1,0 +1,1 @@
+Native graphics scroll resources reach the UI as pixel offsets.

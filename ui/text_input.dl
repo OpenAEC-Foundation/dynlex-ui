@@ -18,15 +18,16 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view}:
     return result
 
 to select UI text at {UI point:point} in {a pointer to UI text run:run} extending {boolean:extend} in {a pointer to UI view:view}:
+    set extendSelection to extend
     set local to UI text position of point in run
     set caret to the UI text byte at (local's x - run's origin's x) in run
     if run's element != @intrinsic("construct", UI reference):
         if view's selection's anchor run != run:
-            set extend to false
+            set extendSelection to false
     else if view's selection's anchor run != @intrinsic("construct", a pointer to UI text run):
         if view's selection's anchor run's element != @intrinsic("construct", UI reference):
-            set extend to false
-    if extend = false:
+            set extendSelection to false
+    if extendSelection = false:
         set view's selection's anchor run to run
         set view's selection's anchor to caret
     if (view's selection's caret run != run) or (view's selection's caret != caret):

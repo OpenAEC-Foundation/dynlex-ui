@@ -57,7 +57,7 @@ to get the test UI [width] of {a pointer:resource} containing {C string:text} co
         set width to width + 8.0
     return width
 
-to draw test UI text in {a pointer to UI view:view} using {a pointer:font} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
+to draw test UI text in {a pointer to UI view:view} using {a pointer:face} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
     set surface to view's window as a pointer to test UI surface
     set surface's drawn to (surface's drawn + (a new string from text containing count bytes)) + "\n"
 

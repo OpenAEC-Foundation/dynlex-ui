@@ -1,0 +1,21 @@
+import ../../helpers/driver.dl
+import ../../../ui/native.dl
+
+window scroll test:
+    label "Scroll input"
+
+set state to 0
+set instance to an instance of scroll test with state (the address of state)
+set view to a UI view of (the address of instance) sized 640 by 480 using font "regular" with the test UI driver
+set surface to a new native UI surface
+set surface's view to the address of view
+set graphics to a new DynlexGraphics
+set graphics' application_state to (the address of surface) as a pointer
+receive native UI scroll from ((the address of graphics) as a pointer) at 2.0 -3.0
+require condition (view's input first's kind = 5) reporting "The graphics scroll resource did not reach the UI input queue"
+require condition (view's input first's x = -80.0 and view's input first's y = 120.0) reporting "Native wheel offsets were not normalized to UI pixels"
+process UI input in (the address of view)
+require condition (view's input first = @intrinsic("construct", a pointer to UI input event)) reporting "The native scroll event was not consumed"
+close the address of view
+close the address of instance
+print line "Native graphics scroll resources reach the UI as pixel offsets."
