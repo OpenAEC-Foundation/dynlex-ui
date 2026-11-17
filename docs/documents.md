@@ -587,3 +587,9 @@ and undo with source editors, while source workspace discovery registers only
 `editor` controls for language analysis. A plain text area is suitable for multiline
 search and replace queries without creating a second language document. Named
 background marks also work in plain text controls through the same layer API.
+
+The browser font service shares measured metrics between layout and mask lookup.
+Measurements belong to a loaded font handle, remain in logical pixels across
+pixel-scale changes, and are released with the font. The FIFO cache bounds both
+entry count and retained text; repeatedly drawing unchanged captions does not
+measure them again or mutate cache insertion order.

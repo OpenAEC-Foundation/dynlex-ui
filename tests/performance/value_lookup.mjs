@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const [core,binary]=process.argv.slice(2);
+const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(pathToFileURL(path.join(core,'src/web/ide/public/compiler/runtimeImports.js')));
+const {observeAllocations}=await import(pathToFileURL(path.join(core,'tests/web/allocation_probe.mjs')));
+const bytes=await fs.readFile(binary),runtime=buildRuntimeImports([],createRuntimeFilesystem(),inspectRuntimeWasmLayout(bytes));
+const allocations=observeAllocations(runtime,1024*1024),samples=[];
+let start,round,expected=0;
+for(let index=0;index<10000;index++) expected+=(index*73)%1024+1;
+runtime.env.ui_lookup_count=()=>1024;
+runtime.env.begin_ui_lookup_sample=sample=>{round=Number(sample);start=performance.now();};
+runtime.env.end_ui_lookup_sample=total=>{const elapsed=performance.now()-start;assert.equal(Number(total),expected);if(round>0) samples.push(elapsed);};
+const {instance}=await WebAssembly.instantiate(bytes,runtime);
+instance.exports.main();assert.equal(allocations.live,0,'UI values retained owned allocations');
+samples.sort((a,b)=>a-b);
+console.log(JSON.stringify({controls:1024,lookupsPerSample:10000,medianMs:samples[10],p95Ms:samples[18],maximumMs:samples.at(-1),peakBytes:allocations.peak},null,2));

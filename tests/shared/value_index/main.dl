@@ -1,0 +1,35 @@
+import ../../../ui/components.dl
+
+window example:
+    button "Host"
+
+set instance to an instance of example
+set context to the address of instance
+set count to 1024
+set nodes to storage for count slots initialized with (the value at (button "Temporary"))
+set retained to storage for count slots initialized with (0 as a pointer to UI value)
+loop index from 0 to count:
+    set slot to (index * 73) % count
+    set entry to the UI value for (nodes + slot) in context
+    set entry's number to slot + 1
+    store entry into retained at slot
+loop pass from 0 to 8:
+    loop index from 0 to count:
+        set entry to the UI value for (nodes + index) in context
+        require condition (entry = (the item at index in retained)) reporting "Growing control storage moved an existing UI value"
+        require condition (entry's number = index + 1) reporting "Control lookup returned another element's state"
+set (the UI value for nodes in context)'s enabled to false
+require condition ((the UI element nodes is enabled in context) = false) reporting "Indexed lookup discarded a disabled control"
+loop index from 0 to count:
+    if (index % 2) = 1:
+        forget UI state for (nodes + index) in context
+loop index from 0 to count:
+    if (index % 2) = 0:
+        require condition ((the UI value for (nodes + index) in context) = (the item at index in retained)) reporting "Removing another control invalidated a retained state address"
+    else:
+        set entry to the UI value for (nodes + index) in context
+        require condition ((entry's number = 0) and (entry's text = "Temporary")) reporting "Recreated controls retained forgotten state"
+close context
+deallocate nodes
+deallocate retained
+print line "Control values retain identity through growth, removal and recreation."

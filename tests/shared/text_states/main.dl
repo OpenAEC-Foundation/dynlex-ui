@@ -9,7 +9,6 @@ set window to the address of instance
 set caption to the UI value for (the control labeled "Caption" in window) in window
 set node to the control labeled "Source" in window
 set entry to the UI value for node in window
-set next to entry's next
 set view to a UI view of window sized 400 by 300 using font "regular" with the test UI driver
 ignore update UI view (the address of view)
 queue UI input of kind 3 key 258 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
@@ -24,6 +23,8 @@ add UI text mark (UI ink 190 120 80) from 3 to 4 with opacity 100 in layer "exec
 set colors to entry's colors
 set marks to entry's mark layers
 
+set registry to instance's values' data
+set registered to instance's values' length
 set parked to a new UI text state
 set parked's text to "other"
 exchange UI text state for node in (the address of view) with (the address of parked)
@@ -31,7 +32,7 @@ ignore update UI view (the address of view)
 require condition ((entry's text = "other") and (parked's text = "abc!")) reporting "Exchanging documents did not transfer their text."
 require condition ((entry's undo = @intrinsic("construct", a pointer to UI text edit)) and (parked's undo = history)) reporting "The inactive document lost its own undo history."
 require condition ((parked's colors = colors) and (parked's mark layers = marks)) reporting "Inactive document annotations lost their ownership."
-require condition ((entry's target = node) and ((entry's next = next) and (caption's text = "Keep this caption"))) reporting "Moving text changed the control identity or its value registry."
+require condition ((entry's target = node) and (((instance's values' data = registry) and (instance's values' length = registered)) and (caption's text = "Keep this caption"))) reporting "Moving text changed the control identity or its value registry."
 
 queue UI input of kind 3 key 90 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
 ignore update UI view (the address of view)

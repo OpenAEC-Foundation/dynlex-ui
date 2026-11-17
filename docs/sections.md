@@ -271,3 +271,13 @@ including functions with multiple parameters. `@intrinsic("function type", resul
 first parameter, second parameter)` builds their types. Signature queries use only
 the callback's type and never execute it. Native `call pointer` remains available
 for foreign pointers; if passed a typed callback it checks the declared signature.
+
+Control state is indexed by each description's address. The sorted registry moves
+only pointers when it grows or removes entries; a control's state address remains
+stable while text buffers, selections and floating controls borrow it. Lookup is
+logarithmic, and enabled-state queries do not create missing state. The shared
+`value_index` fixture covers growth, removal, recreation and ownership.
+The development benchmark in `tests/performance/value_lookup.dl` performs 10,000
+lookups among 1,024 controls per sample. A local Wasm run measured 11.71 ms median
+with the linked registry and 0.56 ms with the index; this measures lookup costs,
+not complete application frame rate.

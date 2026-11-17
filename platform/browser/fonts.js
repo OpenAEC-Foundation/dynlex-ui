@@ -1,4 +1,5 @@
 // Font rasterization is a host service. Placement and interaction are DynLex code.
+import {createFontMeasurements} from "./font-measurements.js";
 export async function loadFonts(paths, base) {
   const faces = new Map();
   for (const [index, path] of paths.entries()) {
@@ -25,6 +26,8 @@ export function createFontServices(gpu, faces, resources, id) {
     context.fillStyle = "white";
   }
 
+  const measurements=createFontMeasurements(measure,use);
+
   function coverage(context, width, height) {
     const rgba = context.getImageData(0, 0, width, height).data;
     const bytes = new Uint8Array(width * height);
@@ -47,14 +50,12 @@ export function createFontServices(gpu, faces, resources, id) {
   }
 
   function width(handle, text) {
-    use(measure, fonts.get(handle));
-    return measure.measureText(text).width;
+    return measurements.measure(handle,fonts.get(handle),text).width;
   }
 
   function mask(handle, text, scale, clipLeft, clipTop, clipRight, clipBottom) {
     const font = fonts.get(handle);
-    use(measure, font);
-    const metrics = measure.measureText(text);
+    const metrics = measurements.measure(handle,font,text);
     const left = Math.max(Math.floor(clipLeft * scale) - 1, Math.floor(Math.min(0, -metrics.actualBoundingBoxLeft) * scale) - 1);
     const right = Math.min(Math.ceil(clipRight * scale) + 1, Math.ceil(Math.max(metrics.width, metrics.actualBoundingBoxRight) * scale) + 1);
     const top = Math.max(Math.floor(clipTop * scale) - 1, -Math.ceil(metrics.actualBoundingBoxAscent * scale) - 1);
@@ -85,6 +86,7 @@ export function createFontServices(gpu, faces, resources, id) {
   }
 
   function close(handle) {
+    measurements.forget(handle);
     for (const [key, entry] of cache) if (entry.font === handle) release(key, entry);
     fonts.delete(handle);
   }

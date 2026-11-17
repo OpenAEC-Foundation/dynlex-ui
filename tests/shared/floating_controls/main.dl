@@ -115,10 +115,8 @@ click floating point point in (the address of view)
 require condition (first's next = (0 as a pointer to UI floating control)) reporting "A floating button could not remove itself during activation"
 close UI floating controls controls
 require condition (view's overlays = (0 as a pointer to UI overlay)) reporting "Closing the control owner retained its overlay"
-set entry to instance's values
-loop while entry != (0 as a pointer to UI value):
+for each entry in (the address of (instance's values)):
     require condition ((entry's target != first node) and (entry's target != second node)) reporting "Removing controls retained their instance state"
-    set entry to entry's next
 require condition ((instance's handlers' target's text = "Stage") and (instance's handlers' next = (0 as a pointer to UI handler))) reporting "Removing controls retained their callbacks"
 set controls to UI floating controls in (the address of view)
 set automatic to a UI floating control from marker prototype named (the string form of "automatic") in controls

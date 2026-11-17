@@ -115,7 +115,6 @@ class:
         text state as UI text state
         number as an integer
         amount as a floating-point number
-        next as a pointer to UI value
         destination as a string
         enabled as a boolean
         read only as a boolean
@@ -123,6 +122,9 @@ class:
         options supplied as a boolean
         options as UI option values
         options revision as an integer
+
+no UI values means: @intrinsic("construct", a list, 0 as a pointer to a pointer to UI value, 0, 0)
+UI values means: the type of (no UI values)
 
 {UI value:entry}'s text means: entry's text state's text
 {a pointer to UI value:entry}'s text means: entry's text state's text
@@ -155,7 +157,7 @@ class:
         state as a pointer
         status as a string
         handlers as a pointer to UI handler
-        values as a pointer to UI value
+        values as UI values
         page as UI reference
         reduced motion as a boolean
         revision as an integer
@@ -163,6 +165,30 @@ class:
         event target as UI reference
         event context as a pointer
         palette as UI palette
+
+# State addresses remain stable; the sorted list only moves their pointers.
+to get the UI value position for {UI reference:node} in {a pointer to UI instance:instance}:
+    set values to the address of (instance's values)
+    set first to 0
+    set end to the length of values
+    set key to node as a 64 bit unsigned integer
+    loop while first < end:
+        set middle to first + ((end - first) / 2)
+        set entry to the item at middle in values
+        if (entry's target as a 64 bit unsigned integer) < key:
+            set first to middle + 1
+        else:
+            set end to middle
+    return first
+
+to get the existing UI value for {UI reference:node} in {a pointer to UI instance:instance}:
+    set values to the address of (instance's values)
+    set position to the UI value position for node in instance
+    if position < the length of values:
+        set entry to the item at position in values
+        if entry's target = node:
+            return entry
+    return 0 as a pointer to UI value
 
 to invalidate {a pointer to UI instance:instance}:
     increment instance's revision
@@ -310,15 +336,13 @@ to get an instance of {UI reference:description}:
     return an instance of description with state (0 as a pointer to a byte)
 
 to get the UI element {UI reference:node} is enabled in {a pointer to UI instance:instance}:
-    set value to instance's values
-    loop while value != @intrinsic("construct", a pointer to UI value):
-        if value's target = node:
-            if node's kind = 34:
-                if value's options supplied:
-                    return value's enabled and ((the length of (value's options)) > 0)
-                return value's enabled and (node's count > 0)
-            return value's enabled
-        set value to value's next
+    set value to the existing UI value for node in instance
+    if value != (0 as a pointer to UI value):
+        if node's kind = 34:
+            if value's options supplied:
+                return value's enabled and ((the length of (value's options)) > 0)
+            return value's enabled and (node's count > 0)
+        return value's enabled
     if node's kind = 34:
         return node's count > 0
     return true
@@ -355,20 +379,15 @@ to [forget UI state for] {UI reference:node} [in] {a pointer to UI instance:inst
         else:
             set previous handler to handler
         set handler to next
-    set value to instance's values
-    set {previous value} to 0 as a pointer to UI value
-    loop while value != (0 as a pointer to UI value):
-        set next to value's next
+    set values to the address of (instance's values)
+    set position to the UI value position for node in instance
+    if position < the length of values:
+        set value to the item at position in values
         if value's target = node:
-            if previous value = (0 as a pointer to UI value):
-                set instance's values to next
-            else:
-                set previous value's next to next
             release UI value value
+            remove item position from values
             invalidate instance
             return nothing
-        set previous value to value
-        set value to next
     if changed:
         invalidate instance
 
@@ -380,12 +399,12 @@ to close {a pointer to UI instance:instance}:
         deallocate handler
         set handler to next
     set instance's handlers to @intrinsic("construct", a pointer to UI handler)
-    set value to instance's values
-    loop while value != @intrinsic("construct", a pointer to UI value):
-        set next to value's next
+    set values to the address of (instance's values)
+    for each value in values:
         release UI value value
-        set value to next
-    set instance's values to @intrinsic("construct", a pointer to UI value)
+    clear values
+    deallocate values' data
+    set instance's values to no UI values
 
 to release UI text colors {a pointer to UI value:value}:
     release UI text colors (the address of (value's text state))

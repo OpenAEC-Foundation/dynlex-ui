@@ -1,0 +1,21 @@
+import ../../ui/components.dl
+
+window example:
+    button "Host"
+
+set instance to an instance of example
+set context to the address of instance
+set count to @intrinsic("call", "host", "ui_lookup_count", integer)
+set nodes to storage for count slots initialized with (the value at (button "Temporary"))
+loop index from 0 to count:
+    set (the UI value for (nodes + index) in context)'s number to index + 1
+loop sample from 0 to 21:
+    @intrinsic("call", "host", "begin_ui_lookup_sample", nothing, sample)
+    set total to 0
+    loop index from 0 to 10000:
+        set slot to (index * 73) % count
+        set entry to the UI value for (nodes + slot) in context
+        set total to total + entry's number
+    @intrinsic("call", "host", "end_ui_lookup_sample", nothing, total)
+close context
+deallocate nodes

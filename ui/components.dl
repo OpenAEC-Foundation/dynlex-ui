@@ -80,11 +80,9 @@ to get [the selected choice of] {C string:label} [in] {a pointer to UI instance:
     return the selected UI option identity of (the control labeled label in instance) in instance
 
 to get the UI value for {UI reference:node} in {a pointer to UI instance:instance}:
-    set entry to instance's values
-    loop while entry != @intrinsic("construct", a pointer to UI value):
-        if entry's target = node:
-            return entry
-        set entry to entry's next
+    set entry to the existing UI value for node in instance
+    if entry != (0 as a pointer to UI value):
+        return entry
     set {new entry} to a new UI value
     set new entry's target to node
     set new entry's enabled to true
@@ -109,9 +107,9 @@ to get the UI value for {UI reference:node} in {a pointer to UI instance:instanc
         set new entry's amount to the initial UI range amount of node
     if node's kind = 21:
         set new entry's text to "0"
-    set new entry's next to instance's values
-    set instance's values to storage for one slot initialized with new entry
-    return instance's values
+    set result to storage for one slot initialized with new entry
+    insert result into (the address of (instance's values)) at index (the UI value position for node in instance)
+    return result
 
 to [set UI text of] {UI reference:node} [in] {a pointer to UI instance:instance} [to] {a value:text}:
     set entry to the UI value for node in instance
