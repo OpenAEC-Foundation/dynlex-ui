@@ -1,0 +1,25 @@
+import ../../../testing/driver.dl
+
+document deferred input:
+    view group "Mode" using no UI appearance:
+        paragraph "Closed" using no UI appearance
+        text field "Query" containing "Find" using no UI appearance
+
+to show deferred input {a pointer to UI view:view}:
+    if view's input kind = 8:
+        set the value of "Mode" in (view's instance) to 1
+        set field to the UI layout labeled "Query" in (view's layout)
+        activate UI layout field in view
+
+set instance to an instance of deferred input
+set view to a UI view of (the address of instance) sized 500 by 400 using font "regular" with the test UI driver
+ignore update UI view (the address of view)
+watch UI input in (the address of view) using (the function named "show deferred input $")
+queue UI input of kind 8 key 0 at 0.0 0.0 with modifiers 0 containing "" in (the address of view)
+queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing "x" in (the address of view)
+ignore update UI view (the address of view)
+require condition (((the UI value for (the control labeled "Query" in (the address of instance)) in (the address of instance))'s text) = "Findx") reporting "A newly selected field lost queued text before painting"
+require condition (view's input context's active) reporting "The selected field did not publish its input context"
+close the address of view
+close the address of instance
+print line "Input observers can reveal and focus deferred fields before queued text and painting."

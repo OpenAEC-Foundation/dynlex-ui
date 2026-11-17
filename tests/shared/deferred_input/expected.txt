@@ -1,0 +1,1 @@
+Input observers can reveal and focus deferred fields before queued text and painting.

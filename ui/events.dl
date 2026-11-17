@@ -6,8 +6,10 @@ import tab_navigation.dl
 
 import hit_testing.dl
 import range_input.dl
+import viewport.dl
 
 to handle UI input in {a pointer to UI view:view}:
+    update the UI viewport in view
     set cursor to the UI cursor in view
     if view's page != view's instance's page:
         clear UI selection in view

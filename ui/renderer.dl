@@ -4,7 +4,7 @@ import focus.dl
 import icon_rendering.dl
 import theme.dl
 import ribbon.dl
-import resize.dl
+import viewport.dl
 import layout.dl
 import ribbon_layout.dl
 import table_rendering.dl
@@ -37,37 +37,6 @@ to draw UI layout {a pointer to UI layout:layout} at {a value:x} {a value:y} wit
         loop while child != @intrinsic("construct", a pointer to UI layout):
             draw UI layout child at (box's x) (box's y) with cursor cursor in view on frame
             set child to child's next
-
-to update the UI viewport in {a pointer to UI view:view}:
-    set width to view's width as a floating-point number
-    set height to view's height as a floating-point number
-    set view's icons' scale to view's pixel scale
-    set view's content bounds to UI box at 0 0 sized width height
-    if view's instance's description's kind = 40:
-        set view's logical width to view's width
-        set view's logical height to view's height
-        if (((view's layout width != view's width) or (view's layout height != view's height)) or (view's layout revision != view's instance's revision)) or (view's images changed):
-            if view's layout width != view's width:
-                set view's reveal caret to true
-            reflow the UI document in view
-        refresh UI document selections in view
-        return nothing
-    if view's adaptive:
-        set view's logical width to view's width
-        set view's logical height to view's height
-        if (view's layout's bounds' width != width) or (view's layout's bounds' height != height):
-            resize UI layout (view's layout) to (view's width) by (view's height)
-    else if view's fitted:
-        set scale to the minimum of (width / view's logical width) and (height / view's logical height)
-        set view's icons' scale to scale * view's pixel scale
-        set {inner width} to scale * view's logical width
-        set {inner height} to scale * view's logical height
-        set view's content bounds to UI box at ((width - inner width) / 2.0) ((height - inner height) / 2.0) sized inner width inner height
-    else:
-        set {available width} to the maximum of 1 and (view's width - 64)
-        set {available height} to the maximum of 1 and (view's height - 192)
-        if (view's layout's bounds' width != available width) or (view's layout's bounds' height != available height):
-            resize UI layout (view's layout) to available width by available height
 
 to paint UI view {a pointer to UI view:view}:
     update the UI viewport in view
