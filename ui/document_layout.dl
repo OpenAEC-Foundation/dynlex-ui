@@ -201,3 +201,7 @@ to reflow the UI document in {a pointer to UI view:view}:
     set limit to the maximum of 0.0 and (view's layout's bounds' height - view's height)
     set view's layout's scroll position to the minimum of limit and (view's layout's scroll position)
     set view's layout's scroll target to the minimum of limit and (view's layout's scroll target)
+    set view's layout revision to view's instance's revision
+    set view's layout width to view's width
+    set view's layout height to view's height
+    set view's images changed to false

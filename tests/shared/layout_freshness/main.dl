@@ -1,0 +1,37 @@
+import ../../../testing/driver.dl
+
+set measurements to 0
+function [measure a fresh layout] {a pointer:font} containing {C string:text} counting {integer:count}:
+    globals:
+        measurements
+    execute:
+        increment measurements
+        return the test UI width of font containing text counting count
+
+document fresh layout:
+    paragraph "Body" containing "A measured paragraph" using no UI appearance
+set instance to an instance of fresh layout
+set driver to the value at (the test UI driver)
+set driver's measure text to (the function named "measure a fresh layout $ containing $ counting $") as a pointer
+set view to a UI view of (the address of instance) sized 500 by 400 using font "regular" with (the address of driver)
+set measurements to 0
+update the UI viewport in (the address of view)
+update the UI viewport in (the address of view)
+require condition (measurements = 0) reporting "An unchanged document was measured again before its first paint"
+set the text of "Body" in (the address of instance) to "Changed text"
+reflow the UI document in (the address of view)
+set measurements to 0
+update the UI viewport in (the address of view)
+require condition (measurements = 0) reporting "An explicit reflow was repeated before painting"
+set view's width to 280
+update the UI viewport in (the address of view)
+require condition (measurements > 0) reporting "A changed viewport did not invalidate layout"
+set measurements to 0
+update the UI viewport in (the address of view)
+require condition (measurements = 0) reporting "A resized document was measured more than once"
+set view's images changed to true
+update the UI viewport in (the address of view)
+require condition ((measurements > 0) and (view's images changed = false)) reporting "Image completion did not refresh layout"
+close the address of view
+close the address of instance
+print line "Document layout tracks its own viewport, content and image freshness before painting."

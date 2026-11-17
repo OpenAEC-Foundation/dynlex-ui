@@ -40,6 +40,9 @@ class:
         last scale as a floating-point number
         observer as a pointer to UI observer
         revision as an integer
+        layout revision as an integer
+        layout width as an integer
+        layout height as an integer
         vertices as a pointer to UI vertex
         vertex count as an integer
         vertex capacity as an integer

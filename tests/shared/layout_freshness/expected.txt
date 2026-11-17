@@ -1,0 +1,1 @@
+Document layout tracks its own viewport, content and image freshness before painting.
