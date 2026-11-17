@@ -56,9 +56,11 @@ export async function createWebGpu(device, reportError) {
       } }] },
       primitive: { topology: "triangle-list" }
     };
-    pipeline = await device.createRenderPipelineAsync(description);
-    imagePipeline = await device.createRenderPipelineAsync({ ...description,
-      fragment: { ...description.fragment, entryPoint: 'imageFragment' } });
+    [pipeline, imagePipeline] = await Promise.all([
+      device.createRenderPipelineAsync(description),
+      device.createRenderPipelineAsync({ ...description,
+        fragment: { ...description.fragment, entryPoint: 'imageFragment' } })
+    ]);
   } catch (error) {
     closed = true;
     device.destroy();
