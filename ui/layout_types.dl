@@ -57,3 +57,4 @@ class:
         text end as an integer
         rich as a boolean
         tab bounds as UI bounds
+        measured selection as UI reference

@@ -609,7 +609,8 @@ Clipped rounded surfaces and outlines skip tessellation without changing paint
 state. These paths are shared by native and browser drivers.
 
 Browser application manifests identify fonts by their logical path and a delivery
-source, for example `{"path":"regular.ttf","source":"regular.woff2"}`. The native
+source and weight, for example `{"path":"regular.ttf","source":"family.woff2","weight":400}`. Multiple
+logical font paths can share one variable font download at different weights. The native
 path stays unchanged. Required fonts load concurrently with streaming application
 compilation and preparation of the first GPU surface. `tools/wasm_delivery.mjs`
 separates optional Wasm debug names into a `.wasm.names` sidecar while preserving

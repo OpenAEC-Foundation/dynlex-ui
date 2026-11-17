@@ -53,7 +53,7 @@ def main():
     for path in sorted({supplied / "runtimeImports.js", *supplied.glob("runtime*.js")}):
         shutil.copy2(path, runtime / path.name)
     shutil.copytree(project / "assets/fonts", output / "assets/fonts", dirs_exist_ok=True)
-    fonts = [{"path": path.relative_to(output).as_posix(),
+    fonts = [{"path": path.relative_to(output).as_posix(), "weight": 400,
               "source": path.with_suffix(".woff2").relative_to(output).as_posix()}
              for path in sorted((output / "assets/fonts").glob("*.ttf"))]
     (output / "application.json").write_text(json.dumps({"module": "application.wasm", "fonts": fonts}, indent=2) + "\n")

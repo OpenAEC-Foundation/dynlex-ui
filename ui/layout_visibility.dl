@@ -12,6 +12,26 @@ to get [the UI layout] {a pointer to UI layout:layout} [is visible in] {a pointe
         return (the selected UI child of node in instance) != (0 as UI reference)
     return true
 
+# Selection values may change through the instance model before focus or painting.
+to get the UI selection changed inside {a pointer to UI layout:layout} in {a pointer to UI instance:instance}:
+    if (layout's node's kind = 22) and (layout's node != instance's page):
+        return false
+    if layout's appearance's hidden:
+        return false
+    set kind to layout's node's kind
+    set selected to 0 as UI reference
+    if (kind = 48) or (kind = 49):
+        set selected to the selected UI child of (layout's node) in instance
+        if selected != layout's measured selection:
+            return true
+    set child to layout's first
+    loop while child != (0 as a pointer to UI layout):
+        if ((kind != 48) and (kind != 49)) or (child's node = selected):
+            if the UI selection changed inside child in instance:
+                return true
+        set child to child's next
+    return false
+
 # 0: not owned by this tree; 1: retained but hidden; 2: active.
 to get [the UI activation scope of] {a pointer to UI layout:target} [inside] {a pointer to UI layout:layout} [visible] {boolean:visible} [in] {a pointer to UI instance:instance}:
     set active to visible and (the UI layout layout is visible in instance)

@@ -114,6 +114,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             set layout's bounds' height to 24.0 + appearance's padding * 2.0
     else if node's kind = 49:
         set selected to the selected UI child of node in (view's instance)
+        set layout's measured selection to selected
         if selected = (0 as UI reference):
             return nothing
         set child to layout's first
@@ -126,6 +127,7 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             set child to child's next
     else if node's kind = 48:
         set selected to the selected tab of node in (view's instance)
+        set layout's measured selection to selected
         set layout's typeface to a document UI font for appearance in view
         set header to (appearance's font size * appearance's line spacing) + 20.0
         set span to (inner - appearance's gap * (node's count - 1)) / node's count
@@ -205,3 +207,9 @@ to reflow the UI document in {a pointer to UI view:view}:
     set view's layout width to view's width
     set view's layout height to view's height
     set view's images changed to false
+
+to refresh UI document selections in {a pointer to UI view:view}:
+    if view's instance's description's kind = 40:
+        if the UI selection changed inside (view's layout) in (view's instance):
+            reflow the UI document in view
+            set view's damaged to true

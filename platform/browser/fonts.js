@@ -1,11 +1,11 @@
 // Font rasterization is a host service. Placement and interaction are DynLex code.
 import {createFontMeasurements} from "./font-measurements.js";
 export async function loadFonts(paths, base) {
-  const loaded = await Promise.all(paths.map(async ({path,source}, index) => {
+  const loaded = await Promise.all(paths.map(async ({path,source,weight}, index) => {
     const family = `DynLexUI${index}`;
-    const face = new FontFace(family, `url("${new URL(source, base).href}")`);
+    const face = new FontFace(family, `url("${new URL(source, base).href}")`, {weight:String(weight)});
     await face.load();
-    return [path, { family, face }];
+    return [path, { family, face, weight }];
   }));
   for (const [, {face}] of loaded) document.fonts.add(face);
   return new Map(loaded);
@@ -19,7 +19,7 @@ export function createFontServices(gpu, faces, resources, id) {
   const measure = new OffscreenCanvas(1, 1).getContext("2d");
 
   function use(context, font, scale = 1) {
-    context.font = `${font.size * scale}px "${font.family}"`;
+    context.font = `${font.weight} ${font.size * scale}px "${font.family}"`;
     context.fontKerning = "none";
     context.textBaseline = "alphabetic";
     context.fillStyle = "white";
@@ -42,9 +42,9 @@ export function createFontServices(gpu, faces, resources, id) {
   }
 
   function open(surface, path, size) {
-    const { family } = faces.get(path);
+    const { family, weight } = faces.get(path);
     const handle = id();
-    fonts.set(handle, { surface, family, size });
+    fonts.set(handle, { surface, family, size, weight });
     return handle;
   }
 
@@ -90,5 +90,5 @@ export function createFontServices(gpu, faces, resources, id) {
     fonts.delete(handle);
   }
   return { open, close, width, mask, trim, coverage,
-    description(handle) { const { family, size } = fonts.get(handle); return { family, size }; } };
+    description(handle) { const { family, size, weight } = fonts.get(handle); return { family, size, weight }; } };
 }

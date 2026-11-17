@@ -50,7 +50,7 @@ export function connectInput(surface, send, schedule) {
     const scale = box.height / (value.font.size + 3);
     Object.assign(input.style, { left: bounds.left + box.x + 'px', top: bounds.top + box.y + 'px',
       height: box.height + 'px', lineHeight: box.height + 'px', fontSize: value.font.size * scale + 'px',
-      fontFamily: '"' + value.font.family + '"' });
+      fontFamily: '"' + value.font.family + '"', fontWeight:String(value.font.weight) });
     if (!composing) {
       if (input.value !== value.text) input.value = value.text;
       const first = Math.min(value.anchor, value.caret), last = Math.max(value.anchor, value.caret);

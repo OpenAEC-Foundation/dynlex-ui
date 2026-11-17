@@ -50,6 +50,7 @@ to update the UI viewport in {a pointer to UI view:view}:
             if view's layout width != view's width:
                 set view's reveal caret to true
             reflow the UI document in view
+        refresh UI document selections in view
         return nothing
     if view's adaptive:
         set view's logical width to view's width
