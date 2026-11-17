@@ -9,6 +9,7 @@ const result=separateWasmNames(input);
 assert.deepEqual(result.module,Uint8Array.from([...code,...other]));
 assert.deepEqual(result.names,names);
 assert(WebAssembly.validate(result.module));
+assert.throws(()=>separateWasmNames(Uint8Array.from([0,1,2])),WebAssembly.CompileError);
 assert.equal(new WebAssembly.Instance(new WebAssembly.Module(result.module)).exports.run(),7);
 assert.deepEqual(separateWasmNames(result.module).module,result.module);
 assert.equal(separateWasmNames(result.module).names.length,0);

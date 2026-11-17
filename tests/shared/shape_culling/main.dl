@@ -1,0 +1,35 @@
+import ../../../testing/driver.dl
+
+set submissions to 0
+function [record a culled shape] {a pointer to UI view:view} vertices {a pointer to UI vertex:vertices} counting {integer:count} with {a pointer:texture}:
+    globals:
+        submissions
+    execute:
+        require condition (count > 0) reporting "A shape submitted empty geometry"
+        increment submissions
+
+document shape fixture:
+    paragraph "Fixture" using no UI appearance
+set instance to an instance of shape fixture
+set driver to the value at (the test UI driver)
+set driver's triangles to (the function named "record a culled shape $ vertices $ counting $ with $") as a pointer
+set view to a UI view of (the address of instance) sized 100 by 100 using font "regular" with (the address of driver)
+set view's clip to UI box at 0.0 0.0 sized 100.0 100.0
+set frame to @intrinsic("construct", UI frame, the address of view, true)
+set ink to UI ink 255 255 255
+draw a rounded UI box (UI box at 10.0 150.0 sized 20.0 20.0) with radius 4.0 in ink on frame
+draw a rounded UI outline (UI box at 10.0 150.0 sized 20.0 20.0) with radius 4.0 width 2.0 in ink on frame
+require condition (submissions = 0) reporting "Clipped shapes still built and submitted geometry"
+draw a rounded UI surface (UI box at 10.0 110.0 sized 20.0 20.0) with radius 4.0 from ink to ink opacity 120 feathered by 12.0 on frame
+require condition (submissions = 1) reporting "Culling discarded a visible shadow fringe"
+move the model in frame by x 200.0, y 0.0 and z 0.0
+rotate the model in frame by 90.0 degrees around x 0.0, y 0.0 and z 1.0
+draw a rounded UI box (UI box at 10.0 150.0 sized 20.0 20.0) with radius 4.0 in ink on frame
+require condition (submissions = 2) reporting "Culling ignored the model transform"
+set view's transform to the identity UI transform
+move the model in frame by x -200.0, y 0.0 and z 0.0
+draw a rounded UI box (UI box at 10.0 10.0 sized 20.0 20.0) with radius 4.0 in ink on frame
+require condition (submissions = 2) reporting "A transformed shape outside the clip still submitted geometry"
+close the address of view
+close the address of instance
+print line "Shape culling respects transforms, clipping and visible antialiasing fringes."

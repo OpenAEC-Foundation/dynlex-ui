@@ -1,0 +1,1 @@
+Shape culling respects transforms, clipping and visible antialiasing fringes.

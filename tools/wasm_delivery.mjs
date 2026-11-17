@@ -2,7 +2,9 @@
 import fs from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 export function separateWasmNames(input) {
-  const bytes=new Uint8Array(input),parts=[bytes.subarray(0,8)],symbols=[];
+  const bytes=new Uint8Array(input);
+  if(!WebAssembly.validate(bytes)) throw new WebAssembly.CompileError('Invalid executable Wasm module');
+  const parts=[bytes.subarray(0,8)],symbols=[];
   const integer=cursor=>{
     let value=0,shift=0,byte;
     do {byte=bytes[cursor.position++];value+=(byte&127)*2**shift;shift+=7;} while(byte&128);

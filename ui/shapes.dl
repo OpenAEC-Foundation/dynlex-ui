@@ -34,6 +34,13 @@ to add UI [vertex] {UI point:point} in {linear UI paint:ink} with alpha {integer
     set vertex to @intrinsic("construct", UI vertex, point's x as a 32 bit floating-point number, point's y as a 32 bit floating-point number, 0.0 as a 32 bit floating-point number, 0.0 as a 32 bit floating-point number, ink's red, ink's green, ink's blue, (alpha as a 32 bit floating-point number) / (255.0 as a 32 bit floating-point number))
     append UI vertex vertex to frame
 
+# Reject invisible geometry before tessellating, without changing text selection.
+to get [UI shape] {UI bounds:box} [expanded by] {floating-point number:margin} [is visible on] {UI frame:frame}:
+    set expanded to UI box at (box's x - margin) (box's y - margin) sized (box's width + margin * 2.0) (box's height + margin * 2.0)
+    set transformed to UI bounds expanded transformed by (frame's view's transform)
+    set visible to the UI intersection of transformed and (frame's view's clip)
+    return (visible's width > 0.0) and (visible's height > 0.0)
+
 to draw a rounded UI box {UI bounds:box} with radius {floating-point number:radius} in {UI paint:ink} on {UI frame:frame}:
     draw a rounded UI surface box with radius radius from ink to ink opacity 255 feathered by 0.75 on frame
 
@@ -47,6 +54,8 @@ to draw a rounded UI surface {UI bounds:box} with radius {floating-point number:
     if (box's width <= 0.0) or (box's height <= 0.0):
         return nothing
     if frame's drawable:
+        if (UI shape box expanded by (the maximum of 0.0 and feather) is visible on frame) = false:
+            return nothing
         set upper to the linear UI ink of top on frame
         set lower to the linear UI ink of bottom on frame
         set rounding to the maximum of 0.0 and radius

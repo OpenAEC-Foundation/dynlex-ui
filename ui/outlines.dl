@@ -5,6 +5,8 @@ import shapes.dl
 to draw a rounded UI outline {UI bounds:box} with radius {floating-point number:radius} width {floating-point number:width} in {UI paint:ink} on {UI frame:frame}:
     if frame's drawable = false:
         return nothing
+    if (UI shape box expanded by 0.75 is visible on frame) = false:
+        return nothing
     set limit to (the minimum of (box's width) and (box's height)) / 2.0
     if width >= limit:
         draw a rounded UI box box with radius radius in ink on frame
