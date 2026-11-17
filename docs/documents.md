@@ -602,6 +602,9 @@ initial content once. An ordinary `a UI view of ...` still provides immediate
 layout. `update the UI viewport in view` explicitly measures a deferred view when
 geometry is needed before running it. Layout records its own content revision,
 viewport dimensions and image freshness, independently of the last paint.
+Programmatic focus changes control identity without measuring the document.
+Input dispatch prepares the current viewport after application input observers,
+before hit testing and text handling; painting reuses that layout.
 
 Inactive tab and selected-view bodies are measured when selected. Wrapped text
 uses whole-line and word boundaries, splitting oversized words at UTF-8 boundaries.
