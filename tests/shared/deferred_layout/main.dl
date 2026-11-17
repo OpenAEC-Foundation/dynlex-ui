@@ -1,0 +1,38 @@
+import ../../../testing/driver.dl
+
+set measurements to 0
+function [measure deferred layout text] {a pointer:font} containing {C string:text} counting {integer:count}:
+    globals:
+        measurements
+    execute:
+        increment measurements
+        return the test UI width of font containing text counting count
+
+document deferred layout:
+    view group "Panels" using no UI appearance:
+        region "First" using no UI appearance:
+            paragraph "First text" containing "First panel" using no UI appearance
+        region "Second" using no UI appearance:
+            paragraph "Second text" containing "Second panel" using no UI appearance
+    tab group "Tabs" using no UI appearance:
+        tab "One":
+            paragraph "One text" containing "One body" using no UI appearance
+        tab "Two":
+            paragraph "Two text" containing "Two body" using no UI appearance
+
+set instance to an instance of deferred layout
+set driver to the value at (the test UI driver)
+set driver's measure text to (the function named "measure deferred layout text $ containing $ counting $") as a pointer
+set view to a UI view of (the address of instance) sized 600 by 500 using font "regular" with (the address of driver)
+set hidden to the UI layout labeled "Second text" in (view's layout)
+set tab to the UI layout labeled "Two text" in (view's layout)
+require condition ((hidden's lines = (0 as a pointer to UI text line)) and (tab's lines = (0 as a pointer to UI text line))) reporting "Inactive bodies were measured during initial layout"
+require condition (measurements <= 4) reporting "Single-line text was measured one prefix per character"
+set the value of "Panels" in (the address of instance) to 1
+set the value of "Tabs" in (the address of instance) to 1
+ignore update UI view (the address of view)
+require condition ((hidden's lines != (0 as a pointer to UI text line)) and (tab's lines != (0 as a pointer to UI text line))) reporting "Selecting a retained body did not lay out its text"
+require condition ((hidden's bounds' height > 0.0) and (tab's bounds' height > 0.0)) reporting "Deferred layout did not acquire its content dimensions"
+close the address of view
+close the address of instance
+print line "Inactive bodies defer measurement and selected bodies acquire their text layout."

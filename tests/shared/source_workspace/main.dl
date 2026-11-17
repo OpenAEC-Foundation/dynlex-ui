@@ -53,6 +53,10 @@ require condition ((the UI source focus in (the address of view) for workspace) 
 set view's text focus to game's node
 set layout's hit bounds to UI box at 0 0 sized 0 0
 require condition ((the UI source focus in (the address of view) for workspace) = game's node) reporting "A focused source lost priority while scrolled."
+set view's text focus to 0 as UI reference
+set deferred to the next visible UI source work in workspace in (the address of view) at 3.0 seconds
+require condition (deferred's step = 0) reporting "An offscreen workspace started language analysis"
+set view's text focus to game's node
 set files to a JSON object containing [JSON text "helper.dl" is "helper means: 1"]
 configure UI source document (game's document) named "game.dl" at "file:///workspace/game.dl" prefixed by "import game.dl\n\n" using UI CPU analysis with files files
 free files

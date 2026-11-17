@@ -1,15 +1,14 @@
 // Font rasterization is a host service. Placement and interaction are DynLex code.
 import {createFontMeasurements} from "./font-measurements.js";
 export async function loadFonts(paths, base) {
-  const faces = new Map();
-  for (const [index, path] of paths.entries()) {
+  const loaded = await Promise.all(paths.map(async ({path,source}, index) => {
     const family = `DynLexUI${index}`;
-    const face = new FontFace(family, `url("${new URL(path, base).href}")`);
+    const face = new FontFace(family, `url("${new URL(source, base).href}")`);
     await face.load();
-    document.fonts.add(face);
-    faces.set(path, { family, face });
-  }
-  return faces;
+    return [path, { family, face }];
+  }));
+  for (const [, {face}] of loaded) document.fonts.add(face);
+  return new Map(loaded);
 }
 
 export function createFontServices(gpu, faces, resources, id) {

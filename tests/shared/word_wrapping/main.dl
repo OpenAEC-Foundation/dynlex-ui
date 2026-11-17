@@ -1,0 +1,34 @@
+import ../../../testing/driver.dl
+
+document wrapping fixture:
+    paragraph "Fixture" using no UI appearance
+set instance to an instance of wrapping fixture
+set view to a UI view of (the address of instance) sized 400 by 300 using font "regular" with the test UI driver
+
+to [check wrapping] {string:content} [within] {floating-point number:width} [as] {an array:expected} [in] {a pointer to UI view:view}:
+    set layout to a new UI layout
+    set layout's content to content
+    set layout's typeface to view's typeface
+    set layout's appearance to default UI appearance settings
+    set count to the number of wrapped UI rows in (the address of layout) within width
+    require condition (count = the length of expected) reporting "Word wrapping produced the wrong number of lines"
+    set line to layout's lines
+    set index to 0
+    loop while line != (0 as a pointer to UI text line):
+        set text to the substring of content from (line's start) spanning (line's end - line's start) bytes
+        require condition (text = the item at index in expected) reporting "Word wrapping changed text boundaries"
+        increment index
+        set line to line's next
+    release UI text lines in (the address of layout)
+
+check wrapping "one two three" within 48.0 as ["one","two","three"] in (the address of view)
+check wrapping "abcdefgh" within 24.0 as ["abc","def","gh"] in (the address of view)
+check wrapping "a😀bcd" within 24.0 as ["a😀b","cd"] in (the address of view)
+check wrapping "abc def" within 24.0 as ["abc","def"] in (the address of view)
+check wrapping "a  b" within 16.0 as ["a ","b"] in (the address of view)
+check wrapping "\na\n" within 40.0 as ["","a",""] in (the address of view)
+check wrapping "" within 40.0 as [""] in (the address of view)
+check wrapping "ab" within 0.0 as ["a","b"] in (the address of view)
+close the address of view
+close the address of instance
+print line "Word wrapping preserves whitespace, hard breaks, overlong words and UTF-8 boundaries."

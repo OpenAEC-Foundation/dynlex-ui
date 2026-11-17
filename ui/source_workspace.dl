@@ -252,3 +252,10 @@ to get [the UI source focus in] {a pointer to UI view:view} [for] {a pointer to 
                     set chosen to entry's node
         set entry to entry's next
     return chosen
+
+# Background editors retain their data without starting a language service.
+to get [the next visible UI source work in] {a pointer to UI source workspace:workspace} [in] {a pointer to UI view:view} [at] {floating-point number:seconds} [seconds]:
+    set focused to the UI source focus in view for workspace
+    if focused = (0 as UI reference):
+        return a new UI language work
+    return the next UI source workspace work in workspace focused on focused at seconds seconds

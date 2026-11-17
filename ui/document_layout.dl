@@ -118,10 +118,10 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
             return nothing
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
-            reflow document UI layout child within inner inheriting appearance in view
-            set child's bounds' x to appearance's padding
-            set child's bounds' y to appearance's padding
             if child's node = selected:
+                reflow document UI layout child within inner inheriting appearance in view
+                set child's bounds' x to appearance's padding
+                set child's bounds' y to appearance's padding
                 set layout's bounds' height to child's bounds' height + appearance's padding * 2.0
             set child to child's next
     else if node's kind = 48:
@@ -132,9 +132,10 @@ to reflow document UI layout {a pointer to UI layout:layout} within {floating-po
         set child to layout's first
         set index to 0
         loop while child != @intrinsic("construct", a pointer to UI layout):
-            reflow document UI layout child within inner inheriting appearance in view
-            set child's bounds' x to appearance's padding
-            set child's bounds' y to appearance's padding + header + appearance's gap
+            if child's node = selected:
+                reflow document UI layout child within inner inheriting appearance in view
+                set child's bounds' x to appearance's padding
+                set child's bounds' y to appearance's padding + header + appearance's gap
             set child's tab bounds to UI box at (appearance's padding + index * (span + appearance's gap)) (appearance's padding) sized span header
             if child's node = selected:
                 set layout's bounds' height to child's bounds' y + child's bounds' height + appearance's padding

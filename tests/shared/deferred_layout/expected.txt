@@ -1,0 +1,1 @@
+Inactive bodies defer measurement and selected bodies acquire their text layout.

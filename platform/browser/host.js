@@ -6,11 +6,11 @@ import { createPictureServices } from './pictures.js';
 import { createUiScheduling } from './scheduling.js';
 import { createServiceCalls } from './service-calls.js';
 
-export async function createUiHost(root, fontPaths, base, runtime, options = {}) {
+export async function createUiHost(root, fontPaths, base, runtimeLoading, options = {}) {
   const surfaces = new Map(), resources = new Map(), drawings = new Map();
   let instance, nextId = 1;
   const id = () => nextId++;
-  const memory = runtime.env.__linear_memory;
+  let runtime, memory;
   const decoder = new TextDecoder("utf-8", { fatal: true });
   const encoder = new TextEncoder();
   const text = (pointer, count) => decoder.decode(new Uint8Array(memory.buffer, pointer, count));
@@ -31,8 +31,11 @@ export async function createUiHost(root, fontPaths, base, runtime, options = {})
   }
   const scheduling = createUiScheduling({ error: reportError });
   const schedule = scheduling.schedule;
-  const gpu = await createGpu(reportError);
-  const faces = await loadFonts(fontPaths, base);
+  const [gpu, faces, loadedRuntime] = await Promise.all([
+    createGpu(reportError), loadFonts(fontPaths, base), runtimeLoading
+  ]);
+  runtime = loadedRuntime;
+  memory = runtime.env.__linear_memory;
   const fonts = createFontServices(gpu, faces, resources, id);
   const graphics = createGraphicsServices({ gpu, surfaces, resources, id, memory, base });
   const callback = number => instance.exports.__indirect_function_table.get(number);

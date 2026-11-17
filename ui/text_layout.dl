@@ -18,6 +18,17 @@ to get the number of wrapped UI rows in {a pointer to UI layout:layout} within {
         set next to start
         set break to -1
         set complete to false
+        set limit to start
+        loop while (limit < content's length) and ((the UTF8 character at limit in content)'s code != 10):
+            set character to the UTF8 character at limit in content
+            require condition (character's valid) reporting "UI text must contain valid UTF-8"
+            set limit to character's next
+        if (the width from start to limit in UI paragraph layout) <= width:
+            set end to limit
+            set next to limit
+            if limit < content's length:
+                increment next
+            set complete to true
         loop while (offset < content's length) and (complete = false):
             set character to the UTF8 character at offset in content
             require condition (character's valid) reporting "UI text must contain valid UTF-8"
@@ -28,13 +39,34 @@ to get the number of wrapped UI rows in {a pointer to UI layout:layout} within {
             else:
                 if (character's code = 32) or (character's code = 9):
                     set break to offset
-                set measured to the width from start to (character's next) in UI paragraph layout
+                set boundary to (character's code = 32) or (character's code = 9)
+                if character's next = limit:
+                    set boundary to true
+                else:
+                    set following to the UTF8 character at (character's next) in content
+                    set boundary to boundary or ((following's code = 32) or (following's code = 9))
+                set measured to 0.0
+                if boundary:
+                    set measured to the width from start to (character's next) in UI paragraph layout
                 if (measured > width) and (offset > start):
                     set end to offset
                     set next to offset
                     if break > start:
                         set end to break
                         set next to (the UTF8 character at break in content)'s next
+                    else:
+                        # Split an overlong word on UTF-8 boundaries, retaining one glyph.
+                        set end to (the UTF8 character at start in content)'s next
+                        set probe to end
+                        set fitting to true
+                        loop while (probe < character's next) and fitting:
+                            set candidate to (the UTF8 character at probe in content)'s next
+                            if (the width from start to candidate in UI paragraph layout) > width:
+                                set fitting to false
+                            else:
+                                set end to candidate
+                            set probe to candidate
+                        set next to end
                     set complete to true
                 else:
                     set end to character's next

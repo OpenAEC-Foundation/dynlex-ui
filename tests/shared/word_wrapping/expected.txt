@@ -1,0 +1,1 @@
+Word wrapping preserves whitespace, hard breaks, overlong words and UTF-8 boundaries.

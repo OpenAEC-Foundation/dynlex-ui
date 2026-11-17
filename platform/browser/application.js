@@ -9,12 +9,16 @@ export async function loadUiApplication(root, manifestUrl, options = {}) {
   };
   const manifest = await (await read(manifestUrl)).json();
   const base = new URL('./', manifestUrl);
-  const bytes = await (await read(new URL(manifest.module, base))).arrayBuffer();
+  const response = read(new URL(manifest.module, base));
+  const compiled = response.then(resource => WebAssembly.compileStreaming(resource.clone()));
   const output = options.output ?? { push(chunk) { console.log('DynLex:', chunk); } };
-  const runtime = buildRuntimeImports(output, createRuntimeFilesystem(), inspectRuntimeWasmLayout(bytes));
-  const host = await createUiHost(root, manifest.fonts, base, runtime, options);
+  const loadingRuntime = response.then(resource => resource.arrayBuffer()).then(bytes =>
+    buildRuntimeImports(output, createRuntimeFilesystem(), inspectRuntimeWasmLayout(bytes)));
+  const [host, module, runtime] = await Promise.all([
+    createUiHost(root, manifest.fonts, base, loadingRuntime, options), compiled, loadingRuntime
+  ]);
   Object.assign(runtime.env, host.imports);
-  const { instance } = await WebAssembly.instantiate(bytes, runtime);
+  const instance = await WebAssembly.instantiate(module, runtime);
   host.attach(instance);
   instance.exports.main();
   return host;
