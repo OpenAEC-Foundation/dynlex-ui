@@ -17,8 +17,10 @@ set view to a UI view of (the address of instance) sized 100 by 100 using font "
 set view's clip to UI box at 0.0 0.0 sized 100.0 100.0
 set frame to @intrinsic("construct", UI frame, the address of view, true)
 set ink to UI ink 255 255 255
+set view's current alpha to 120
 draw a rounded UI box (UI box at 10.0 150.0 sized 20.0 20.0) with radius 4.0 in ink on frame
 draw a rounded UI outline (UI box at 10.0 150.0 sized 20.0 20.0) with radius 4.0 width 2.0 in ink on frame
+require condition (view's current alpha = 255) reporting "Culling changed the primitive's final paint state"
 require condition (submissions = 0) reporting "Clipped shapes still built and submitted geometry"
 draw a rounded UI surface (UI box at 10.0 110.0 sized 20.0 20.0) with radius 4.0 from ink to ink opacity 120 feathered by 12.0 on frame
 require condition (submissions = 1) reporting "Culling discarded a visible shadow fringe"

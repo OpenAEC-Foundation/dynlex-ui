@@ -55,6 +55,7 @@ to draw a rounded UI surface {UI bounds:box} with radius {floating-point number:
         return nothing
     if frame's drawable:
         if (UI shape box expanded by (the maximum of 0.0 and feather) is visible on frame) = false:
+            use vertex color red 255, green 255 and blue 255 in frame
             return nothing
         set upper to the linear UI ink of top on frame
         set lower to the linear UI ink of bottom on frame

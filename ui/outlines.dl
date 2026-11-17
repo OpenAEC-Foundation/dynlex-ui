@@ -6,6 +6,7 @@ to draw a rounded UI outline {UI bounds:box} with radius {floating-point number:
     if frame's drawable = false:
         return nothing
     if (UI shape box expanded by 0.75 is visible on frame) = false:
+        use vertex color red 255, green 255 and blue 255 in frame
         return nothing
     set limit to (the minimum of (box's width) and (box's height)) / 2.0
     if width >= limit:
