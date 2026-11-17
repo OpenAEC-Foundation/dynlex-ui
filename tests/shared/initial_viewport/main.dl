@@ -1,0 +1,19 @@
+import ../../../testing/driver.dl
+
+to [poll the initial viewport] {a pointer to UI view:view}:
+    require condition (view's window != (0 as a pointer)) reporting "Polling preceded surface creation"
+    set view's width to 320
+    set view's height to 500
+    set view's pixel scale to 2.0
+
+document responsive fixture:
+    paragraph "Mobile first" using no UI appearance
+set instance to an instance of responsive fixture
+set driver to the value at (the test UI driver)
+set driver's poll to (the function named "poll the initial viewport $") as a pointer
+set view to a UI view of (the address of instance) sized 1280 by 900 using font "regular" with (the address of driver)
+require condition ((view's width = 320) and (view's height = 500)) reporting "Initial layout retained the requested desktop viewport"
+require condition ((view's layout's bounds' width = 320.0) and (view's clip's width = 320.0)) reporting "The first layout and clip disagree with the host surface"
+close the address of view
+close the address of instance
+print line "The first UI layout uses the actual host viewport and pixel scale."

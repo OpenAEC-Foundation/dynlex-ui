@@ -34,13 +34,14 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
         set result's logical width to rule's width
         set result's logical height to rule's height
         set result's adaptive to rule's variant = "adaptive"
+    @intrinsic("call pointer", driver's open, nothing, the address of result, pixel width, pixel height, instance's description's text)
+    @intrinsic("call pointer", driver's poll, nothing, the address of result)
+    set result's clip and result's hit bounds to the UI viewport bounds in (the address of result)
     set {available width} to result's logical width
     set {available height} to result's logical height
     if result's fitted = false:
-        set available width to the maximum of 1 and (pixel width - 64)
-        set available height to the maximum of 1 and (pixel height - 192)
-    set result's clip and result's hit bounds to the UI viewport bounds in (the address of result)
-    @intrinsic("call pointer", driver's open, nothing, the address of result, pixel width, pixel height, instance's description's text)
+        set available width to the maximum of 1 and (result's width - 64)
+        set available height to the maximum of 1 and (result's height - 192)
     set result's typeface to a UI font from regular sized 15 in (the address of result)
     set result's heading to a UI font from bold sized 26 in (the address of result)
     set result's small to a UI font from regular sized 12 in (the address of result)
