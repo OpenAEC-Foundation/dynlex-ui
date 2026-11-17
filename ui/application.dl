@@ -5,7 +5,8 @@ import input.dl
 import invalidation.dl
 import operation_values.dl
 
-to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
+# Batch initial controller changes before the first document measurement.
+to get an unmeasured UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
     set {pixel width} to a UI operation integer from width
     set {pixel height} to a UI operation integer from height
     require condition ((pixel width > 0) and (pixel height > 0)) reporting "UI view dimensions must be positive"
@@ -50,10 +51,15 @@ to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by
     set result's brand to a UI font from bold sized 30 in (the address of result)
     if instance's description's kind = 40:
         set result's layout to a document UI layout for (instance's description) inside (instance's description)
-        reflow the UI document in (the address of result)
     else:
         set result's layout to a UI layout for (instance's description) inside (instance's description) with width available width using (result's theme) with palette (instance's palette)
         prepare UI layout (result's layout) for (instance's description) sized available width by available height
+    return result
+
+to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using fonts {C string:regular} and {C string:bold} with {a pointer to UI driver:driver}:
+    set result to an unmeasured UI view of instance sized width by height using fonts regular and bold with driver
+    if instance's description's kind = 40:
+        reflow the UI document in (the address of result)
     return result
 
 to get a UI view of {a pointer to UI instance:instance} sized {integer:width} by {integer:height} using font {C string:path} with {a pointer to UI driver:driver}:

@@ -34,4 +34,16 @@ update the UI viewport in (the address of view)
 require condition ((measurements > 0) and (view's images changed = false)) reporting "Image completion did not refresh layout"
 close the address of view
 close the address of instance
+set deferred to an instance of fresh layout
+set measurements to 0
+set batched to an unmeasured UI view of (the address of deferred) sized 500 by 400 using fonts "regular" and "regular" with (the address of driver)
+require condition (measurements = 0) reporting "A deferred view measured before its controller was configured"
+set the text of "Body" in (the address of deferred) to "Configured content"
+update the UI viewport in (the address of batched)
+require condition ((measurements > 0) and (batched's layout revision = deferred's revision)) reporting "A deferred view did not measure its final initial state"
+set measurements to 0
+update the UI viewport in (the address of batched)
+require condition (measurements = 0) reporting "The first deferred measurement was repeated"
+close the address of batched
+close the address of deferred
 print line "Document layout tracks its own viewport, content and image freshness before painting."
