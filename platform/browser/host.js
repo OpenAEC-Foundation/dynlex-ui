@@ -31,9 +31,19 @@ export async function createUiHost(root, fontPaths, base, runtimeLoading, option
   }
   const scheduling = createUiScheduling({ error: reportError });
   const schedule = scheduling.schedule;
-  const [gpu, faces, loadedRuntime] = await Promise.all([
-    createGpu(reportError), loadFonts(fontPaths, base), runtimeLoading
+  function newCanvas() {
+    const canvas = document.createElement("canvas");
+    canvas.tabIndex = 0;
+    canvas.setAttribute("role", "application");
+    Object.assign(canvas.style, { display: "block", width: "100%", height: "100%" });
+    root.append(canvas);
+    return canvas;
+  }
+  const opening = createGpu(reportError).then(gpu => ({gpu, surface:gpu.surface(newCanvas())}));
+  const [{gpu, surface}, faces, loadedRuntime] = await Promise.all([
+    opening, loadFonts(fontPaths, base), runtimeLoading
   ]);
+  let preparedSurface = surface;
   runtime = loadedRuntime;
   memory = runtime.env.__linear_memory;
   const fonts = createFontServices(gpu, faces, resources, id);
@@ -64,14 +74,14 @@ export async function createUiHost(root, fontPaths, base, runtimeLoading, option
 
   const imports = {
     ui_open(width, height, title) {
-      const canvas = document.createElement("canvas");
-      canvas.tabIndex = 0; canvas.setAttribute("role", "application");
-      canvas.setAttribute("aria-label", cstring(title));
-      Object.assign(canvas.style, { display: "block", width: "100%", height: "100%" });
-      root.append(canvas);
-      const surface = Object.assign(gpu.surface(canvas), {
-        title: cstring(title), id: id(), closed: false, raf: null, background: null, tick: null
-      });
+      let surface;
+      if (preparedSurface !== null) {
+        surface = preparedSurface;
+        preparedSurface = null;
+      } else surface = gpu.surface(newCanvas());
+      const titleText = cstring(title);
+      surface.canvas.setAttribute("aria-label", titleText);
+      Object.assign(surface, { title:titleText, id:id(), closed:false, raf:null, background:null, tick:null });
       surfaces.set(surface.id, surface); resized(surface);
       return surface.id;
     },
@@ -187,6 +197,11 @@ export async function createUiHost(root, fontPaths, base, runtimeLoading, option
       for (const surface of [...surfaces.values()]) surface.dispose(surface.view);
       for (const request of requests.values()) request.controller.abort();
       for (const { face } of faces.values()) document.fonts.delete(face);
+      if (preparedSurface !== null) {
+        gpu.releaseSurface(preparedSurface);
+        preparedSurface.canvas.remove();
+        preparedSurface = null;
+      }
       gpu.close();
     } };
 }
