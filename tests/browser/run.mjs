@@ -291,7 +291,7 @@ try {
       const service = createFontServices({
         mask(surface, pixels, width, height) { textures++; return { texture: {}, width, height }; },
         retire() {}
-      }, new Map([['test', { family: 'sans-serif' }]]), resources, () => ++sequence);
+      }, new Map([['test', { family: 'sans-serif', weight:400 }]]), resources, () => ++sequence);
       const font = service.open({}, 'test', 15);
       const first = service.mask(font, 'Reusable text', 1, -1000, -1000, 1000, 1000);
       const moved = service.mask(font, 'Reusable text', 1, -500, -500, 500, 500);
