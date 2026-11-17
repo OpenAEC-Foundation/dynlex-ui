@@ -37,6 +37,7 @@ def main():
     output = (args.output or project / "dist" / name).resolve()
     output.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(compiler), str(source), "--emit-wasm", "-o", str(output / "application.wasm")], cwd=project, check=True)
+    subprocess.run(['node', str(project / 'tools/wasm_delivery.mjs'), str(output / 'application.wasm')], check=True)
     shutil.copy2(project / "LICENSE.md", output / "LICENSE.md")
     write_notices(project, dynlex, output / "licenses")
     platform = output / "platform"

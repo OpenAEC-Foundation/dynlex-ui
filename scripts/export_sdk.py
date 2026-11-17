@@ -17,7 +17,7 @@ def revision(directory):
 def export_sdk(project, compiler, output):
     sources = {'LICENSE.md': (project / 'LICENSE.md').read_bytes()}
     sources.update({f'licenses/{name}': data for name, data in compiler_notices(compiler).items()})
-    for directory in ['ui', 'platform', 'assets', 'testing']:
+    for directory in ['ui', 'platform', 'assets', 'testing', 'tools']:
         for path in sorted((project / directory).rglob('*')):
             if path.is_file():
                 sources[path.relative_to(project).as_posix()] = path.read_bytes()
