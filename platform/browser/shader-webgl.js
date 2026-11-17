@@ -1,4 +1,4 @@
-import { createWebGlProgram } from './graphics-backend.js';
+import { createWebGlProgramAsync } from './graphics-backend.js';
 import { createShaderGeometry } from './shader-streams.js';
 import { createShaderUniforms } from './shader-uniforms.js';
 import {createShaderAssets} from './shader-assets.js';
@@ -33,7 +33,7 @@ function validateAttributes(gl,program,layouts) {
 
 const emptyFragment='#version 300 es\nprecision highp float;void main(){}';
 
-export function createWebGlShader(gl,descriptor,target) {
+export async function createWebGlShader(gl,descriptor,target) {
   const assets=createShaderAssets(descriptor.assets,webGlShaderAssetDriver(gl)),passes=[];
   const provoking=gl.getExtension('WEBGL_provoking_vertex');
   let output=null,closed=false;
@@ -69,7 +69,7 @@ export function createWebGlShader(gl,descriptor,target) {
         topology:{'triangle-list':gl.TRIANGLES,'line-list':gl.LINES,'point-list':gl.POINTS}[description.topology]};
       passes.push(pass);
       if(pass.topology===undefined) throw new Error('Unsupported shader list topology');
-      pass.program=createWebGlProgram(gl,description.vertex===null?fullscreen:description.vertex,
+      pass.program=await createWebGlProgramAsync(gl,description.vertex===null?fullscreen:description.vertex,
         description.fragment===null?emptyFragment:description.fragment);
       pass.array=gl.createVertexArray();
       if(!pass.array) throw new Error('WebGL could not allocate a shader vertex array');
