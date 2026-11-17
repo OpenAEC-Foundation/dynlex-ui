@@ -593,3 +593,24 @@ Measurements belong to a loaded font handle, remain in logical pixels across
 pixel-scale changes, and are released with the font. The FIFO cache bounds both
 entry count and retained text; repeatedly drawing unchanged captions does not
 measure them again or mutate cache insertion order.
+
+For a controller that sets initial values before showing a document, construct
+`an unmeasured UI view of instance sized width by height using fonts regular and bold with driver`.
+It opens the surface and creates the layout tree without measuring the document.
+Configure the controller, then run the view: the first update measures the final
+initial content once. An ordinary `a UI view of ...` still provides immediate
+layout. `update the UI viewport in view` explicitly measures a deferred view when
+geometry is needed before running it. Layout records its own content revision,
+viewport dimensions and image freshness, independently of the last paint.
+
+Inactive tab and selected-view bodies are measured when selected. Wrapped text
+uses whole-line and word boundaries, splitting oversized words at UTF-8 boundaries.
+Clipped rounded surfaces and outlines skip tessellation without changing paint
+state. These paths are shared by native and browser drivers.
+
+Browser application manifests identify fonts by their logical path and a delivery
+source, for example `{"path":"regular.ttf","source":"regular.woff2"}`. The native
+path stays unchanged. Required fonts load concurrently with streaming application
+compilation and preparation of the first GPU surface. `tools/wasm_delivery.mjs`
+separates optional Wasm debug names into a `.wasm.names` sidecar while preserving
+executable code. No compiler is needed to start a built UI application.
