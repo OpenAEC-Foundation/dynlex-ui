@@ -1,0 +1,22 @@
+import ../../../ui/interaction.dl
+import ../../../ui/layout.dl
+import ../../../ui/document_layout.dl
+
+document focus before layout:
+    view group "Mode" using no UI appearance:
+        paragraph "Closed" using no UI appearance
+        text field "Query" containing "Find" using no UI appearance
+
+set instance to an instance of focus before layout
+set view to a new UI view
+set view's instance to the address of instance
+set view's layout to a document UI layout for focus before layout inside focus before layout
+set the value of "Mode" in (the address of instance) to 1
+set target to the UI layout labeled "Query" in (view's layout)
+activate UI layout target in (the address of view)
+require condition ((view's focused = target) and (view's text focus = target's node)) reporting "Unmeasured focus lost the selected field"
+require condition ((target's lines = (0 as a pointer to UI text line)) and (target's typeface's driver = (0 as a pointer to UI driver))) reporting "Focus measured a document without a renderer"
+clear UI selection in (the address of view)
+release UI layout view's layout
+close the address of instance
+print line "Focus resolves selected control identity without requiring layout or a renderer."

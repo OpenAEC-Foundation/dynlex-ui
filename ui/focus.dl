@@ -3,7 +3,6 @@ import view.dl
 import ribbon_scroll.dl
 import text.dl
 import layout_visibility.dl
-import document_layout.dl
 
 to append UI focus {a pointer to UI layout:layout} in {a pointer to UI view:view}:
     if (the UI element (layout's node) is enabled in (view's instance)) = false:
@@ -115,7 +114,6 @@ to reconcile UI editing focus in {a pointer to UI view:view}:
         synchronize editable UI text source in view
 
 to refresh UI focus in {a pointer to UI view:view}:
-    refresh UI document selections in view
     # Ordinals express keyboard navigation, but inserting or removing another
     # control must preserve the identity of the current focus target.
     set retained to @intrinsic("construct", a pointer to UI layout)

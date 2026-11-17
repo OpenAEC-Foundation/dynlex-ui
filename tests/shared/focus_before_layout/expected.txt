@@ -1,0 +1,1 @@
+Focus resolves selected control identity without requiring layout or a renderer.
