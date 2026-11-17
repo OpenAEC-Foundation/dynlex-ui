@@ -143,6 +143,7 @@ export function createShaderGeometry(description, transfer) {
     draws(data) {
       active();
       if (!(data instanceof Uint32Array) || data.length%7!==0) throw new Error('Shader draws require seven unsigned words each');
+      if (data.length===words.length && data.every((value,index)=>value===words[index])) return;
       words=data.slice(); dirty=true;
     },
     bufferBytes(slot) { active(); return stream(slot).byteLength; },

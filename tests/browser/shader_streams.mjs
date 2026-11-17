@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createWebGlPrimitiveDraws} from '../../platform/browser/shader-provoking-webgl.js';
 import { createShaderStream, shaderVertexLayouts, shaderBufferRecords, packShaderDraws,
   validateShaderDraws, createShaderGeometry } from '../../platform/browser/shader-streams.js';
 
@@ -78,6 +79,19 @@ geometry.indexBuffer(indices);
 geometry.draws(words);
 const cached=geometry.commands;
 assert.equal(geometry.commands,cached);
+const primitiveWrites=[];
+const primitives=createWebGlPrimitiveDraws('triangle-list',{
+  allocate:(size,usage)=>({size,usage}),write:(buffer,bytes)=>primitiveWrites.push(bytes.byteLength),retire:()=>{}
+});
+const primitivePlan=primitives.prepare(geometry);
+for(let frame=0;frame<20;frame++) {
+  geometry.vertexBuffer(1,new Float32Array(18).fill(frame));
+  geometry.draws(words.slice());
+  assert.equal(geometry.commands,cached,'Identical draw records must retain their validated commands');
+  assert.equal(primitives.prepare(geometry),primitivePlan,'Animation must retain its WebGL primitive index plan');
+}
+assert.equal(primitiveWrites.length,1,'Animating instance data re-uploaded immutable WebGL indices');
+primitives.close();
 geometry.vertexBuffer(0,new Float32Array(16).fill(0.25));
 assert.equal(geometry.commands,cached,'Changing buffer contents without changing their range must preserve draw validation');
 assert.equal(geometry.bufferRecords(0),4);
@@ -85,6 +99,7 @@ assert.equal(geometry.indexCount,5);
 indices[2]=999;
 assert.equal(geometry.commands,cached,'Uploading indices must snapshot the caller data before it is freed or reused');
 geometry.vertexBuffer(1,new Float32Array(12));
+geometry.draws(words.slice());
 assert.throws(()=>geometry.commands,/instance/);
 geometry.vertexBuffer(1,new Float32Array(18));
 assert.equal(geometry.commands.length,1);
