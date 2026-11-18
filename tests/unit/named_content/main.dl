@@ -2,7 +2,7 @@ import ../../../testing/driver.dl
 
 document content test:
     paragraph "Output" containing "" using no UI appearance
-    editor "Code" containing "print 42" using no UI appearance
+    text surface "Code" containing "print 42" using no UI appearance
     link "Reference" to "/docs" using no UI appearance
     region "First" using no UI appearance:
         paragraph "Repeated" containing "first" using no UI appearance

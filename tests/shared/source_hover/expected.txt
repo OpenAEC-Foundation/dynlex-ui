@@ -1,1 +1,0 @@
-Studio and embedded editors share delayed hover, type/value presentation, Unicode copying, read-only inspection and stale-result isolation.

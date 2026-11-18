@@ -3,7 +3,7 @@ import components.dl
 import lib/utf8.dl
 
 to color UI text {string:source} in {UI reference:node} in {a pointer to UI instance:instance}:
-    require condition (node's kind = 44) reporting "Text colors require an editor"
+    require condition (the UI element node is multiline) reporting "Text colors require multiline text"
     set value to the UI value for node in instance
     release UI text colors value
     set value's colored text to source

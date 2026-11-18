@@ -7,7 +7,7 @@ appearance source appearance:
     height is 140
 
 document composition test:
-    editor "Source" containing "Aé🙂B\nC" using source appearance
+    text surface "Source" containing "Aé🙂B\nC" using source appearance
 
 set instance to an instance of composition test
 set view to a UI view of (the address of instance) sized 300 by 240 using font "regular" with the test UI driver

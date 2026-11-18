@@ -10,8 +10,8 @@ document controls:
     (button "Action") wearing control appearance
     paragraph "Rich" using control appearance:
         link "Inline" to "example" using no UI appearance
-    editor "Plain" containing "plain" using control appearance
-    editor "Code" containing "code" using control appearance
+    text surface "Plain" containing "plain" using control appearance
+    text surface "Code" containing "code" using control appearance
 
 window desktop controls:
     group at 0 0 sized 600 by 520:

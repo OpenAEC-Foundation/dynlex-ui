@@ -7,7 +7,7 @@ appearance editor appearance:
     lines do not wrap
 
 document marks test:
-    editor "Source" containing "a😀b\nend" using editor appearance
+    text surface "Source" containing "a😀b\nend" using editor appearance
 
 set painted to 0
 set lowest to 0.0

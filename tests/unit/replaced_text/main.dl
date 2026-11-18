@@ -1,7 +1,7 @@
 import ../../../testing/driver.dl
 
 document replacement test:
-    editor "Source" containing "abcd" using no UI appearance
+    text surface "Source" containing "abcd" using no UI appearance
 
 set instance to an instance of replacement test
 set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver

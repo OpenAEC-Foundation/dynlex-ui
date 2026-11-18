@@ -24,7 +24,7 @@ close the address of view
 close the address of instance
 
 document multiline focus test:
-    editor "Program" containing "x" using no UI appearance
+    text surface "Program" containing "x" using no UI appearance
     link "Finish" to "/next" using no UI appearance
 set instance to an instance of multiline focus test
 set view to a UI view of (the address of instance) sized 500 by 300 using font "regular" with the test UI driver

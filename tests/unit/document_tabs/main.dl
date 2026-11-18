@@ -9,9 +9,9 @@ appearance group appearance:
 document tabs test:
     tab group "Examples" using group appearance:
         tab "First":
-            editor "First source" containing "First content" using no UI appearance
+            text surface "First source" containing "First content" using no UI appearance
         tab "Second":
-            editor "Second source" containing "Second content" using no UI appearance
+            text surface "Second source" containing "Second content" using no UI appearance
         tab "Third":
             paragraph "Third content" using no UI appearance
 

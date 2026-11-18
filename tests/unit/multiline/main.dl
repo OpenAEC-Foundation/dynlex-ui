@@ -7,7 +7,7 @@ appearance editor appearance:
     lines do not wrap
 
 document editor test:
-    editor "Program" containing "Aé🙂B\nC" using editor appearance
+    text surface "Program" containing "Aé🙂B\nC" using editor appearance
 
 set instance to an instance of editor test
 set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver

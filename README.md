@@ -109,67 +109,7 @@ composition works in single-line fields, plain multiline text areas and source e
 cancellation and undo; read-only content does not activate the text input bridge.
 Documents also support responsive fields, switches, choice lists, rich paragraphs,
 source-anchored selection, multiline editing and undo/redo.
-`ui/source_workspace.dl` supplies reusable source documents,
-project-aware language analysis, semantic colors and mapped diagnostics for both
-drivers; applications supply project metadata and a language transport.
-`ui/source_tools.dl` adds the shared completion popup: Ctrl+Space requests it,
-arrows or the pointer select a suggestion, Enter/Tab accepts it as one undoable
-edit, and Escape dismisses it. Completion commands continue through a pattern's
-next argument. All requests use the document's prefix and Unicode coordinates;
-edits to protected context are rejected together with their other edits.
-Hover inspection uses the same delayed language query and selectable text
-popover in standalone and embedded editors, including read-only imports. Type
-and value text can be selected and copied without including the page behind it.
-Enable tools with `enable UI source tools for workspace in view`, and call
-`update UI source tools in workspace` before scheduling language work each frame.
-Changing the token theme refreshes every editor from its existing analysis; an
-unchanged theme preserves cached colors. `read only editor` and `read only text
-field` retain selection, copying and navigation while excluding editing and IME.
-The same policy can change at runtime with `set UI control node read only true in
-instance`; programmatic `set the text of` updates still work.
-Dynamic read-only changes survive definition visits and returns, including policy
-changes made while viewing an imported source. Imported text stays protected.
-Semantic themes share type and modifier selectors, including combinations and
-wildcards. The default nested-call colors come from the compiler's canonical
-palette; `python3 scripts/generate_source_colors.py --dynlex <compiler-checkout>` updates
-their static declarations. Each document retains its own modifier legend and
-invalidates colors when that legend changes.
-Suggestions follow typed characters and committed IME words. Paste and newlines
-keep the code surface clear, and Ctrl+Space remains available explicitly. Popups
-inherit their editor's font and colors. Multiline editors keep them inside the
-code area; compact fields place them in the available space beside the field.
-The same workspace can contain plain editors and editors with hidden vocabulary
-imports. No application-specific completion handlers are needed. F12 follows definitions
-into retained read-only imported sources; Alt+Left returns to the preceding file
-and selection. `source pane "Plan" containing text using appearance` composes the
-same editor with scoped Back/Main file, Outline, Instances, Fixes and Find controls
-and a filename. Find/Replace uses pane-local Unicode matching, literal multiline
-queries, independent highlight layers and atomic undoable replacements. Its controls
-and Ctrl/Cmd+F/H, F3, Enter and Escape commands are shared DynLex UI logic.
-See [scoped keyboard commands](docs/commands.md) for application bindings and
-platform default handling. F9 opens the nested document outline; F8 chooses the inferred instance
-at the caret. Both inspection tools work on read-only sources and preserve
-editing focus. Instance selection refreshes colors and hover values after the
-language service acknowledges it. F7 opens quick fixes for the selection. Fixes
-refresh diagnostic context when the request is dispatched, apply through the
-shared Unicode edit planner, and make one undoable change per source. Imported
-and application read-only text remain protected. Applications read
-`the UI main source of editor in workspace at seconds seconds` for Run or Save,
-so opening a definition never changes the program they execute. Program loads
-use `load UI main source of editor in view from text at seconds seconds`; this
-starts fresh editing and navigation state without taking another control's focus.
-Host capabilities use `ui/services.dl`. Applications receive a `UI service provider`
-separately from their renderer; immediate calls, asynchronous requests and
-cancellation carry its context and the target view. The browser adapter supplies
-`the browser UI service provider`, with replies delivered through the shared
-input queue.
-Window dimensions, font sizes and shader operation arguments share checked
-32-bit driver conversion. Wider public integers retain their values when they
-fit; out-of-range values fail before conversion.
-Grapheme-cluster navigation, bidirectional editing and a
-screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
-font fallback for missing glyphs. Browser font masks are clipped before rasterization,
-so long fields do not allocate textures as wide as their entire contents.
+The code editor, source panes and language-service integration live in [dynlex-ide](https://github.com/OpenAEC-Foundation/dynlex-ide).
 
 ## Tests
 
@@ -180,7 +120,7 @@ opening platform windows. The SDK includes this test adapter.
 
 ```sh
 python3 scripts/test.py --dynlex ../dynlex
-python3 scripts/test.py --dynlex /absolute/path/to/dynlex --case shared/source_hover
+python3 scripts/test.py --dynlex /absolute/path/to/dynlex --case shared/text_popovers
 python3 scripts/test.py --dynlex ../dynlex --native --browser
 ```
 

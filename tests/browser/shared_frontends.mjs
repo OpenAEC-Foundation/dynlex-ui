@@ -6,12 +6,13 @@ import os from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 
-const core=path.resolve(process.argv[2]),root=fileURLToPath(new URL('../../',import.meta.url));
+const core=path.resolve(process.argv[2]),root=process.argv[4] ? path.resolve(process.argv[4]) : fileURLToPath(new URL('../../',import.meta.url));
 const fixture=process.argv[3];
 assert(fixture,'Pass a shared fixture name after the compiler checkout');
-const entry=`tests/shared/${fixture}/main.dl`;
-const expected=await fs.readFile(path.join(root,`tests/shared/${fixture}/expected.txt`),'utf8');
-const directory=path.join(root,'tests/shared',fixture),files=await fs.readdir(directory);
+const fixtureRoot=process.argv[5] || '.';
+const entry=path.posix.join(fixtureRoot,`tests/shared/${fixture}/main.dl`);
+const expected=await fs.readFile(path.join(root,fixtureRoot,`tests/shared/${fixture}/expected.txt`),'utf8');
+const directory=path.join(root,fixtureRoot,'tests/shared',fixture),files=await fs.readdir(directory);
 const assets=files.includes('assets.json')?await JSON.parse(await fs.readFile(path.join(directory,'assets.json'),'utf8')):[];
 const assetBytes=await Promise.all(assets.map(async name=>[name,await fs.readFile(path.join(root,name))]));
 const {buildRuntimeImports,createRuntimeFilesystem,inspectRuntimeWasmLayout}=await import(

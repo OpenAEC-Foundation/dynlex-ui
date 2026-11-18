@@ -5,7 +5,7 @@ import clipping.dl
 import document_scrolling.dl
 import paragraph_rendering.dl
 import document_tabs_rendering.dl
-import editor_rendering.dl
+import text_span_rendering.dl
 import composition_rendering.dl
 import control_presentation.dl
 import document_forms.dl

@@ -44,7 +44,7 @@ function [observe key dispatch] {a pointer to UI view:view}:
 
 document commands using column appearance:
     region "Left" using column appearance:
-        editor "Source" containing "abc" using code appearance
+        text surface "Source" containing "abc" using code appearance
         button "Run"
     text field "Elsewhere" containing "other" using no UI appearance
 

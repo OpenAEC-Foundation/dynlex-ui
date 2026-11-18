@@ -1,6 +1,5 @@
 import ../../../testing/driver.dl
 import ../../../ui/key_bindings.dl
-import ../../../ui/source_workspace.dl
 
 appearance stack appearance:
     gap is 12
@@ -14,7 +13,7 @@ document conditional views using stack appearance:
     view group "Details" using stack appearance:
         region "Work" using stack appearance:
             button "Run"
-            editor "Draft" containing "kept draft" using editor appearance
+            text surface "Draft" containing "kept draft" using editor appearance
             paragraph "Retained explanation" using no UI appearance
             choice field "Mode" choosing "One" using no UI appearance:
                 choice "One"
@@ -61,7 +60,6 @@ require condition ((the UI text hit at caption point in (the address of view)) =
 require condition ((the nearest UI text to point in (the address of view)) = (0 as a pointer to UI text run)) reporting "A selection drag could enter hidden text"
 require condition ((the selected UI child of group in window) = (0 as UI reference)) reporting "An optional view group cannot select no view"
 require condition ((the active UI editor within group in window) = (0 as UI reference)) reporting "A hidden view still exposes its editor"
-require condition ((UI source element source is active within conditional views in window) = false) reporting "A hidden source was still active for language analysis"
 set hit to the UI hit at position in (the address of view)
 require condition (hit != run) reporting "A newly hidden view retained its previous pointer target before repainting"
 ignore deliver UI input of kind 3 key 257 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
@@ -82,7 +80,6 @@ set the value of "Details" in window to 0
 ignore update UI view (the address of view)
 ignore deliver UI input of kind 3 key 257 at 0.0 0.0 with modifiers 2 containing "" in (the address of view)
 require condition (count = 1) reporting "Showing a view did not restore its bound action"
-require condition (UI source element source is active within conditional views in window) reporting "Showing a source did not restore its language-analysis scope"
 set choice to the UI layout labeled "Mode" in (view's layout)
 activate UI layout choice in (the address of view)
 require condition (view's popup = choice) reporting "The visible conditional choice field did not open"

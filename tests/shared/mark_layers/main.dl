@@ -6,7 +6,7 @@ appearance code appearance:
     height is 80
 
 document layered editor:
-    editor "Source" containing "abc" using code appearance
+    text surface "Source" containing "abc" using code appearance
 
 set {paint order} to the string form of ""
 set {last ink} to 0

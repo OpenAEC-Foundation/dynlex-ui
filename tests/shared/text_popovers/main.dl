@@ -11,7 +11,7 @@ appearance hint appearance:
     text is UI ink 25 30 35
 
 document example:
-    editor "Source" containing "kept" using no UI appearance
+    text surface "Source" containing "kept" using no UI appearance
     (button "Behind the popover") wearing background appearance
 
 set activations to 0

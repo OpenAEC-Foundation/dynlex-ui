@@ -23,8 +23,6 @@ def main():
     parser.add_argument('--case', action='append', choices=list(cases),
                         help='Run only this shared fixture; repeat to select several (default: all).')
     args = parser.parse_args()
-    subprocess.run([sys.executable, 'scripts/generate_source_colors.py',
-                    '--dynlex', str(args.dynlex.resolve()), '--check'], cwd=project, check=True)
     subprocess.run([sys.executable, 'tests/packaging/runtime_modules.py'], cwd=project, check=True)
     subprocess.run([sys.executable, 'tests/packaging/application_notices.py'], cwd=project, check=True)
     compiler = args.dynlex.resolve() / 'build/dynlex'
@@ -67,12 +65,11 @@ def main():
         subprocess.run(['node', 'tests/browser/service_provider.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/driver_integer_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/source_features.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        subprocess.run(['node', 'tests/browser/source_connection.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_passes.mjs'], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_operation_widths.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/shader_value_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        for fixture in ['palettes', 'value_index', 'source_annotations', 'source_modifiers', 'canvas_visibility', 'shape_contours', 'optional_views', 'paint_updates', 'shader_api', 'shader_resources', 'shader_attachments', 'shader_graph', 'option_models', 'scene_tone', 'shader_pipelines', 'scene_draws', 'scene_orbit', 'scene_motion', 'scene_attachments', 'scene_lighting', 'scene_sampling']:
+        for fixture in ['palettes', 'value_index', 'canvas_visibility', 'shape_contours', 'optional_views', 'paint_updates', 'shader_api', 'shader_resources', 'shader_attachments', 'shader_graph', 'option_models', 'scene_tone', 'shader_pipelines', 'scene_draws', 'scene_orbit', 'scene_motion', 'scene_attachments', 'scene_lighting', 'scene_sampling']:
             subprocess.run(['node', 'tests/browser/shared_frontends.mjs', str(args.dynlex.resolve()), fixture],
                            cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_mesh_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
@@ -105,7 +102,6 @@ def main():
         applications = [([name], f'dist/{name}') for name in ['ribbon', 'snake', 'text']]
         applications.append((['--entry', 'tests/browser/editor.dl', '--output', '.cache/editor'], '.cache/editor'))
         applications.append((['--entry', 'tests/browser/commands.dl', '--output', '.cache/commands'], '.cache/commands'))
-        applications.append((['--entry', 'tests/browser/search.dl', '--output', '.cache/search'], '.cache/search'))
         applications.append((['--entry', 'tests/browser/forms.dl', '--output', '.cache/forms'], '.cache/forms'))
         applications.append((['--entry', 'tests/browser/pictures.dl', '--output', '.cache/browser/pictures'], '.cache/browser/pictures'))
         for arguments, directory in applications:

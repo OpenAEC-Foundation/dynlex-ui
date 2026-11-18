@@ -19,7 +19,7 @@ appearance source appearance:
     border is UI ink 170 180 190
 
 document keyboard laboratory using page appearance:
-    editor "Source" containing "alpha" using source appearance
+    text surface "Source" containing "alpha" using source appearance
     button "Run"
     paragraph "Status" containing "Ready" using no UI appearance
     code:

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
+import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 import http from 'node:http';
 import { spawn, execFileSync } from 'node:child_process';
@@ -302,9 +303,9 @@ try {
       if (resources.size !== 0) throw new Error('Closing the font retained masks');
     })()`);
 
-  } else if (example === 'search') {
-    const {verifySearch} = await import('./search.mjs');
-    await verifySearch({click,key,evaluate,command,waitFor,settled,screenshot});
+  } else if (process.argv[5]) {
+    const {verify} = await import(pathToFileURL(path.resolve(process.argv[5])));
+    await verify({click,key,evaluate,command,waitFor,settled,screenshot});
   } else if (example === 'commands') {
     const {verifyCommands}=await import('./commands.mjs');
     await verifyCommands({click,key,evaluate,command,waitFor,settled,screenshot});

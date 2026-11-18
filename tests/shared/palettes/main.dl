@@ -34,7 +34,7 @@ document palette preview using responsive paper appearance:
     paragraph "Introduction" using no UI appearance:
         words "See "
         link "the colors" to "/colors" using emphasis appearance
-    editor "Draft" containing "starter" using editor appearance
+    text surface "Draft" containing "starter" using editor appearance
 
 to require paint {UI paint:actual} equals {UI paint:expected}:
     require condition (((actual's red = expected's red) and (actual's green = expected's green)) and (actual's blue = expected's blue)) reporting "An appearance resolved the wrong palette color"

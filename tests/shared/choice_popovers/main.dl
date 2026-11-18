@@ -2,7 +2,7 @@ import ../../../testing/driver.dl
 import ../../../ui/choice_popovers.dl
 
 document example:
-    editor "Source" containing "hello" using no UI appearance
+    text surface "Source" containing "hello" using no UI appearance
 
 to get [read test choices] {a pointer:context} [in] {a pointer to UI view:view}:
     set popup to context as a pointer to UI choice popover

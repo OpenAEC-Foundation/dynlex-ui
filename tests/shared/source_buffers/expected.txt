@@ -1,1 +1,0 @@
-Studio and embedded source views preserve per-file history, selection, scrolling and main-project actions.

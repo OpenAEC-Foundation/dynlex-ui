@@ -4,7 +4,7 @@ appearance source appearance:
     height is 100
 
 document example:
-    read only editor "Library" containing "Aé🙂B\nC" using source appearance
+    read only text surface "Library" containing "Aé🙂B\nC" using source appearance
     link "Next" to "" using no UI appearance
 
 set instance to an instance of example

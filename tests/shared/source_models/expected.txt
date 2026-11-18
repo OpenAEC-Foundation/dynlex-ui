@@ -1,1 +1,0 @@
-Language models keep the main file open, retain independent versions and synchronize root edits before imported queries.

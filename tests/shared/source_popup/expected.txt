@@ -1,1 +1,0 @@
-Source popups inherit their editor surface, stay within it and require visible rows to insert.

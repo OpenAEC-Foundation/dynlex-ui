@@ -1,1 +1,0 @@
-Closing refreshes receive replies without requeuing closed source projects.

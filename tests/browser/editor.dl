@@ -15,8 +15,8 @@ appearance source appearance:
 
 document editing workspace using sheet appearance:
     paragraph "Read only" containing "Read-only canvas text" using no UI appearance
-    editor "Source" containing "alpha selected omega\nnext line" using source appearance
-    read only editor "Library" containing "Aé🙂B\nC" using source appearance
+    text surface "Source" containing "alpha selected omega\nnext line" using source appearance
+    read only text surface "Library" containing "Aé🙂B\nC" using source appearance
     text area "Query" containing "plain query\nsecond line" using source appearance
 
 to close editing workspace {a pointer to UI view:view}:

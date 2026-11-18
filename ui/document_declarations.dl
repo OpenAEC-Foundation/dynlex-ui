@@ -38,8 +38,9 @@ section paragraph {C string:name} using {UI appearance reference:appearance}:
         (a UI container of kind 42 containing (the body's children) named name) wearing appearance
 
 link {C string:text} to {C string:destination} using {UI appearance reference:appearance} means: ((a UI text component 43 labeled text styled "") leading to destination) wearing appearance
-editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 44 labeled name styled "") with initial text initial) wearing appearance
-read only editor {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (editor name containing initial using appearance) with read only text
+a UI text surface {C string:name} styled {C string:variant} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 44 labeled name styled variant) with initial text initial) wearing appearance
+text surface {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: a UI text surface name styled "" containing initial using appearance
+read only text surface {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text surface name containing initial using appearance) with read only text
 text area {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: ((a UI text component 50 labeled name styled "") with initial text initial) wearing appearance
 read only text area {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text area name containing initial using appearance) with read only text
 text field {C string:name} containing {C string:initial} using {UI appearance reference:appearance} means: (text field name containing initial) wearing appearance

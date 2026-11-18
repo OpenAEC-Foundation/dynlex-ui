@@ -1,1 +1,0 @@
-Shared source colors and diagnostics map hidden prefixes and Unicode without touching execution marks.

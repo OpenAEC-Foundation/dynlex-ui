@@ -1,7 +1,7 @@
 import ../../../testing/driver.dl
 
 document text state example:
-    editor "Source" containing "abc" using no UI appearance
+    text surface "Source" containing "abc" using no UI appearance
     paragraph "Caption" containing "Keep this caption" using no UI appearance
 
 set instance to an instance of text state example

@@ -1,1 +1,0 @@
-Source themes refresh ordinary and wrapped editors without reanalysis or unchanged redraws.

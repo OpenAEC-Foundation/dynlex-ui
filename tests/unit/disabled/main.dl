@@ -8,7 +8,7 @@ appearance control appearance:
 document disabled test:
     link "Run" to "#" using control appearance
     link "Other" to "#" using control appearance
-    editor "Source" containing "original" using control appearance
+    text surface "Source" containing "original" using control appearance
     code:
         when the "Run" link is followed:
             set counter to this window's state as a pointer to an integer

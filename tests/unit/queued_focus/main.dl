@@ -13,7 +13,7 @@ window queued tabs:
 
 document changing controls:
     button "Earlier"
-    editor "Source" containing "abc" using no UI appearance
+    text surface "Source" containing "abc" using no UI appearance
     button "Later"
 set state to 0
 set instance to an instance of queued tabs with state (the address of state)

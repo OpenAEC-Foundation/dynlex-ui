@@ -1,1 +1,0 @@
-Diagnostics follow document URIs within their project and retain their analysis snapshots.

@@ -2,11 +2,8 @@
 import declarations.dl
 import lib/utf8.dl
 
-to get [the UI element] {UI reference:node} [is a source editor]:
-    return node's kind = 44
-
 to get [the UI element] {UI reference:node} [is multiline]:
-    return (the UI element node is a source editor) or (node's kind = 50)
+    return (node's kind = 44) or (node's kind = 50)
 
 to get [the UI element] {UI reference:node} [is a text control]:
     return (node's kind = 39) or (the UI element node is multiline)

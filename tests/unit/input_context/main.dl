@@ -6,7 +6,7 @@ appearance source appearance:
     height is 100
 
 document input test:
-    editor "Source" containing "Aé🙂B\nC" using source appearance
+    text surface "Source" containing "Aé🙂B\nC" using source appearance
     link "Leave editor" to "" using no UI appearance
 
 set instance to an instance of input test

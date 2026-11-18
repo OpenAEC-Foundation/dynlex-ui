@@ -4,9 +4,9 @@ import lib/text_scan.dl
 document view test:
     view group "Current view" using no UI appearance:
         region "First view" using no UI appearance:
-            editor "First source" containing "First text" using no UI appearance
+            text surface "First source" containing "First text" using no UI appearance
         region "Second view" using no UI appearance:
-            editor "Second source" containing "Second text" using no UI appearance
+            text surface "Second source" containing "Second text" using no UI appearance
 
 set instance to an instance of view test
 set view to a UI view of (the address of instance) sized 300 by 200 using font "regular" with the test UI driver

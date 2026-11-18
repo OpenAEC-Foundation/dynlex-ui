@@ -1,1 +1,0 @@
-Application read-only policy survives source navigation while imported documents remain protected.

@@ -8,7 +8,7 @@ appearance editor appearance:
     lines do not wrap
 
 document colors test:
-    editor "Source" containing "a😀b\nend" using editor appearance
+    text surface "Source" containing "a😀b\nend" using editor appearance
 
 set recorded to the string form of ""
 function record colored text in {a pointer to UI view:view} using {a pointer:font} containing {C string:text} counting {integer:count} at {floating-point number:x} {floating-point number:y} in {a pointer to UI paint:ink}:
