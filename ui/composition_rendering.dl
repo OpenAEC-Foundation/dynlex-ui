@@ -1,4 +1,4 @@
-import editor_rendering.dl
+import text_span_rendering.dl
 
 # Composition replaces a source range only in the presentation. Prefix and
 # suffix runs keep their original source offsets and semantic colors.
