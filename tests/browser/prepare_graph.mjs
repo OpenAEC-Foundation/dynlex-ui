@@ -13,9 +13,10 @@ await fs.mkdir(path.join(output,'__tests__'),{recursive:true});
 execFileSync(process.execPath,['tests/browser/prepare_resources.mjs',core,output],{cwd:root,stdio:'inherit',timeout:120000});
 await prepareScene(core,output);
 await fs.copyFile(path.join(output,'scene-buffers.json'),path.join(output,'__tests__/scene-buffers.json'));
-execFileSync(process.execPath,[path.join(core,'tests/web/shader_uniforms.mjs'),path.join(core,'build-web'),
+const shippedCompiler=path.join(core,'src/web/ide/public/compiler');
+execFileSync(process.execPath,[path.join(core,'tests/web/shader_uniforms.mjs'),shippedCompiler,
   path.join(output,'__tests__/shader-uniforms.json')],{cwd:root,stdio:'inherit',timeout:60000});
-execFileSync(process.execPath,[path.join(core,'tests/web/shader_derivatives.mjs'),path.join(core,'build-web'),
+execFileSync(process.execPath,[path.join(core,'tests/web/shader_derivatives.mjs'),shippedCompiler,
   path.join(output,'__tests__/shader-derivatives.json')],{cwd:root,stdio:'inherit',timeout:60000});
 for(const name of ['shader_graph_rendering.mjs','shader_fixtures.mjs','rendering.mjs','scene_rendering.mjs','pipeline_rendering.mjs','lighting_rendering.mjs','sampling_rendering.mjs','derivative_rendering.mjs'])
   await fs.copyFile(path.join(root,'tests/browser',name),path.join(output,'__tests__',name));

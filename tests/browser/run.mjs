@@ -18,7 +18,7 @@ assert(process.argv[4], 'Pass the compiler checkout after the graphics mode');
 const compiler=path.resolve(process.argv[4]);
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'dynlex-ui-chrome-'));
 try {
-  execFileSync(process.execPath,[path.join(compiler,'tests/web/shader_uniforms.mjs'),path.join(compiler,'build-web'),path.join(profile,'shader-uniforms.json')],{timeout:60000});
+  execFileSync(process.execPath,[path.join(compiler,'tests/web/shader_uniforms.mjs'),path.join(compiler,'src/web/ide/public/compiler'),path.join(profile,'shader-uniforms.json')],{timeout:60000});
   await prepareScene(compiler,profile);
 } catch(error) {await fs.rm(profile,{recursive:true,force:true});throw error;}
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
