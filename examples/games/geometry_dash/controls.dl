@@ -1,0 +1,43 @@
+import interface.dl
+import ../input.dl
+
+to read route input from {a pointer to UI view:view}:
+    set session to the route in (view's instance)
+    if view's input kind = 9:
+        if view's key press is one of [the UI P key, the UI escape key, the UI R key, the UI Q key, the UI up arrow key, the UI space key]:
+            set view's key press to -1
+        return nothing
+    if view's input kind = 3:
+        set key to view's key press
+        if (key = the UI P key) or (key = the UI escape key):
+            if session's phase != 0:
+                set session's paused to not session's paused
+        if key = the UI R key:
+            restart session
+        if key = the UI Q key:
+            set view's closed to true
+        if (key = the UI up arrow key) or (key = the UI space key):
+            if not session's paused:
+                begin session
+                if session's phase = 1:
+                    set session's jump requested to true
+        if view's key press is one of [the UI P key, the UI escape key, the UI R key, the UI Q key, the UI up arrow key, the UI space key]:
+            set view's damaged to true
+            set view's key press to -1
+    if (view's input kind = 2) and view's down:
+        set cursor to the UI cursor in view
+        if (cursor's y > 100.0) and (cursor's y < 710.0):
+            if (session's phase = 1) and not session's paused:
+                set session's jump requested to true
+
+to advance the route frame in {a pointer to UI view:view}:
+    set session to the route in (view's instance)
+    set held to (key (the UI up arrow key) is held in view) or (key (the UI space key) is held in view)
+    set cursor to the UI cursor in view
+    if (cursor's y > 100.0) and (cursor's y < 710.0):
+        set held to held or view's down
+    set session's held to held or session's jump requested
+    update session after (view's frame seconds) seconds
+    refresh the route in (view's instance)
+    if (session's phase != 0) and ((session's phase != 3) and not session's paused):
+        animate UI view view

@@ -1,0 +1,5 @@
+import lib/shader.dl
+
+# Passthrough vertex shader — copies input position to gl_Position
+
+set the output position with x the vertex x, y the vertex y, z the vertex z and w the vertex w

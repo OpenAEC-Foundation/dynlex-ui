@@ -77,6 +77,7 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
     return result
 
 to select UI text at {UI point:point} in {a pointer to UI text run:run} extending {boolean:extend} in {a pointer to UI view:view}:
+    set extendSelection to extend
     if view's selection's caret source != run's source:
         set view's input context's active to false
         set view's selection's composing to false
@@ -85,11 +86,11 @@ to select UI text at {UI point:point} in {a pointer to UI text run:run} extendin
     set caret to run's start + (the UI text byte at (local's x - run's origin's x) in run)
     if run's source's element != @intrinsic("construct", UI reference):
         if view's selection's anchor source != run's source:
-            set extend to false
+            set extendSelection to false
     else if view's selection's anchor source != @intrinsic("construct", a pointer to UI text source):
         if view's selection's anchor source's element != @intrinsic("construct", UI reference):
-            set extend to false
-    if extend = false:
+            set extendSelection to false
+    if extendSelection = false:
         set view's selection's anchor source to run's source
         set view's selection's anchor to caret
     if (view's selection's caret source != run's source) or (view's selection's caret != caret):

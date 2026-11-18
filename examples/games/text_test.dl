@@ -1,0 +1,29 @@
+import ../../ui/native.dl
+import input.dl
+
+window typography studio:
+    group at 40 32 sized 720 by 64:
+        brand "TYPE / DYNLEX"
+        caption "A STUDY IN CLARITY"
+    panel at 40 128 sized 720 by 432:
+        eyebrow "SIMPLE WORDS. PRECISE SHAPES."
+        space of 20 pixels
+        title "Hello,"
+        accent title "DynLex."
+        space of 12 pixels
+        heading "Room for every idea."
+        label "From small captions to large headlines, one interface language."
+        caption "NOTO SANS / REGULAR + SEMIBOLD"
+    group at 40 584 sized 720 by 24:
+        caption "RESIZE THE WINDOW TO EXPLORE THE TYPE     ESC  CLOSE"
+    style:
+        the interface uses a "midnight" theme
+        the interface fits 800 by 640 pixels
+        the window is at least 600 by 480 pixels
+
+set interface to an instance of typography studio
+set view to a desktop view of (the address of interface) sized 800 by 640 using fonts "assets/fonts/NotoSans-Regular.ttf" and "assets/fonts/NotoSans-SemiBold.ttf"
+watch UI input in (the address of view) using (the function named "close a game from $")
+run the address of view
+close the address of view
+close the address of interface

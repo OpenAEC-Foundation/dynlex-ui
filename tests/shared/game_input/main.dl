@@ -1,0 +1,41 @@
+import ../../../examples/games/geometry_dash/controls.dl
+
+set session to a new route session
+set interface to an instance of geometry dash with state (the address of session)
+set view to a new UI view
+set view's instance to the address of interface
+set view's keys to a new boolean array of 512 items
+set view's input kind to 3
+set view's key press to the UI space key
+read route input from the address of view
+require condition (session's phase = 1) reporting "Space did not start the route"
+require condition (view's key press = -1) reporting "Jump input leaked into UI activation"
+set view's frame seconds to the dash tick / 2.0
+advance the route frame in the address of view
+require condition (session's tick = 0) reporting "A partial frame advanced the physics"
+require condition (session's jump requested) reporting "A short jump was lost before a physics tick"
+advance the route frame in the address of view
+require condition (session's player's jumps = 1) reporting "A queued press/release did not jump"
+require condition (not session's jump requested) reporting "The simulation did not consume the jump"
+set view's input kind to 3
+set view's key press to 258
+read route input from the address of view
+require condition (view's key press = 258) reporting "Game input consumed Tab navigation"
+set view's input kind to 9
+set view's key press to the UI space key
+read route input from the address of view
+require condition (view's key press = -1) reporting "Jump repeat leaked into UI activation"
+set view's damaged to false
+set view's input kind to 3
+set view's key press to the UI P key
+read route input from the address of view
+require condition (view's damaged) reporting "A game shortcut did not invalidate the view"
+set tick to session's tick
+advance the route frame in the address of view
+require condition (session's tick = tick) reporting "Paused input advanced the route"
+set view's key press to the UI space key
+read route input from the address of view
+require condition (not session's jump requested) reporting "A paused tap was queued for after resume"
+close the address of interface
+close the address of session
+print line "Game input passed"

@@ -1,0 +1,13 @@
+import ../../ui/input.dl
+
+to get key {integer:key} is held in {a pointer to UI view:view}:
+    return the item at key in (view's keys)
+
+the UI R key means: 82
+the UI Q key means: 81
+the UI E key means: 69
+
+to close a game from {a pointer to UI view:view}:
+    if (view's input kind = 3) and (view's key press = the UI escape key):
+        set view's closed to true
+        set view's key press to -1

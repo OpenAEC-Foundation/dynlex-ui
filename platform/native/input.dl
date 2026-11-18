@@ -29,8 +29,9 @@ to receive native UI character from {a pointer:handle} numbered {32 bit unsigned
     set surface to the native UI surface for handle handle
     queue UI input of kind 4 key 0 at 0.0 0.0 with modifiers 0 containing (UTF8 text for code point (code as an integer)) in (surface's view)
 
-to receive native UI scroll from {a pointer:handle} at {floating-point number:x} {floating-point number:y}:
-    set surface to the native UI surface for handle handle
+to receive native UI scroll from {a pointer:resource} at {floating-point number:x} {floating-point number:y}:
+    set graphics to resource as a pointer to DynlexGraphics
+    set surface to graphics' application_state as a pointer to native UI surface
     queue UI input of kind 5 key 0 at (-40.0 * x) (-40.0 * y) with modifiers 0 containing "" in (surface's view)
 
 to receive native UI focus from {a pointer:handle} active {integer:active}:

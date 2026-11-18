@@ -14,7 +14,8 @@ and IME events. Application UI needs no HTML or CSS.
 
 ## Try it
 
-From this checkout, with a built DynLex compiler checkout at `../dynlex`:
+Use a built checkout of DynLex local master.
+From this checkout, with the built compiler checkout at `../dynlex`:
 
 ```sh
 python3 scripts/build.py ribbon --dynlex ../dynlex
@@ -47,6 +48,21 @@ resolve. Native dependencies are DynLex's Vulkan, GLFW and FreeType dependencies
 Native pictures additionally use the GdkPixbuf 2 image codecs and GLib runtime.
 Install loaders for the formats your application uses; the image tests exercise
 PNG, WebP, SVG and JPEG. The decoder modules load when a picture is first used.
+
+## Games and visual studies
+
+The [game examples](examples/games/README.md) include classic cube Geometry Dash,
+LEXI-8 Breakout, five shader studies, a color cube, city flyover and typography.
+Snake remains in `examples/snake`. Build and launch any native example from any
+directory with absolute checkout paths:
+
+```sh
+python3 /home/jan/Documents/Github/dynlex-ui/scripts/play_game.py geometry --dynlex /home/jan/Documents/Github/dynlex
+```
+
+Use `breakout`, `snake`, `shaders`, `mandelbrot`, `plasma`, `event-horizon`, `cube`,
+`city` or `typography` in place of `geometry`. Gameplay, UI input and painting use
+the shared UI engine; custom SPIR-V shaders and 3D scenes use the native adapter.
 
 ## Authoring
 
