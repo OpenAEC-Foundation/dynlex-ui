@@ -111,6 +111,19 @@ Documents also support responsive fields, switches, choice lists, rich paragraph
 source-anchored selection, multiline editing and undo/redo.
 The code editor, source panes and language-service integration live in [dynlex-ide](https://github.com/OpenAEC-Foundation/dynlex-ide).
 
+Host capabilities use `ui/services.dl`. Applications receive a `UI service provider`
+separately from their renderer; immediate calls, asynchronous requests and
+cancellation carry its context and the target view. The browser adapter supplies
+`the browser UI service provider`, with replies delivered through the shared
+input queue.
+Window dimensions, font sizes and shader operation arguments share checked
+32-bit driver conversion. Wider public integers retain their values when they
+fit; out-of-range values fail before conversion.
+Grapheme-cluster navigation, bidirectional editing and a
+screen-reader semantic tree are not implemented. Native glyph coverage comes from the chosen font; browsers may use their platform
+font fallback for missing glyphs. Browser font masks are clipped before rasterization,
+so long fields do not allocate textures as wide as their entire contents.
+
 ## Tests
 
 Import `testing/driver.dl` in UI test programs to use `the test UI driver`. It
