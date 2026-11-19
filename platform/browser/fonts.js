@@ -60,11 +60,12 @@ export function createFontServices(gpu, faces, resources, id) {
 
   function mask(handle, text, scale, clipLeft, clipTop, clipRight, clipBottom) {
     const font = fonts.get(handle);
-    const metrics = measurements.measure(handle,font,text);
-    const left = Math.max(Math.floor(clipLeft * scale) - 1, Math.floor(Math.min(0, -metrics.actualBoundingBoxLeft) * scale) - 1);
-    const right = Math.min(Math.ceil(clipRight * scale) + 1, Math.ceil(Math.max(metrics.width, metrics.actualBoundingBoxRight) * scale) + 1);
-    const top = Math.max(Math.floor(clipTop * scale) - 1, -Math.ceil(metrics.actualBoundingBoxAscent * scale) - 1);
-    const bottom = Math.min(Math.ceil(clipBottom * scale) + 1, Math.ceil(metrics.actualBoundingBoxDescent * scale) + 1);
+    // Glyph ink bounds can round differently at the size used by fillText.
+    const metrics = measurements.measure(handle, font, text, scale);
+    const left = Math.max(Math.floor(clipLeft * scale) - 1, Math.floor(Math.min(0, -metrics.actualBoundingBoxLeft)) - 1);
+    const right = Math.min(Math.ceil(clipRight * scale) + 1, Math.ceil(Math.max(metrics.width, metrics.actualBoundingBoxRight)) + 1);
+    const top = Math.max(Math.floor(clipTop * scale) - 1, -Math.ceil(metrics.actualBoundingBoxAscent) - 1);
+    const bottom = Math.min(Math.ceil(clipBottom * scale) + 1, Math.ceil(metrics.actualBoundingBoxDescent) + 1);
     if (right <= left || bottom <= top) return 0;
     const key = `${handle}:${scale}:${left}:${top}:${right}:${bottom}:${text}`;
     const existing = cache.get(key);

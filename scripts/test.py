@@ -82,7 +82,7 @@ def main():
         subprocess.run(['node', 'tests/browser/scene_baking_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_rotation_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
         subprocess.run(['node', 'tests/browser/scene_shader_ranges.mjs', str(args.dynlex.resolve())], cwd=project, check=True)
-        for case in ['wasm_delivery', 'font_loading', 'font_measurements', 'pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_provoking_vertex', 'shader_services', 'shader_uniforms', 'shader_assets']:
+        for case in ['wasm_delivery', 'font_loading', 'font_measurements', 'font_masks', 'pictures_service', 'audio_service', 'timer_service', 'scheduling', 'service_calls', 'connectivity_service', 'shader_streams', 'shader_provoking_vertex', 'shader_services', 'shader_uniforms', 'shader_assets']:
             subprocess.run(['node', f'tests/browser/{case}.mjs'], cwd=project, check=True)
         for suite in ['resources', 'graph']:
             probe = project / f'.cache/shader-{suite}-probe'
