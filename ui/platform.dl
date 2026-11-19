@@ -11,8 +11,13 @@ to get the width of {a value:message} using {UI font:typeface}:
 to get a UI font from {C string:path} sized {integer:size} in {a pointer to UI view:view}:
     set pixels to a UI operation integer from size
     require condition (pixels > 0) reporting "Font sizes must be positive"
-    set resource to @intrinsic("call pointer", view's driver's open font, a pointer, view, path, pixels)
-    return @intrinsic("construct", UI font, resource, view's driver, pixels)
+    set result to a new UI font
+    set result's driver to view's driver
+    set result's size to pixels
+    set result's resource to @intrinsic("call pointer", view's driver's open font, a pointer, view, path, pixels, the address of (result's ascent), the address of (result's descent))
+    return result
+
+the height of UI font {UI font:typeface} means: typeface's ascent + typeface's descent
 
 to release UI font {a pointer to UI font:typeface}:
     @intrinsic("call pointer", typeface's driver's close font, nothing, typeface's resource)

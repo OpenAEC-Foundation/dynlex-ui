@@ -22,7 +22,7 @@ to position UI input for {a pointer to UI text source:source} displaying {string
     set context's byte caret to view's selection's caret
     set context's font to typeface
     set first to UI surface point (UI point origin transformed by (view's transform)) in view
-    set last to UI surface point (UI point (a UI point at (origin's x + 1.2) and (origin's y + typeface's size + 3)) transformed by (view's transform)) in view
+    set last to UI surface point (UI point (a UI point at (origin's x + 1.2) and (origin's y + (the height of UI font typeface))) transformed by (view's transform)) in view
     set context's bounds to UI box at (first's x) (first's y) sized (last's x - first's x) (last's y - first's y)
     set index, line and start to 0
     loop while index < position:

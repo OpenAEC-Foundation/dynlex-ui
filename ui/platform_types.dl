@@ -48,6 +48,8 @@ class:
         resource as a pointer
         driver as a pointer to UI driver
         size as an integer
+        ascent as a floating-point number
+        descent as a floating-point number
 
 class:
     patterns:

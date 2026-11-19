@@ -36,12 +36,16 @@ to get the width from {integer:start} to {integer:end} in UI paragraph {a pointe
     return advance
 
 to measure UI row {a pointer to UI text line:line} in {a pointer to UI layout:layout}:
-    set line's ascent to layout's typeface's size as a floating-point number
-    set line's height to line's ascent * layout's appearance's line spacing
+    set ascent to layout's typeface's ascent
+    set descent to layout's typeface's descent
+    set height to layout's typeface's size * layout's appearance's line spacing
     if layout's rich:
         set child to layout's first
         loop while child != @intrinsic("construct", a pointer to UI layout):
             if (child's text end > line's start) and (child's text start < line's end):
-                set line's ascent to the maximum of (line's ascent) and (child's typeface's size as a floating-point number)
-                set line's height to the maximum of (line's height) and (child's typeface's size * child's appearance's line spacing)
+                set ascent to the maximum of ascent and (child's typeface's ascent)
+                set descent to the maximum of descent and (child's typeface's descent)
+                set height to the maximum of height and (child's typeface's size * child's appearance's line spacing)
             set child to child's next
+    set line's height to the maximum of height and (ascent + descent)
+    set line's ascent to ascent + (line's height - (ascent + descent)) / 2.0

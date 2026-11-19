@@ -1,10 +1,15 @@
 import graphics.dl
 
-to get a native UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size}:
+to get a native UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size} with ascent {a pointer to a floating-point number:ascent} and descent {a pointer to a floating-point number:descent}:
     set surface to the native UI surface in view
     set loading to the result of loading a font from path at size size rasterized at scale 2 for (surface's resource)
     require condition (loading succeeded) reporting "Loading a UI font failed"
-    set face to @intrinsic("construct", native UI face, loading's typeface, size)
+    set metadata to loading's typeface's face as a pointer to FT face
+    require condition (metadata's units per EM > 0) reporting "A UI typeface must have scalable font metrics"
+    set scale to (size as a floating-point number) / metadata's units per EM
+    set the value at ascent to metadata's ascender * scale
+    set the value at descent to -metadata's descender * scale
+    set face to @intrinsic("construct", native UI face, loading's typeface)
     return (storage for one slot initialized with face) as a pointer
 
 to release native UI font {a pointer:resource}:

@@ -10,7 +10,7 @@ to close browser UI {a pointer to UI view:view}:
     @intrinsic("call", "dynlex_ui", "ui_close", nothing, view's window)
 
 to poll browser UI {a pointer to UI view:view}:
-    @intrinsic("call", "dynlex_ui", "ui_poll", nothing, view's window, the address of (view's width), the address of (view's height), the address of (view's pixel scale), the address of (view's seconds))
+    set view's visible to @intrinsic("call", "dynlex_ui", "ui_poll", a boolean, view's window, the address of (view's width), the address of (view's height), the address of (view's pixel scale), the address of (view's seconds))
 
 to begin browser UI {a pointer to UI view:view}:
     set ink to view's theme's background
@@ -30,8 +30,8 @@ to submit browser UI {a pointer to UI view:view} vertices {a pointer to UI verte
     set last to UI surface point (a UI point at (view's clip's x + view's clip's width) and (view's clip's y + view's clip's height)) in view
     @intrinsic("call", "dynlex_ui", "ui_triangles", nothing, view's window, vertices, count, texture, first's x, first's y, last's x - first's x, last's y - first's y)
 
-to get a browser UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size}:
-    return @intrinsic("call", "dynlex_ui", "ui_open_font", a pointer, view's window, path, size)
+to get a browser UI [font] in {a pointer to UI view:view} from {C string:path} sized {integer:size} with ascent {a pointer to a floating-point number:ascent} and descent {a pointer to a floating-point number:descent}:
+    return @intrinsic("call", "dynlex_ui", "ui_open_font", a pointer, view's window, path, size, ascent, descent)
 
 to release browser UI font {a pointer:resource}:
     @intrinsic("call", "dynlex_ui", "ui_close_font", nothing, resource)

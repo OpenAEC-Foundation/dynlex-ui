@@ -15,6 +15,7 @@ function keyNumber(code) {
 
 export function connectInput(surface, send, schedule) {
   const { canvas } = surface;
+  canvas.style.touchAction = 'pinch-zoom';
   const controller = new AbortController();
   const options = { signal: controller.signal };
   const input = document.createElement("textarea");
@@ -47,7 +48,7 @@ export function connectInput(surface, send, schedule) {
     }
     input.readOnly = false;
     const bounds = canvas.getBoundingClientRect(), box = value.bounds;
-    const scale = box.height / (value.font.size + 3);
+    const scale = box.height / (value.font.ascent + value.font.descent);
     Object.assign(input.style, { left: bounds.left + box.x + 'px', top: bounds.top + box.y + 'px',
       height: box.height + 'px', lineHeight: box.height + 'px', fontSize: value.font.size * scale + 'px',
       fontFamily: '"' + value.font.family + '"', fontWeight:String(value.font.weight) });
@@ -64,27 +65,73 @@ export function connectInput(surface, send, schedule) {
   };
   const modifiers = event => Number(event.shiftKey) | Number(event.ctrlKey) << 1 |
     Number(event.altKey) << 2 | Number(event.metaKey) << 3;
-  const motion = event => {
+  const motion = (x, y, keys) => {
     const box = canvas.getBoundingClientRect();
-    send(1, 0, event.clientX - box.left, event.clientY - box.top, modifiers(event));
+    send(1, 0, x - box.left, y - box.top, keys);
   };
-  canvas.addEventListener("pointermove", motion, options);
+  let touch;
+  const clearTouch = () => {
+    if (touch?.scrolling) send(1, 0, -1, -1, 0);
+    touch = undefined;
+  };
+  const pan = event => {
+    const { clientX: x, clientY: y } = event;
+    const dx = touch.x - x, dy = touch.y - y;
+    if (!touch.scrolling) {
+      if (Math.hypot(dx, dy) < 8) return;
+      touch.scrolling = true;
+      motion(touch.x, touch.y, modifiers(event));
+    }
+    if (dx || dy) send(5, 1, dx, dy, modifiers(event));
+    touch.x = x; touch.y = y;
+  };
+  canvas.addEventListener("pointermove", event => {
+    if (event.pointerType !== 'touch') motion(event.clientX, event.clientY, modifiers(event));
+    else if (touch?.id === event.pointerId) pan(event);
+  }, options);
   canvas.addEventListener("pointerleave", event => {
-    if (!canvas.hasPointerCapture(event.pointerId)) send(1, 0, -1, -1, modifiers(event));
+    if (event.pointerType !== 'touch' && !canvas.hasPointerCapture(event.pointerId))
+      send(1, 0, -1, -1, modifiers(event));
   }, options);
   canvas.addEventListener("pointerdown", event => {
-    event.preventDefault(); canvas.focus({ preventScroll: true });
-    canvas.setPointerCapture(event.pointerId); motion(event);
+    event.preventDefault();
+    if (event.pointerType === 'touch') {
+      if (event.isPrimary) {
+        touch = { id: event.pointerId, x: event.clientX, y: event.clientY, scrolling: false };
+        canvas.setPointerCapture(event.pointerId);
+      } else clearTouch();
+      return;
+    }
+    canvas.focus({ preventScroll: true });
+    canvas.setPointerCapture(event.pointerId);
+    motion(event.clientX, event.clientY, modifiers(event));
     const button = event.button === 1 ? 2 : event.button === 2 ? 1 : event.button;
     send(2, button * 2 + 1, 0, 0, modifiers(event));
   }, options);
   canvas.addEventListener("pointerup", event => {
+    if (event.pointerType === 'touch') {
+      if (touch?.id !== event.pointerId) return;
+      pan(event);
+      if (!touch.scrolling) {
+        canvas.focus({ preventScroll: true });
+        motion(event.clientX, event.clientY, modifiers(event));
+        send(2, 1, 0, 0, modifiers(event));
+        send(2, 0, 0, 0, modifiers(event));
+        send(1, 0, -1, -1, 0);
+      }
+      clearTouch();
+      return;
+    }
     const button = event.button === 1 ? 2 : event.button === 2 ? 1 : event.button;
-    motion(event); send(2, button * 2, 0, 0, modifiers(event));
+    motion(event.clientX, event.clientY, modifiers(event));
+    send(2, button * 2, 0, 0, modifiers(event));
     if (event.buttons === 0) canvas.releasePointerCapture(event.pointerId);
   }, options);
   canvas.addEventListener('contextmenu', event => event.preventDefault(), options);
-  canvas.addEventListener("pointercancel", () => send(7), options);
+  canvas.addEventListener("pointercancel", event => {
+    if (event.pointerType !== 'touch') send(15);
+    else if (touch?.id === event.pointerId) clearTouch();
+  }, options);
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
     const unit = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? canvas.clientHeight : 1;
@@ -146,10 +193,13 @@ export function connectInput(surface, send, schedule) {
     resolution.addEventListener("change", changed, { once: true }); schedule();
   };
   changed();
-  document.addEventListener("visibilitychange", () => send(document.hidden ? 7 : (ownsFocus() ? 14 : 8)), options);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) clearTouch();
+    send(document.hidden ? 7 : (ownsFocus() ? 14 : 8));
+  }, options);
   if (document.hidden) send(7);
   window.addEventListener('focus', () => { if (ownsFocus()) send(14); }, options);
-  window.addEventListener('blur', () => send(7), options);
+  window.addEventListener('blur', () => { clearTouch(); send(7); }, options);
   return { updateContext, close() { controller.abort(); observer.disconnect();
     resolution.removeEventListener("change", changed); input.remove(); } };
 }

@@ -96,6 +96,7 @@ class:
         focus last as a pointer to UI layout
         keyboard focus as a boolean
         active as a boolean
+        visible as a boolean
         page as UI reference
         fitted as a boolean
         adaptive as a boolean

@@ -98,6 +98,7 @@ export async function createUiHost(root, fontPaths, base, runtimeLoading, option
       const data = new DataView(memory.buffer);
       data.setInt32(width, surface.width, true); data.setInt32(height, surface.height, true);
       data.setFloat64(scale, surface.scale, true); data.setFloat64(seconds, performance.now() / 1000, true);
+      return !document.hidden;
     },
     ui_begin(handle, red, green, blue) { gpu.begin(surfaces.get(handle), [red, green, blue]); },
     ui_present(handle) {
@@ -115,7 +116,12 @@ export async function createUiHost(root, fontPaths, base, runtimeLoading, option
       gpu.triangles(surfaces.get(handle), new Float32Array(memory.buffer, pointer, count * 8),
         texture === 0 ? null : resources.get(texture), { x, y, width, height });
     },
-    ui_open_font(handle, path, size) { return fonts.open(surfaces.get(handle), cstring(path), size); },
+    ui_open_font(handle, path, size, ascent, descent) {
+      const font = fonts.open(surfaces.get(handle), cstring(path), size);
+      const metrics = fonts.lineMetrics(font), data = new DataView(memory.buffer);
+      data.setFloat64(ascent, metrics.ascent, true); data.setFloat64(descent, metrics.descent, true);
+      return font;
+    },
     ui_close_font(handle) { fonts.close(handle); },
     ui_measure_text(handle, pointer, count) { return fonts.width(handle, text(pointer, count)); },
     ui_text_mask(handle, pointer, count, scale, left, top, right, bottom) {

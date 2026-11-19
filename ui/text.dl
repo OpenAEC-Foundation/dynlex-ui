@@ -185,11 +185,12 @@ to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
     set start to the first selected UI byte in run in view
     set end to the last selected UI byte in run in view
     set x to run's origin's x
-    set y to run's origin's y - run's typeface's size
+    set y to run's origin's y - run's typeface's ascent
+    set height to the height of UI font (run's typeface)
     if end > start:
         set left to the width of (the UI text prefix of (run's text) ending at start) using (run's typeface)
         set right to the width of (the UI text prefix of (run's text) ending at end) using (run's typeface)
-        draw a rectangle at x (x + left) and y y with width (right - left) and height (run's typeface's size + 4) in color red 190, green 216 and blue 250 in frame
+        draw a rectangle at x (x + left) and y y with width (right - left) and height height in color red 190, green 216 and blue 250 in frame
     if view's active and ((run's source's element != @intrinsic("construct", UI reference)) and (view's selection's caret source = run's source)):
         set caret to view's selection's caret - run's start
         if (caret < 0) or ((caret >= run's text's length) and (run's end caret = false)):
@@ -198,7 +199,7 @@ to draw UI selection for {a pointer to UI text run:run} on {UI frame:frame}:
             return nothing
         set offset to the width of (the UI text prefix of (run's text) ending at caret) using (run's typeface)
         position UI input for (run's source) displaying (run's source's text) with caret (view's selection's caret) at (a UI point at (x + offset) and y) using (run's typeface) in view
-        draw a rectangle at x (x + offset) and y y with width 1.2 and height (run's typeface's size + 3) in color red 60, green 100 and blue 190 in frame
+        draw a rectangle at x (x + offset) and y y with width 1.2 and height height in color red 60, green 100 and blue 190 in frame
 
 to finish UI text painting in {a pointer to UI view:view}:
     set run to view's next text

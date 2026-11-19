@@ -6,7 +6,7 @@ to draw UI fragment from {integer:start} to {integer:end} at {floating-point num
     set view to frame's view
     set content to the substring of (paragraph's content) from start spanning (end - start) bytes
     set width to the width of content using (span's typeface)
-    set box to UI box at x (baseline - span's typeface's size) sized width (span's typeface's size + 4)
+    set box to UI box at x (baseline - span's typeface's ascent) sized width (the height of UI font (span's typeface))
     set appearance to the UI appearance of span displayed in view
     set view's text control to @intrinsic("construct", a pointer to UI layout)
     if span != paragraph:

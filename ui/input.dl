@@ -10,8 +10,9 @@ import key_bindings.dl
 # 6 key release, 7 focus loss, 8 refresh, 9 repeat, 10 composition,
 # 11 platform response (key=request ID, modifiers=status), 12 platform notification,
 # 13 native text edit (key=input epoch, x/y=UTF-16 selection anchor/caret),
-# 14 surface focus gained.
+# 14 surface focus gained, 15 pointer cancelled.
 # Pointer key: button * 2 + pressed; buttons 0 primary, 1 secondary, 2 middle.
+# Scroll key: 0 wheel, 1 touch pan.
 # Text input: key=0 typed character, key=1 clipboard.
 # Composition: key=input epoch, modifiers=0 end/1 begin/2 update,
 # x/y=UTF-16 selection anchor/caret within the composition text.
@@ -59,16 +60,18 @@ to process UI input in {a pointer to UI view:view}:
         if event's kind = 5:
             set view's scroll x to event's x
             set view's scroll y to event's y
+        if (event's kind = 7) or (event's kind = 15):
+            set view's down to false
+            set view's pressed to @intrinsic("construct", a pointer to UI layout)
+            set view's selection's dragging to false
+            set view's damaged to true
         if event's kind = 7:
             if view's selection's composing:
                 receive UI composition (the string form of "") for (view's input context's epoch) at phase 0 selecting 0 through 0 in view
             set view's keys to a new boolean array of 512 items
-            set view's down to false
-            set view's pressed to @intrinsic("construct", a pointer to UI layout)
             set view's active to false
             set view's selection's composition to ""
             set view's selection's composing to false
-            set view's damaged to true
         if event's kind = 14:
             set view's active to true
             set view's damaged to true

@@ -48,6 +48,12 @@ export function createFontServices(gpu, faces, resources, id) {
     return handle;
   }
 
+  function lineMetrics(handle) {
+    const { fontBoundingBoxAscent: ascent, fontBoundingBoxDescent: descent } =
+      measurements.measure(handle, fonts.get(handle), '');
+    return { ascent, descent };
+  }
+
   function width(handle, text) {
     return measurements.measure(handle,fonts.get(handle),text).width;
   }
@@ -89,6 +95,6 @@ export function createFontServices(gpu, faces, resources, id) {
     for (const [key, entry] of cache) if (entry.font === handle) release(key, entry);
     fonts.delete(handle);
   }
-  return { open, close, width, mask, trim, coverage,
-    description(handle) { const { family, size, weight } = fonts.get(handle); return { family, size, weight }; } };
+  return { open, close, lineMetrics, width, mask, trim, coverage,
+    description(handle) { const { family, size, weight } = fonts.get(handle); return { family, size, weight, ...lineMetrics(handle) }; } };
 }

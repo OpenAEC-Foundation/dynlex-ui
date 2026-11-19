@@ -6,9 +6,10 @@ to count link activation {a pointer to UI instance:instance}:
 appearance paragraph appearance:
     padding is 12
     font size is 16
-    line spacing is 1.5
+    line spacing is 1.0
 appearance emphasis appearance:
     font is bold
+    font size is 20
     text is UI ink 146 64 14
 
 document rich text test:
@@ -25,6 +26,9 @@ set view to a UI view of (the address of instance) sized 184 by 300 using font "
 ignore update UI view (the address of view)
 set paragraph to view's layout's first
 set link to paragraph's first's next
+set line to paragraph's lines
+require condition (line's ascent >= link's typeface's ascent) reporting "A larger span rose past the top of its line"
+require condition (line's height - line's ascent >= link's typeface's descent) reporting "A tight line clipped descenders in a larger span"
 require condition (paragraph's content = "Readable project vocabulary belongs in the program.") reporting "Rich text did not preserve its source"
 set view's selection's anchor source to the address of (paragraph's text source)
 set view's selection's caret source to view's selection's anchor source

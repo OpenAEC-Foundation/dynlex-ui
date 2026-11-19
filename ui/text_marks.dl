@@ -24,8 +24,10 @@ to [draw UI text mark layer] {a pointer to UI text mark layer:layer} [in] {strin
             if last > first:
                 set x to left + (the width of (the substring of text from start spanning (first - start) bytes) using (layout's typeface))
                 set width to the width of (the substring of text from first spanning (last - first) bytes) using (layout's typeface)
-                set height to layout's typeface's size * layout's appearance's line spacing
-                set box to UI box at x (baseline - layout's typeface's size) sized width height
+                set {font height} to the height of UI font (layout's typeface)
+                set height to the maximum of {font height} and (layout's typeface's size * layout's appearance's line spacing)
+                set top to (baseline - layout's typeface's ascent) - (height - {font height}) / 2.0
+                set box to UI box at x top sized width height
                 draw a rounded UI surface box with radius 2.0 from (mark's ink) to (mark's ink) opacity (mark's opacity) feathered by 0.25 on frame
             if mark's end >= finish:
                 return nothing

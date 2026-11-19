@@ -25,7 +25,7 @@ to get the UI text hit at {UI point:point} in {a pointer to UI view:view} limite
         if visible and ((run's generation = view's paint count) and (point is inside (run's clip))):
             set local to UI text position of point in run
             set width to the maximum of 8.0 and (the width of (run's text) using (run's typeface))
-            set box to UI box at (run's origin's x) (run's origin's y - run's typeface's size) sized width (run's typeface's size + 5)
+            set box to UI box at (run's origin's x) (run's origin's y - run's typeface's ascent) sized width (the height of UI font (run's typeface))
             set inside to local is inside box
             if run's source's element != @intrinsic("construct", UI reference):
                 set inside to (local's y >= box's y) and (local's y < (box's y + box's height))
@@ -66,8 +66,9 @@ to get the nearest UI text to {UI point:point} in {a pointer to UI view:view}:
             set allowed to allowed and (run's source = view's selection's limit)
         if (run's generation = view's paint count) and allowed:
             set local to UI text position of point in run
-            set top to run's origin's y - run's typeface's size
-            set vertical to the maximum of 0.0 and (the maximum of (top - local's y) and (local's y - (top + run's typeface's size)))
+            set top to run's origin's y - run's typeface's ascent
+            set bottom to run's origin's y + run's typeface's descent
+            set vertical to the maximum of 0.0 and (the maximum of (top - local's y) and (local's y - bottom))
             set horizontal to the maximum of 0.0 and (the maximum of (run's origin's x - local's x) and (local's x - (run's origin's x + (the width of (run's text) using (run's typeface)))))
             set candidate to vertical * 1000.0 + horizontal
             if candidate < distance:

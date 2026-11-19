@@ -38,6 +38,9 @@ to poll native UI {a pointer to UI view:view}:
     if dimensions' width > 0:
         set view's pixel scale to (the framebuffer width of (surface's resource)) / (dimensions' width as a floating-point number)
     set view's seconds to the time since start for (surface's resource)
+    set graphics to surface's resource as a pointer to DynlexGraphics
+    # GLFW_ICONIFIED
+    set view's visible to @intrinsic("call", "glfw", "glfwGetWindowAttrib", an integer, graphics' window, 131074) = 0
     set view's closed to surface's resource should close
 
 to wait for native UI {a pointer to UI view:view} for {floating-point number:seconds}:

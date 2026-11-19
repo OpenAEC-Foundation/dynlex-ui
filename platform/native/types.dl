@@ -20,4 +20,3 @@ class:
         native UI face
     members:
         typeface as a font
-        size as an integer

@@ -21,6 +21,7 @@ to get an unmeasured UI view of {a pointer to UI instance:instance} sized {integ
     set result's pixel scale to 1.0
     set result's focus order to 1
     set result's active to true
+    set result's visible to true
     set result's key press to -1
     set result's current alpha to 255
     set result's current color to UI ink 255 255 255

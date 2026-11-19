@@ -10,7 +10,7 @@ the native UI driver means: a static reference to @intrinsic("construct", UI dri
     (the function named "begin native UI $") as a pointer,
     (the function named "present native UI $") as a pointer,
     (the function named "submit native UI $ vertices $ counting $ with $") as a pointer,
-    (the function named "a native UI font in $ from $ sized $") as a pointer,
+    (the function named "a native UI font in $ from $ sized $ with ascent $ and descent $") as a pointer,
     (the function named "release native UI font $") as a pointer,
     (the function named "the native UI width of $ containing $ counting $") as a pointer,
     (the function named "draw native UI text in $ using $ containing $ counting $ at $ $ in $") as a pointer,
